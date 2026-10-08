@@ -1,0 +1,66 @@
+from typing import Dict, Any, Optional
+import httpx
+from app.providers.base import Provider, Action
+from app.core.ssrf import assert_public_url
+
+class HttpRequestAction(Action):
+    def __init__(self):
+        super().__init__(
+            id="custom.http_request",
+            name="Custom HTTP Request",
+            description="Send a custom SSRF-safe HTTP request to any external API with headers and payload.",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "url": {"type": "string", "description": "Full destination HTTP/HTTPS URL"},
+                    "method": {"type": "string", "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"], "default": "GET"},
+                    "headers": {"type": "object", "description": "Optional HTTP headers dictionary"},
+                    "body": {"type": "object", "description": "Optional JSON body object"}
+                },
+                "required": ["url"]
+            }
+        )
+
+    async def execute(self, input_data: Dict[str, Any], credential: Optional[Dict[str, Any]], client: httpx.AsyncClient) -> Dict[str, Any]:
+        url = input_data["url"]
+        method = input_data.get("method", "GET").upper()
+        headers = dict(input_data.get("headers") or {})
+        body = input_data.get("body")
+
+        # Inject custom credential apiKey if present
+        if credential and credential.get("apiKey"):
+            headers.setdefault("Authorization", f"Bearer {credential['apiKey']}")
+
+        assert_public_url(url)
+        resp = await client.request(method=method, url=url, json=body if body else None, headers=headers)
+        
+        try:
+            data = resp.json()
+        except Exception:
+            data = resp.text
+
+        return {
+            "status": resp.status_code,
+            "headers": dict(resp.headers),
+            "data": data
+        }
+
+class CustomHttpProvider(Provider):
+    def __init__(self):
+        super().__init__(
+            service="custom",
+            display_name="Custom Webhook / HTTP",
+            category="Utilities",
+            auth_types=["no_auth", "api_key"],
+            description="Execute arbitrary SSRF-guarded HTTP requests and webhooks to any external API.",
+            homepage_url=""
+        )
+        self.register_action(HttpRequestAction())
+
+    async def validate_credentials(self, credential: Dict[str, Any], client: httpx.AsyncClient) -> Dict[str, Any]:
+        api_key = credential.get("apiKey") or credential.get("accessToken")
+        return {
+            "account_id": "api_key" if api_key else "anonymous",
+            "display_name": "Custom HTTP Client",
+            "granted_scopes": []
+        }
