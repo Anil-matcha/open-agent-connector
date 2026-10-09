@@ -4,6 +4,7 @@ from app.providers.builtins.hackernews import HackerNewsProvider
 from app.providers.builtins.github import GitHubProvider
 from app.providers.builtins.slack import SlackProvider
 from app.providers.builtins.custom_http import CustomHttpProvider
+from app.providers.builtins.gmail import GmailProvider
 
 class ProviderRegistry:
     def __init__(self):
@@ -15,6 +16,7 @@ class ProviderRegistry:
         self.register(HackerNewsProvider())
         self.register(GitHubProvider())
         self.register(SlackProvider())
+        self.register(GmailProvider())
         self.register(CustomHttpProvider())
 
     def register(self, provider: Provider):

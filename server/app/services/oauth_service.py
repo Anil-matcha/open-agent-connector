@@ -28,6 +28,16 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "authorize_url": "https://slack.com/oauth/v2/authorize",
         "token_url": "https://slack.com/api/oauth.v2.access",
         "default_scopes": ["chat:write", "channels:read"],
+    },
+    "gmail": {
+        "display_name": "Gmail",
+        "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth",
+        "token_url": "https://oauth2.googleapis.com/token",
+        "default_scopes": [
+            "https://www.googleapis.com/auth/gmail.readonly",
+            "https://www.googleapis.com/auth/gmail.send",
+            "https://www.googleapis.com/auth/gmail.modify"
+        ],
     }
 }
 
@@ -128,17 +138,17 @@ class OAuthService:
         scopes = custom_scopes or provider_meta.get("default_scopes", [])
         scope_str = " ".join(scopes) if service != "github" else ",".join(scopes)
 
+        callback_uri = f"http://localhost:8000/api/oauth/{service}/callback"
         params = {
             "client_id": client_id,
             "response_type": "code",
             "state": state,
             "code_challenge": code_challenge,
-            "code_challenge_method": "S256"
+            "code_challenge_method": "S256",
+            "redirect_uri": callback_uri
         }
         if scope_str:
             params["scope"] = scope_str
-        if redirect_uri:
-            params["redirect_uri"] = redirect_uri
 
         auth_url = f"{provider_meta['authorize_url']}?{urlencode(params)}"
         return {
@@ -199,8 +209,7 @@ class OAuthService:
         }
         if code_verifier:
             token_payload["code_verifier"] = code_verifier
-        if redirect_uri:
-            token_payload["redirect_uri"] = redirect_uri
+        token_payload["redirect_uri"] = f"http://localhost:8000/api/oauth/{service}/callback"
 
         client = await create_guarded_client()
         try:
@@ -298,7 +307,8 @@ class OAuthService:
                 "displayName": profile.get("display_name"),
                 "status": "active",
                 "lastValidatedAt": utcnow_str(),
-                "expiresAt": expires_at
+                "expiresAt": expires_at,
+                "returnUri": redirect_uri
             }
         finally:
             await client.aclose()

@@ -104,9 +104,10 @@ async def handle_oauth_callback(
             code=code,
             state=state
         )
-        if returnUri:
-            sep = "&" if "?" in returnUri else "?"
-            return RedirectResponse(url=f"{returnUri}{sep}status=connected&service={service}&connectionName={conn.get('connectionName')}")
+        dest = returnUri or conn.get("returnUri")
+        if dest:
+            sep = "&" if "?" in dest else "?"
+            return RedirectResponse(url=f"{dest}{sep}status=connected&service={service}&connectionName={conn.get('connectionName')}")
         return {"success": True, "data": conn}
     except ValueError as e:
         if returnUri:

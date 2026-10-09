@@ -10,7 +10,7 @@ import jsonschema
 from app.providers.registry import registry
 from app.db.models import RunLog, IdempotencyRecord, utcnow_str
 from app.services.connection_service import ConnectionService
-from app.core.ssrf import create_guarded_client
+from app.core.ssrf import create_guarded_client, SSRFViolationError
 from app.core.idempotency import compute_idempotency_scope_key, compute_payload_hash
 from app.core.security import encrypt_secret, decrypt_secret, redact_sensitive_data, safe_error_message
 
@@ -140,6 +140,10 @@ class ActionRunner:
 
         try:
             result_data = await action.execute(clean_input, credential, client)
+        except SSRFViolationError as e:
+            ok = False
+            status_code = 400
+            error_msg = f"SSRF Security Violation: {str(e)}"
         except Exception as e:
             ok = False
             status_code = 500
