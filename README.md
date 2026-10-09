@@ -210,7 +210,7 @@ To add an action:
 4. Add or update credential validation if the provider requires authentication.
 5. Confirm the action schema works through both the REST API and MCP clients.
 
-GitHub actions are data-driven from `server/app/providers/builtins/github_actions.json`; the other providers define actions in Python.
+Provider actions are maintained in a single unified catalog at `server/app/providers/actions_catalog.json`, partitioned by provider service ID for simple, scalable expansion.
 
 ## Data and security notes
 

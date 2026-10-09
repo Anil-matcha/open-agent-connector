@@ -1,6 +1,6 @@
 """
 Slack Provider for ConnectorHub.
-Loads and registers actions from 'slack_actions.json'.
+Loads and registers actions from 'actions_catalog.json'.
 Aligned with the official Slack Web API specifications and open-connector definitions.
 """
 import json
@@ -9,9 +9,9 @@ from typing import Dict, Any, Optional, List
 import httpx
 
 from app.providers.base import Provider, Action
+from app.providers.catalog import get_provider_actions
 from app.core.ssrf import assert_public_url, execute_guarded_request
 
-ACTIONS_JSON_PATH = Path(__file__).parent / "slack_actions.json"
 SLACK_API_BASE = "https://slack.com/api"
 
 def _slack_headers(token: str) -> Dict[str, str]:
@@ -150,10 +150,29 @@ class SlackProvider(Provider):
             auth_configs=[
                 {
                     "type": "api_key",
-                    "label": "Slack Bot Token",
+                    "label": "Bot User OAuth Token",
                     "placeholder": "xoxb-...",
-                    "description": "Create a Slack App at api.slack.com/apps, install to your workspace, and copy the Bot User OAuth Token (xoxb-...).",
+                    "description": "Create a Slack App at api.slack.com/apps, install to your workspace, and copy the Bot User OAuth Token.",
                     "docs_url": "https://api.slack.com/apps",
+                    "docs_label": "Create app on Slack API",
+                    "setup_guide": {
+                        "title": "Slack Token Setup Guide",
+                        "docs_url": "https://api.slack.com/apps",
+                        "docs_label": "Create app on Slack API",
+                        "instructions": [
+                            "1. Create an App at api.slack.com/apps (From scratch) and select your workspace.",
+                            "2. Under OAuth & Permissions > Bot Token Scopes, add the permissions you need.",
+                            "3. Click Install to Workspace at the top, then copy the Bot User OAuth Token (starts with xoxb-...)."
+                        ],
+                        "scopes": [
+                            "chat:write",
+                            "channels:read",
+                            "channels:history",
+                            "groups:read",
+                            "users:read",
+                            "reactions:write"
+                        ]
+                    },
                     "fields": [
                         {
                             "key": "apiKey",
@@ -171,6 +190,16 @@ class SlackProvider(Provider):
                     "placeholder": "xoxp-...",
                     "description": "Authorize via Slack OAuth 2.0 application or enter a user access token.",
                     "docs_url": "https://api.slack.com/authentication/oauth-v2",
+                    "docs_label": "Slack OAuth Docs",
+                    "setup_guide": {
+                        "title": "Slack OAuth Setup Guide",
+                        "docs_url": "https://api.slack.com/authentication/oauth-v2",
+                        "docs_label": "Slack OAuth Docs",
+                        "instructions": [
+                            "Authorize directly via Slack OAuth 2.0 PKCE flow, or provide a user access token (xoxp-...)."
+                        ],
+                        "scopes": ["chat:write", "channels:read", "users:read"]
+                    },
                     "fields": [
                         {
                             "key": "accessToken",
@@ -185,12 +214,9 @@ class SlackProvider(Provider):
             ]
         )
 
-        # Load all actions from JSON definition
-        if ACTIONS_JSON_PATH.exists():
-            with open(ACTIONS_JSON_PATH, "r", encoding="utf-8") as f:
-                catalog = json.load(f)
-            for meta in catalog:
-                self.register_action(SlackDynamicAction(meta))
+        # Load all actions from the centralized actions catalog
+        for meta in get_provider_actions("slack"):
+            self.register_action(SlackDynamicAction(meta))
 
     async def validate_credentials(self, credential: Dict[str, Any], client: httpx.AsyncClient) -> Dict[str, Any]:
         token = credential.get("apiKey") or credential.get("accessToken")

@@ -1,6 +1,6 @@
 """
 GitHub Provider for ConnectorHub.
-Loads and registers actions from 'github_actions.json'.
+Loads and registers actions from 'actions_catalog.json'.
 Aligned with the provider action specifications.
 """
 import json
@@ -11,9 +11,8 @@ from typing import Dict, Any, Optional, List
 import httpx
 
 from app.providers.base import Provider, Action
+from app.providers.catalog import get_provider_actions
 from app.core.ssrf import assert_public_url
-
-ACTIONS_JSON_PATH = Path(__file__).parent / "github_actions.json"
 
 def _github_headers(token: str) -> Dict[str, str]:
     return {
@@ -139,10 +138,23 @@ class GitHubProvider(Provider):
             auth_configs=[
                 {
                     "type": "api_key",
-                    "label": "Personal Access Token",
+                    "label": "Personal Access Token (PAT)",
                     "placeholder": "github_pat_... or ghp_...",
-                    "description": "Create a token from GitHub Developer Settings with 'repo' and 'read:user' permissions.",
+                    "description": "Create a Personal Access Token with 'repo' and 'read:user' permissions.",
                     "docs_url": "https://github.com/settings/tokens",
+                    "docs_label": "Create token on GitHub",
+                    "setup_guide": {
+                        "title": "GitHub Token Setup Guide",
+                        "docs_url": "https://github.com/settings/tokens",
+                        "docs_label": "Create token on GitHub",
+                        "instructions": [
+                            "1. Go to GitHub Settings > Developer settings > Personal access tokens.",
+                            "2. Click 'Generate new token' (Tokens classic or Fine-grained).",
+                            "3. Select the 'repo' scope for repository and code access.",
+                            "4. Select the 'read:user' scope for profile verification, then copy the token."
+                        ],
+                        "scopes": ["repo", "read:user"]
+                    },
                     "fields": [
                         {
                             "key": "apiKey",
@@ -160,6 +172,16 @@ class GitHubProvider(Provider):
                     "placeholder": "gho_...",
                     "description": "Authenticate via OAuth 2.0 application access token.",
                     "docs_url": "https://docs.github.com/en/apps/oauth-apps",
+                    "docs_label": "GitHub OAuth Docs",
+                    "setup_guide": {
+                        "title": "GitHub OAuth Setup Guide",
+                        "docs_url": "https://docs.github.com/en/apps/oauth-apps",
+                        "docs_label": "GitHub OAuth Docs",
+                        "instructions": [
+                            "Authorize directly using OAuth 2.0 PKCE, or enter an issued OAuth access token (gho_...)."
+                        ],
+                        "scopes": ["repo", "read:user"]
+                    },
                     "fields": [
                         {
                             "key": "accessToken",
@@ -174,12 +196,9 @@ class GitHubProvider(Provider):
             ]
         )
         
-        # Load all actions cleanly from JSON definition
-        if ACTIONS_JSON_PATH.exists():
-            with open(ACTIONS_JSON_PATH, "r", encoding="utf-8") as f:
-                catalog = json.load(f)
-            for meta in catalog:
-                self.register_action(GitHubDynamicAction(meta))
+        # Load all actions cleanly from the centralized actions catalog
+        for meta in get_provider_actions("github"):
+            self.register_action(GitHubDynamicAction(meta))
 
     async def validate_credentials(self, credential: Dict[str, Any], client: httpx.AsyncClient) -> Dict[str, Any]:
         token = credential.get("apiKey") or credential.get("accessToken")

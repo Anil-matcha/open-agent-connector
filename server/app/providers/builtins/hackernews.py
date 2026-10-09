@@ -98,7 +98,16 @@ class HackerNewsProvider(Provider):
             auth_types=["no_auth"],
             description="Public developer news and community discussions from Y Combinator.",
             homepage_url="https://news.ycombinator.com",
-            base_url="https://hacker-news.firebaseio.com/v0"
+            base_url="https://hacker-news.firebaseio.com/v0",
+            auth_configs=[
+                {
+                    "type": "no_auth",
+                    "label": "Public Access (No Authentication)",
+                    "description": "Public Hacker News Firebase & Algolia APIs. No credentials required.",
+                    "docs_url": "https://github.com/HackerNews/API",
+                    "docs_label": "Hacker News API Docs"
+                }
+            ]
         )
         self.register_action(GetTopStoriesAction())
         self.register_action(GetItemAction())

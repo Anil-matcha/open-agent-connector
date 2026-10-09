@@ -59,7 +59,26 @@ class CustomHttpProvider(Provider):
             category="Utilities",
             auth_types=["no_auth", "api_key"],
             description="Execute arbitrary SSRF-guarded HTTP requests and webhooks to any external API.",
-            homepage_url=""
+            homepage_url="",
+            auth_configs=[
+                {
+                    "type": "no_auth",
+                    "label": "Anonymous / Public HTTP Request",
+                    "description": "Send unauthenticated HTTP calls or webhooks to public APIs."
+                },
+                {
+                    "type": "api_key",
+                    "label": "Custom Bearer Token / API Key",
+                    "placeholder": "Bearer secret_token_xyz or api_key_...",
+                    "description": "Optionally attach an Authorization Bearer header to all requests.",
+                    "setup_guide": {
+                        "title": "Custom HTTP Setup Guide",
+                        "instructions": [
+                            "Enter an optional API key or Bearer token to be sent with outbound requests."
+                        ]
+                    }
+                }
+            ]
         )
         self.register_action(HttpRequestAction())
 
