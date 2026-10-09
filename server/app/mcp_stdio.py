@@ -6,6 +6,7 @@ import sys
 import os
 import json
 import asyncio
+from typing import Optional
 from pathlib import Path
 
 # Ensure 'server' directory is on sys.path regardless of how this script is invoked
@@ -15,7 +16,26 @@ if str(server_dir) not in sys.path:
 
 from app.db.session import AsyncSessionLocal
 from app.services.mcp_service import McpService
+from app.core.auth import resolve_principal, Principal
+from app.core.config import settings
 
+# In local stdio mode, check if a specific runtime token is passed via environment
+stdio_token = os.environ.get("CONNECTOR_RUNTIME_TOKEN") or os.environ.get("CONNECTOR_ADMIN_TOKEN")
+
+async def get_active_principal(session) -> Optional[Principal]:
+    if stdio_token:
+        p = await resolve_principal(stdio_token, session)
+        if p:
+            return p
+    # By default, local terminal stdio runs with Operator Admin principal
+    return Principal(
+        kind="admin",
+        id="stdio-operator",
+        name="Local Desktop Operator",
+        allowed_actions=["*"],
+        allowed_connections=["*"],
+        allowed_proxies=["*"]
+    )
 
 async def process_message(line: str):
     if not line.strip():
@@ -62,16 +82,24 @@ async def process_message(line: str):
 
     # 3. List tools
     elif method == "tools/list":
-        tools = McpService.get_tool_definitions(include_actions=True)
-        res = {"jsonrpc": "2.0", "id": rpc_id, "result": {"tools": tools}}
+        async with AsyncSessionLocal() as session:
+            principal = await get_active_principal(session)
+            tools = McpService.get_tool_definitions(include_actions=True, principal=principal)
+            res = {"jsonrpc": "2.0", "id": rpc_id, "result": {"tools": tools}}
 
     # 4. Call tool
     elif method == "tools/call":
         tool_name = params.get("name")
         args = params.get("arguments") or {}
         async with AsyncSessionLocal() as session:
+            principal = await get_active_principal(session)
             try:
-                tool_res = await McpService.handle_call_tool(session, tool_name, args)
+                tool_res = await McpService.handle_call_tool(
+                    session=session,
+                    name=tool_name,
+                    arguments=args,
+                    principal=principal
+                )
                 is_err = isinstance(tool_res, dict) and "error" in tool_res
                 res = {
                     "jsonrpc": "2.0",
@@ -103,14 +131,12 @@ async def process_message(line: str):
     sys.stdout.write(json.dumps(res) + "\n")
     sys.stdout.flush()
 
-
 async def main():
     while True:
         line = await asyncio.to_thread(sys.stdin.readline)
         if not line:
             break
         await process_message(line)
-
 
 if __name__ == "__main__":
     asyncio.run(main())

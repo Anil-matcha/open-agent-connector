@@ -1,16 +1,19 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from app.db.session import get_db
 from app.services.mcp_service import McpService
+from app.core.auth import resolve_principal, _extract_token, Principal
 
 router = APIRouter(tags=["MCP"])
 
 @router.get("/mcp/tools")
-async def list_mcp_tools():
-    """List tool definitions for MCP clients and preview inspectors."""
-    return {"tools": McpService.get_tool_definitions()}
+async def list_mcp_tools(request: Request, db: AsyncSession = Depends(get_db)):
+    """List tool definitions for MCP clients, scoped to caller credentials."""
+    token = _extract_token(request)
+    principal = await resolve_principal(token, db) if token else None
+    return {"tools": McpService.get_tool_definitions(include_actions=True, principal=principal)}
 
 @router.post("/mcp")
 async def handle_mcp_jsonrpc(request: Request, db: AsyncSession = Depends(get_db)):
@@ -27,6 +30,12 @@ async def handle_mcp_jsonrpc(request: Request, db: AsyncSession = Depends(get_db
     rpc_id = rpc.get("id")
     method = rpc.get("method")
     params = rpc.get("params") or {}
+
+    # Extract & resolve principal from HTTP request
+    token = _extract_token(request)
+    principal: Optional[Principal] = None
+    if token:
+        principal = await resolve_principal(token, db)
 
     # Handle notifications (requests without 'id')
     if rpc_id is None and method in ["notifications/initialized", "initialized"]:
@@ -61,11 +70,12 @@ async def handle_mcp_jsonrpc(request: Request, db: AsyncSession = Depends(get_db
 
     # 3. Discovery: 'tools/list'
     elif method == "tools/list":
+        tools = McpService.get_tool_definitions(include_actions=True, principal=principal)
         return {
             "jsonrpc": "2.0",
             "id": rpc_id,
             "result": {
-                "tools": McpService.get_tool_definitions(include_actions=True)
+                "tools": tools
             }
         }
 
@@ -74,7 +84,12 @@ async def handle_mcp_jsonrpc(request: Request, db: AsyncSession = Depends(get_db
         tool_name = params.get("name")
         arguments = params.get("arguments") or {}
         try:
-            tool_result = await McpService.handle_call_tool(db, tool_name, arguments)
+            tool_result = await McpService.handle_call_tool(
+                session=db,
+                name=tool_name,
+                arguments=arguments,
+                principal=principal
+            )
             is_err = isinstance(tool_result, dict) and "error" in tool_result
             return {
                 "jsonrpc": "2.0",

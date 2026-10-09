@@ -20,6 +20,10 @@ class Connection(Base):
     account_id = Column(String(128), nullable=True)
     display_name = Column(String(128), nullable=True)
     granted_scopes = Column(Text, nullable=True) # JSON list
+    status = Column(String(32), nullable=False, default="active") # "active", "expired", "revoked", "error"
+    status_message = Column(Text, nullable=True)
+    last_validated_at = Column(String(32), nullable=True)
+    expires_at = Column(String(32), nullable=True)
     created_at = Column(String(32), default=utcnow_str)
     updated_at = Column(String(32), default=utcnow_str, onupdate=utcnow_str)
 
@@ -43,6 +47,7 @@ class OAuthState(Base):
     code_verifier = Column(String(128), nullable=True)
     return_uri = Column(String(512), nullable=True)
     created_at = Column(String(32), default=utcnow_str)
+    expires_at = Column(String(32), nullable=False)
 
 class RuntimeToken(Base):
     __tablename__ = "runtime_tokens"
@@ -54,6 +59,8 @@ class RuntimeToken(Base):
     blocked_actions = Column(Text, nullable=False, default="[]")       # JSON array
     allowed_proxies = Column(Text, nullable=False, default="[]")       # JSON array
     allowed_connections = Column(Text, nullable=False, default="[]")   # JSON array of connection IDs
+    is_active = Column(Boolean, nullable=False, default=True)
+    revoked_at = Column(String(32), nullable=True)
     created_at = Column(String(32), default=utcnow_str)
     last_used_at = Column(String(32), nullable=True)
 
@@ -77,7 +84,8 @@ class RunLog(Base):
 class IdempotencyRecord(Base):
     __tablename__ = "action_idempotency"
     
-    key_hash = Column(String(64), primary_key=True) # Hash of idempotency_key + action + input
+    key_hash = Column(String(64), primary_key=True) # Hash of idempotency_key + principal + action + connection
+    payload_hash = Column(String(64), nullable=True) # Hash of normalized input data for conflict detection
     action_id = Column(String(128), nullable=False)
     status = Column(String(32), nullable=False) # "in_progress", "completed", "failed"
     response_status = Column(Integer, nullable=True)

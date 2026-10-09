@@ -6,6 +6,7 @@ from typing import Optional
 from app.db.session import get_db
 from app.db.models import RunLog, Connection
 from app.providers.registry import registry
+from app.core.auth import require_admin, Principal
 
 router = APIRouter(prefix="", tags=["Admin Audit & Runs"])
 
@@ -15,6 +16,7 @@ async def list_runs(
     actionId: Optional[str] = None,
     ok: Optional[bool] = None,
     limit: int = 50,
+    admin: Principal = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):
     stmt = select(RunLog).order_by(desc(RunLog.started_at)).limit(limit)
@@ -50,7 +52,11 @@ async def list_runs(
     }
 
 @router.get("/runs/{run_id}")
-async def get_run(run_id: str, db: AsyncSession = Depends(get_db)):
+async def get_run(
+    run_id: str,
+    admin: Principal = Depends(require_admin),
+    db: AsyncSession = Depends(get_db)
+):
     stmt = select(RunLog).where(RunLog.id == run_id)
     run = (await db.execute(stmt)).scalar_one_or_none()
     if not run:
@@ -74,7 +80,10 @@ async def get_run(run_id: str, db: AsyncSession = Depends(get_db)):
     }
 
 @router.get("/stats")
-async def get_overview_stats(db: AsyncSession = Depends(get_db)):
+async def get_overview_stats(
+    admin: Principal = Depends(require_admin),
+    db: AsyncSession = Depends(get_db)
+):
     total_runs = (await db.execute(select(func.count(RunLog.id)))).scalar_one() or 0
     successful_runs = (await db.execute(select(func.count(RunLog.id)).where(RunLog.ok == True))).scalar_one() or 0
     total_connections = (await db.execute(select(func.count(Connection.id)))).scalar_one() or 0

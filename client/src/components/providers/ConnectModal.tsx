@@ -38,7 +38,38 @@ export function ConnectModal({
   const [connectionName, setConnectionName] = useState("default");
   const [apiKey, setApiKey] = useState("");
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
+  const [oauthConfigured, setOauthConfigured] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (authTypes.includes("oauth2")) {
+      fetchApi<{ configured: boolean }>(`/api/oauth/${service}/config`)
+        .then((res) => {
+          if (res.configured) setOauthConfigured(true);
+        })
+        .catch(() => {});
+    }
+  }, [service, authTypes]);
+
+  async function handleOAuthLaunch() {
+    setOauthLoading(true);
+    setError(null);
+    try {
+      const returnUri = typeof window !== "undefined" ? `${window.location.origin}/connections` : "";
+      const res = await fetchApi<{ data: { authorization_url: string } }>(
+        `/api/oauth/${service}/authorize?connectionName=${encodeURIComponent(connectionName.trim() || "default")}&redirectUri=${encodeURIComponent(returnUri)}`
+      );
+      if (res.data?.authorization_url) {
+        window.location.href = res.data.authorization_url;
+      } else {
+        throw new Error("Authorization URL could not be generated.");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to start OAuth flow.");
+      setOauthLoading(false);
+    }
+  }
 
   // Match auth config if provided
   const activeConfig = authConfigs.find((c) => c.type === authType);
@@ -120,6 +151,26 @@ export function ConnectModal({
             value={authType}
             onChange={setAuthType}
           />
+        )}
+
+        {/* OAuth 2.0 PKCE Fast Path */}
+        {oauthConfigured && (
+          <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-md flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-xs font-semibold text-zinc-900">OAuth 2.0 PKCE Available</span>
+              <span className="text-[11px] text-zinc-500">Authorize directly with {displayName} consent flow</span>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              loading={oauthLoading}
+              onClick={handleOAuthLaunch}
+              className="bg-white text-zinc-800 hover:bg-zinc-100 text-xs shrink-0"
+            >
+              Sign In via OAuth
+            </Button>
+          </div>
         )}
 
         {/* Connection Alias */}

@@ -15,6 +15,8 @@ from app.api.v1.mcp import router as mcp_router
 from app.api.admin.connections import router as admin_connections_router
 from app.api.admin.tokens import router as admin_tokens_router
 from app.api.admin.runs import router as admin_runs_router
+from app.api.admin.auth import router as admin_auth_router
+from app.api.admin.oauth import router as admin_oauth_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -52,6 +54,8 @@ app.include_router(mcp_router) # Mounts /mcp and /mcp/tools directly
 app.include_router(admin_connections_router, prefix="/api")
 app.include_router(admin_tokens_router, prefix="/api")
 app.include_router(admin_runs_router, prefix="/api")
+app.include_router(admin_auth_router, prefix="/api")
+app.include_router(admin_oauth_router, prefix="/api")
 
 @app.get("/health")
 async def health():

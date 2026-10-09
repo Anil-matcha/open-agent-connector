@@ -1,9 +1,20 @@
 import os
+import re
+import json
 import base64
 import hashlib
-from typing import Optional
+from typing import Optional, Any, Dict, List
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from app.core.config import settings
+
+SENSITIVE_KEYS = {
+    "token", "secret", "password", "key", "authorization",
+    "auth", "cookie", "credential", "private", "access_token",
+    "refresh_token", "client_secret", "api_key", "bearer"
+}
+
+BEARER_PATTERN = re.compile(r"Bearer\s+([a-zA-Z0-9_\-\.]+)", re.IGNORECASE)
+URL_SECRET_PATTERN = re.compile(r"([?&](?:token|key|secret|api_key|access_token)=)[^&]+", re.IGNORECASE)
 
 def _get_key_bytes() -> bytes:
     raw = settings.ENCRYPTION_KEY.strip()
@@ -46,3 +57,29 @@ def decrypt_secret(cipher_text_b64: str) -> str:
 def hash_token(raw_token: str) -> str:
     """Deterministic SHA-256 hash for bearer tokens"""
     return hashlib.sha256(raw_token.strip().encode("utf-8")).hexdigest()
+
+def redact_sensitive_data(val: Any) -> Any:
+    """Recursively redacts sensitive dictionary keys, bearer headers, and credential query strings."""
+    if isinstance(val, dict):
+        redacted = {}
+        for k, v in val.items():
+            lower_k = str(k).lower()
+            if any(s in lower_k for s in SENSITIVE_KEYS):
+                redacted[k] = "[REDACTED]"
+            else:
+                redacted[k] = redact_sensitive_data(v)
+        return redacted
+    elif isinstance(val, list):
+        return [redact_sensitive_data(item) for item in val]
+    elif isinstance(val, str):
+        cleaned = BEARER_PATTERN.sub("Bearer [REDACTED]", val)
+        cleaned = URL_SECRET_PATTERN.sub(r"\1[REDACTED]", cleaned)
+        return cleaned
+    return val
+
+def safe_error_message(err: Any) -> str:
+    """Sanitize error messages so that tokens, passwords, and secrets are not leaked in responses/logs."""
+    raw = str(err)
+    raw = BEARER_PATTERN.sub("Bearer [REDACTED]", raw)
+    raw = URL_SECRET_PATTERN.sub(r"\1[REDACTED]", raw)
+    return raw

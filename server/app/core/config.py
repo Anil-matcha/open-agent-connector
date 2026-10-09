@@ -2,7 +2,6 @@ from pydantic_settings import BaseSettings
 from pydantic import Field
 import os
 from pathlib import Path
-
 import secrets
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -20,6 +19,20 @@ def _resolve_encryption_key() -> str:
     key_file.parent.mkdir(parents=True, exist_ok=True)
     key_file.write_text(new_key, encoding="utf-8")
     return new_key
+
+def _resolve_admin_token() -> str:
+    env_token = os.environ.get("CONNECTOR_ADMIN_TOKEN") or os.environ.get("ADMIN_TOKEN")
+    if env_token and env_token.strip():
+        return env_token.strip()
+    token_file = BASE_DIR / "data" / ".admin_token"
+    if token_file.exists():
+        val = token_file.read_text(encoding="utf-8").strip()
+        if val:
+            return val
+    new_token = f"ch_admin_{secrets.token_urlsafe(32)}"
+    token_file.parent.mkdir(parents=True, exist_ok=True)
+    token_file.write_text(new_token, encoding="utf-8")
+    return new_token
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "ConnectorHub"
@@ -41,8 +54,8 @@ class Settings(BaseSettings):
         description="Base64 or 32-char key for credential encryption"
     )
     ADMIN_TOKEN: str = Field(
-        default="",
-        description="Optional Bearer token required for /api admin endpoints"
+        default_factory=_resolve_admin_token,
+        description="Bearer token required for /api admin endpoints"
     )
     RUNTIME_TOKEN: str = Field(
         default="",

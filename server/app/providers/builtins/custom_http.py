@@ -1,7 +1,7 @@
 from typing import Dict, Any, Optional
 import httpx
 from app.providers.base import Provider, Action
-from app.core.ssrf import assert_public_url
+from app.core.ssrf import assert_public_url, execute_guarded_request
 
 class HttpRequestAction(Action):
     def __init__(self):
@@ -32,7 +32,13 @@ class HttpRequestAction(Action):
             headers.setdefault("Authorization", f"Bearer {credential['apiKey']}")
 
         assert_public_url(url)
-        resp = await client.request(method=method, url=url, json=body if body else None, headers=headers)
+        resp = await execute_guarded_request(
+            client=client,
+            method=method,
+            url=url,
+            json_body=body if body else None,
+            headers=headers
+        )
         
         try:
             data = resp.json()

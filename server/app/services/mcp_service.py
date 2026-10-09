@@ -6,7 +6,7 @@ from app.services.action_runner import ActionRunner
 
 class McpService:
     @staticmethod
-    def get_tool_definitions(include_actions: bool = True) -> List[Dict[str, Any]]:
+    def get_tool_definitions(include_actions: bool = True, principal: Optional[Any] = None) -> List[Dict[str, Any]]:
         # 1. Core discovery and metadata tools
         tools = [
             {
@@ -66,19 +66,20 @@ class McpService:
             }
         ]
 
-        # 2. Expose all individual actions directly for Claude Desktop, Cursor, and other MCP clients
+        # 2. Expose individual actions directly, filtered by caller's permissions
         if include_actions:
             for action in registry.list_actions():
+                # If caller principal has scoped permissions, filter actions
+                if principal and not principal.can_access_action(action.id):
+                    continue
+
                 provider = registry.get_action_provider(action.id)
-                # MCP tool name: sanitize '.' to '_' for strict MCP client compatibility (e.g. github_create_issue)
                 tool_name = action.id.replace(".", "_")
                 
-                # Clone and ensure valid schema for MCP
                 clean_schema = dict(action.input_schema or {"type": "object", "properties": {}})
                 clean_schema.setdefault("type", "object")
                 clean_schema.setdefault("properties", {})
                 
-                # Optionally add connectionName parameter so agent can specify which account
                 if "connectionName" not in clean_schema["properties"]:
                     clean_schema["properties"]["connectionName"] = {
                         "type": "string",
@@ -97,7 +98,8 @@ class McpService:
     async def handle_call_tool(
         session: AsyncSession,
         name: str,
-        arguments: Dict[str, Any]
+        arguments: Dict[str, Any],
+        principal: Optional[Any] = None
     ) -> Dict[str, Any]:
         args = dict(arguments or {})
 
@@ -123,10 +125,15 @@ class McpService:
 
         elif name == "list_connections":
             conns = await ConnectionService.list_connections(session, args.get("service"))
+            # If principal is restricted by connection, filter results
+            if principal and not principal.is_admin and principal.allowed_connections:
+                conns = [c for c in conns if c["connectionName"] in principal.allowed_connections]
             return {"connections": conns}
 
         elif name == "search_actions":
             matched = registry.search_actions(args.get("query", ""), args.get("service"))
+            if principal and not principal.is_admin:
+                matched = [a for a in matched if principal.can_access_action(a.id)]
             return {
                 "actions": [
                     {
@@ -147,6 +154,9 @@ class McpService:
                 action = registry.get_action(action_id.replace("_", ".", 1))
             if not action:
                 return {"error": f"Unknown action: '{action_id}'"}
+
+            if principal and not principal.can_access_action(action.id):
+                return {"error": f"Permission denied: action '{action.id}' is not authorized for this token"}
             
             provider = registry.get_action_provider(action.id)
             props = action.input_schema.get("properties", {})
@@ -181,29 +191,43 @@ class McpService:
             action_id = args.get("actionId", "")
             input_data = args.get("input", {})
             conn_name = args.get("connectionName", "default")
+
+            if principal:
+                if not principal.can_access_action(action_id):
+                    return {"error": f"Permission denied: action '{action_id}' is not authorized for this token"}
+                if not principal.can_access_connection(conn_name):
+                    return {"error": f"Permission denied: connection '{conn_name}' is not authorized for this token"}
+
             return await ActionRunner.run(
                 session=session,
                 action_id=action_id,
                 input_data=input_data,
                 connection_name=conn_name,
-                caller="mcp"
+                caller="mcp",
+                principal_id=principal.id if principal else None
             )
 
-        # 2. Direct Action Execution (e.g. github_create_issue, github.create_issue, github_get_current_user)
+        # 2. Direct Action Execution (e.g. github_create_issue, github_get_current_user)
         target_action = registry.get_action(name)
         if not target_action and "_" in name:
-            # Try replacing first '_' with '.' (e.g. github_create_issue -> github.create_issue)
             candidate = name.replace("_", ".", 1)
             target_action = registry.get_action(candidate)
 
         if target_action:
             conn_name = args.pop("connectionName", "default")
+            if principal:
+                if not principal.can_access_action(target_action.id):
+                    return {"error": f"Permission denied: action '{target_action.id}' is not authorized for this token"}
+                if not principal.can_access_connection(conn_name):
+                    return {"error": f"Permission denied: connection '{conn_name}' is not authorized for this token"}
+
             return await ActionRunner.run(
                 session=session,
                 action_id=target_action.id,
                 input_data=args,
                 connection_name=conn_name,
-                caller="mcp"
+                caller="mcp",
+                principal_id=principal.id if principal else None
             )
 
         return {"error": f"Unknown MCP tool: '{name}'"}

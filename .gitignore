@@ -23,12 +23,12 @@ env/
 .pytest_cache/
 
 # SQLite Database & Data
+server/data/
+server/data/*
 *.db
 *.db-journal
 *.sqlite
 *.sqlite3
-server/data/*.db
-server/data/*.sqlite*
 
 # Environment & Secrets
 .env
