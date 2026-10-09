@@ -6,6 +6,10 @@ from app.providers.builtins.slack import SlackProvider
 from app.providers.builtins.custom_http import CustomHttpProvider
 from app.providers.builtins.gmail import GmailProvider
 from app.providers.builtins.google_calendar import GoogleCalendarProvider
+from app.providers.builtins.whatsapp import WhatsAppProvider
+from app.providers.builtins.twitter import TwitterProvider
+from app.providers.builtins.telegram import TelegramProvider
+from app.providers.builtins.youtube import YouTubeProvider
 
 class ProviderRegistry:
     def __init__(self):
@@ -19,6 +23,10 @@ class ProviderRegistry:
         self.register(SlackProvider())
         self.register(GmailProvider())
         self.register(GoogleCalendarProvider())
+        self.register(WhatsAppProvider())
+        self.register(TwitterProvider())
+        self.register(TelegramProvider())
+        self.register(YouTubeProvider())
         self.register(CustomHttpProvider())
 
     def register(self, provider: Provider):
@@ -28,7 +36,10 @@ class ProviderRegistry:
             self._action_to_provider[action_id] = provider.service
 
     def get_provider(self, service: str) -> Optional[Provider]:
-        return self._providers.get(service)
+        svc = service.lower().strip()
+        if svc == "x":
+            svc = "twitter"
+        return self._providers.get(svc)
 
     def list_providers(self) -> List[Provider]:
         return list(self._providers.values())

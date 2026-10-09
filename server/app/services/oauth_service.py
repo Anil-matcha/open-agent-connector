@@ -48,6 +48,46 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
             "https://www.googleapis.com/auth/calendar.readonly",
             "https://www.googleapis.com/auth/calendar"
         ],
+    },
+    "youtube": {
+        "display_name": "YouTube",
+        "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth",
+        "token_url": "https://oauth2.googleapis.com/token",
+        "default_scopes": [
+            "https://www.googleapis.com/auth/youtube",
+            "https://www.googleapis.com/auth/youtube.readonly"
+        ],
+    },
+    "whatsapp": {
+        "display_name": "WhatsApp",
+        "authorize_url": "https://www.facebook.com/v21.0/dialog/oauth",
+        "token_url": "https://graph.facebook.com/v21.0/oauth/access_token",
+        "default_scopes": [
+            "whatsapp_business_messaging",
+            "whatsapp_business_management"
+        ],
+    },
+    "twitter": {
+        "display_name": "X (Twitter)",
+        "authorize_url": "https://twitter.com/i/oauth2/authorize",
+        "token_url": "https://api.twitter.com/2/oauth2/token",
+        "default_scopes": [
+            "tweet.read",
+            "tweet.write",
+            "users.read",
+            "offline.access"
+        ],
+    },
+    "x": {
+        "display_name": "X (Twitter)",
+        "authorize_url": "https://twitter.com/i/oauth2/authorize",
+        "token_url": "https://api.twitter.com/2/oauth2/token",
+        "default_scopes": [
+            "tweet.read",
+            "tweet.write",
+            "users.read",
+            "offline.access"
+        ],
     }
 }
 
