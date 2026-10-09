@@ -5,6 +5,7 @@ from app.providers.builtins.github import GitHubProvider
 from app.providers.builtins.slack import SlackProvider
 from app.providers.builtins.custom_http import CustomHttpProvider
 from app.providers.builtins.gmail import GmailProvider
+from app.providers.builtins.google_calendar import GoogleCalendarProvider
 
 class ProviderRegistry:
     def __init__(self):
@@ -17,6 +18,7 @@ class ProviderRegistry:
         self.register(GitHubProvider())
         self.register(SlackProvider())
         self.register(GmailProvider())
+        self.register(GoogleCalendarProvider())
         self.register(CustomHttpProvider())
 
     def register(self, provider: Provider):

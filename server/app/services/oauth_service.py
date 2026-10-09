@@ -38,6 +38,16 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
             "https://www.googleapis.com/auth/gmail.send",
             "https://www.googleapis.com/auth/gmail.modify"
         ],
+    },
+    "googlecalendar": {
+        "display_name": "Google Calendar",
+        "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth",
+        "token_url": "https://oauth2.googleapis.com/token",
+        "default_scopes": [
+            "https://www.googleapis.com/auth/calendar.events",
+            "https://www.googleapis.com/auth/calendar.readonly",
+            "https://www.googleapis.com/auth/calendar"
+        ],
     }
 }
 
