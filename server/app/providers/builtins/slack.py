@@ -1,84 +1,141 @@
-from typing import Dict, Any, Optional
+"""
+Slack Provider for ConnectorHub.
+Loads and registers actions from 'slack_actions.json'.
+Aligned with the official Slack Web API specifications and open-connector definitions.
+"""
+import json
+from pathlib import Path
+from typing import Dict, Any, Optional, List
 import httpx
+
 from app.providers.base import Provider, Action
-from app.core.ssrf import assert_public_url
+from app.core.ssrf import assert_public_url, execute_guarded_request
 
-class SlackPostMessageAction(Action):
-    def __init__(self):
+ACTIONS_JSON_PATH = Path(__file__).parent / "slack_actions.json"
+SLACK_API_BASE = "https://slack.com/api"
+
+def _slack_headers(token: str) -> Dict[str, str]:
+    return {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json; charset=utf-8",
+        "User-Agent": "ConnectorHub/1.0"
+    }
+
+def _extract_token(credential: Optional[Dict[str, Any]]) -> str:
+    token = (credential or {}).get("apiKey") or (credential or {}).get("accessToken")
+    if not token or not str(token).strip():
+        raise ValueError("Slack Bot Token (xoxb-...) or User Token required. Please connect your Slack account first.")
+    return str(token).strip()
+
+def _build_slack_params(action_id: str, endpoint: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Translate catalog parameters to Slack Web API parameters."""
+    params = {}
+    for k, v in (input_data or {}).items():
+        if v is None:
+            continue
+        if k == "channelId":
+            params["channel"] = v
+        elif k == "messageTs":
+            if endpoint.startswith("reactions."):
+                params["timestamp"] = str(v)
+            else:
+                params["ts"] = str(v)
+        elif k == "threadTs":
+            params["thread_ts"] = str(v)
+        elif k == "userId":
+            params["user"] = str(v)
+        elif k == "fileId":
+            params["file"] = str(v)
+        elif k == "postAt":
+            params["post_at"] = v
+        elif k == "unfurlLinks":
+            params["unfurl_links"] = v
+        elif k == "unfurlMedia":
+            params["unfurl_media"] = v
+        elif k == "replyBroadcast":
+            params["reply_broadcast"] = v
+        elif k == "includeLocale":
+            params["include_locale"] = v
+        elif k == "contextChannelId":
+            params["context_channel_id"] = v
+        elif k == "termClauses":
+            params["term_clauses"] = v
+        elif k == "channelTypes":
+            params["channel_types"] = v
+        elif k == "includeContextMessages":
+            params["include_context_messages"] = v
+        elif k == "includeBots":
+            params["include_bots"] = v
+        elif k == "includeMessageBlocks":
+            params["include_message_blocks"] = v
+        elif k == "includeArchivedChannels":
+            params["include_archived_channels"] = v
+        elif k == "disableSemanticSearch":
+            params["disable_semantic_search"] = v
+        elif k == "sortDir":
+            params["sort_dir"] = v
+        elif k == "teamId":
+            params["team_id"] = v
+        elif k == "name" and endpoint.startswith("reactions."):
+            # Emoji name without surrounding colons
+            params["name"] = str(v).strip(":")
+        else:
+            params[k] = v
+
+    if action_id == "slack.reply_message" and "threadTs" in input_data:
+        params["thread_ts"] = str(input_data["threadTs"])
+
+    return params
+
+class SlackDynamicAction(Action):
+    def __init__(self, action_meta: Dict[str, Any]):
         super().__init__(
-            id="slack.post_message",
-            name="Post Message",
-            description="Send a message to a Slack channel or user.",
-            input_schema={
-                "type": "object",
-                "properties": {
-                    "channel": {"type": "string", "description": "Channel ID or channel name (e.g. #general or C12345)"},
-                    "text": {"type": "string", "description": "Text message content to send"}
-                },
-                "required": ["channel", "text"]
-            },
-            required_scopes=["chat:write"]
+            id=action_meta["id"],
+            name=action_meta["name"],
+            description=action_meta["description"],
+            category=action_meta.get("category", "Communication"),
+            required_scopes=action_meta.get("required_scopes", []),
+            input_schema=action_meta.get("input_schema", {"type": "object", "properties": {}})
         )
+        self.endpoint = action_meta.get("endpoint", "chat.postMessage")
+        self.method = action_meta.get("method", "POST").upper()
 
     async def execute(self, input_data: Dict[str, Any], credential: Optional[Dict[str, Any]], client: httpx.AsyncClient) -> Dict[str, Any]:
-        token = (credential or {}).get("apiKey") or (credential or {}).get("accessToken")
-        if not token:
-            raise ValueError("Slack Bot User OAuth Token required (xoxb-...)")
-        url = "https://slack.com/api/chat.postMessage"
+        token = _extract_token(credential)
+        headers = _slack_headers(token)
+        url = f"{SLACK_API_BASE}/{self.endpoint}"
         assert_public_url(url)
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json; charset=utf-8"
-        }
-        payload = {
-            "channel": input_data["channel"],
-            "text": input_data["text"]
-        }
-        resp = await client.post(url, json=payload, headers=headers)
+
+        params = _build_slack_params(self.id, self.endpoint, input_data)
+
+        if self.method == "GET":
+            # For GET requests, serialize parameters into query string
+            resp = await execute_guarded_request(
+                client=client,
+                method="GET",
+                url=url,
+                headers=headers,
+                params={k: str(v) if not isinstance(v, (str, int, float, bool)) else v for k, v in params.items()}
+            )
+        else:
+            # For POST requests, send JSON body
+            resp = await execute_guarded_request(
+                client=client,
+                method="POST",
+                url=url,
+                headers=headers,
+                json_body=params
+            )
+
         resp.raise_for_status()
         data = resp.json()
+
         if not data.get("ok"):
-            raise ValueError(f"Slack API error: {data.get('error', 'unknown_error')}")
-        return {
-            "ok": True,
-            "channel": data.get("channel"),
-            "ts": data.get("ts"),
-            "message": data.get("message")
-        }
+            error_code = data.get("error", "unknown_error")
+            detail = data.get("response_metadata", {}).get("messages", [error_code])
+            raise ValueError(f"Slack API error ({self.endpoint}): {error_code} - {detail}")
 
-class SlackListChannelsAction(Action):
-    def __init__(self):
-        super().__init__(
-            id="slack.list_channels",
-            name="List Channels",
-            description="List public or private channels in the Slack workspace.",
-            input_schema={
-                "type": "object",
-                "properties": {
-                    "types": {"type": "string", "default": "public_channel,private_channel"},
-                    "limit": {"type": "integer", "default": 20}
-                }
-            },
-            required_scopes=["channels:read"]
-        )
-
-    async def execute(self, input_data: Dict[str, Any], credential: Optional[Dict[str, Any]], client: httpx.AsyncClient) -> Dict[str, Any]:
-        token = (credential or {}).get("apiKey") or (credential or {}).get("accessToken")
-        if not token:
-            raise ValueError("Slack Bot User OAuth Token required")
-        types = input_data.get("types", "public_channel")
-        limit = int(input_data.get("limit", 20))
-        url = f"https://slack.com/api/conversations.list?types={types}&limit={limit}"
-        assert_public_url(url)
-        headers = {"Authorization": f"Bearer {token}"}
-        resp = await client.get(url, headers=headers)
-        resp.raise_for_status()
-        data = resp.json()
-        channels = [
-            {"id": c.get("id"), "name": c.get("name"), "is_private": c.get("is_private"), "num_members": c.get("num_members")}
-            for c in data.get("channels", [])
-        ]
-        return {"channels": channels, "count": len(channels)}
+        return data
 
 class SlackProvider(Provider):
     def __init__(self):
@@ -87,25 +144,128 @@ class SlackProvider(Provider):
             display_name="Slack",
             category="Communication",
             auth_types=["api_key", "oauth2"],
-            description="Slack Web API for messaging, channels, and team notifications.",
+            description="Slack Web API for messaging, channels, team directory, and reactions.",
             homepage_url="https://slack.com",
-            base_url="https://slack.com/api"
+            base_url="https://slack.com/api",
+            auth_configs=[
+                {
+                    "type": "api_key",
+                    "label": "Slack Bot Token",
+                    "placeholder": "xoxb-...",
+                    "description": "Create a Slack App at api.slack.com/apps, install to your workspace, and copy the Bot User OAuth Token (xoxb-...).",
+                    "docs_url": "https://api.slack.com/apps",
+                    "fields": [
+                        {
+                            "key": "apiKey",
+                            "label": "Bot User OAuth Token",
+                            "type": "password",
+                            "required": True,
+                            "placeholder": "xoxb-...",
+                            "description": "Bot token with chat:write, channels:read, and users:read scopes."
+                        }
+                    ]
+                },
+                {
+                    "type": "oauth2",
+                    "label": "Slack OAuth 2.0 User Token",
+                    "placeholder": "xoxp-...",
+                    "description": "Authorize via Slack OAuth 2.0 application or enter a user access token.",
+                    "docs_url": "https://api.slack.com/authentication/oauth-v2",
+                    "fields": [
+                        {
+                            "key": "accessToken",
+                            "label": "OAuth Access Token",
+                            "type": "password",
+                            "required": True,
+                            "placeholder": "xoxp-...",
+                            "description": "OAuth access token issued by Slack."
+                        }
+                    ]
+                }
+            ]
         )
-        self.register_action(SlackPostMessageAction())
-        self.register_action(SlackListChannelsAction())
+
+        # Load all actions from JSON definition
+        if ACTIONS_JSON_PATH.exists():
+            with open(ACTIONS_JSON_PATH, "r", encoding="utf-8") as f:
+                catalog = json.load(f)
+            for meta in catalog:
+                self.register_action(SlackDynamicAction(meta))
 
     async def validate_credentials(self, credential: Dict[str, Any], client: httpx.AsyncClient) -> Dict[str, Any]:
         token = credential.get("apiKey") or credential.get("accessToken")
-        if not token:
-            raise ValueError("Slack token required")
-        headers = {"Authorization": f"Bearer {token}"}
-        resp = await client.post("https://slack.com/api/auth.test", headers=headers)
-        resp.raise_for_status()
+        if not token or not str(token).strip():
+            raise ValueError("Slack Bot Token or User Token is required.")
+
+        token = str(token).strip()
+        headers = _slack_headers(token)
+        url = "https://slack.com/api/auth.test"
+        assert_public_url(url)
+
+        try:
+            resp = await execute_guarded_request(
+                client=client,
+                method="POST",
+                url=url,
+                headers=headers
+            )
+        except Exception as e:
+            raise ValueError(f"Unable to reach Slack API: {str(e)}")
+
+        if resp.status_code == 401:
+            raise ValueError("Invalid Slack token. Slack API returned 401 Unauthorized.")
+
         data = resp.json()
         if not data.get("ok"):
-            raise ValueError(f"Slack verification failed: {data.get('error')}")
+            error_code = data.get("error", "unknown_error")
+            raise ValueError(f"Slack verification failed: {error_code}")
+
+        # Extract scopes from x-oauth-scopes header if present
+        scopes_header = resp.headers.get("x-oauth-scopes", "")
+        scopes = [s.strip() for s in scopes_header.split(",") if s.strip()]
+
+        user_name = data.get("user") or "Bot"
+        team_name = data.get("team") or "Workspace"
+        user_id = data.get("user_id") or data.get("bot_id") or "slack_user"
+
         return {
-            "account_id": data.get("user_id") or data.get("team_id"),
-            "display_name": f"{data.get('user')} @ {data.get('team')}",
-            "granted_scopes": []
+            "account_id": user_id,
+            "display_name": f"{user_name} @ {team_name}",
+            "granted_scopes": scopes
+        }
+
+    async def proxy(
+        self,
+        endpoint: str,
+        method: str,
+        credential: Optional[Dict[str, Any]],
+        body: Any,
+        query_params: Dict[str, Any],
+        client: httpx.AsyncClient
+    ) -> Dict[str, Any]:
+        """Proxy arbitrary Slack API calls with stored credentials and SSRF protection."""
+        token = _extract_token(credential)
+        clean_endpoint = endpoint.lstrip("/")
+        url = f"{SLACK_API_BASE}/{clean_endpoint}"
+        assert_public_url(url)
+
+        headers = _slack_headers(token)
+        resp = await execute_guarded_request(
+            client=client,
+            method=method.upper(),
+            url=url,
+            headers=headers,
+            params=query_params if query_params else None,
+            json_body=body if body and method.upper() in ["POST", "PUT", "PATCH"] else None
+        )
+
+        try:
+            data = resp.json()
+        except Exception:
+            data = resp.text
+
+        return {
+            "status": resp.status_code,
+            "headers": dict(resp.headers),
+            "data": data
         }
