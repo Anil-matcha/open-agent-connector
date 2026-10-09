@@ -123,6 +123,7 @@ export function ConnectModal({
 
   // Provider-specific docs guide
   const isGitHub = service === "github";
+  const isSlack = service === "slack";
 
   return (
     <Modal
@@ -213,6 +214,45 @@ export function ConnectModal({
           </div>
         )}
 
+        {isSlack && (
+          <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-md text-xs text-zinc-600 flex flex-col gap-2">
+            <div className="flex items-center justify-between font-semibold text-zinc-800">
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck size={13} className="text-emerald-600" />
+                Slack Token Setup Guide
+              </span>
+              <a
+                href="https://api.slack.com/apps"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[11px] text-zinc-900 hover:text-black font-medium flex items-center gap-1 underline"
+              >
+                Create app on Slack API
+                <ExternalLink size={10} />
+              </a>
+            </div>
+            <div className="text-[11px] text-zinc-500 flex flex-col gap-1">
+              <p>
+                1. Create an App at <a href="https://api.slack.com/apps" target="_blank" rel="noreferrer" className="underline font-medium text-zinc-700">api.slack.com/apps</a> (From scratch) and select your workspace.
+              </p>
+              <p>
+                2. Under <strong>OAuth &amp; Permissions &gt; Bot Token Scopes</strong>, add the permissions you need:
+              </p>
+              <div className="bg-white px-2 py-1.5 rounded border border-zinc-200 font-mono text-[10px] text-zinc-700 flex flex-wrap gap-1">
+                <span className="bg-zinc-100 px-1 py-0.5 rounded">chat:write</span>
+                <span className="bg-zinc-100 px-1 py-0.5 rounded">channels:read</span>
+                <span className="bg-zinc-100 px-1 py-0.5 rounded">channels:history</span>
+                <span className="bg-zinc-100 px-1 py-0.5 rounded">groups:read</span>
+                <span className="bg-zinc-100 px-1 py-0.5 rounded">users:read</span>
+                <span className="bg-zinc-100 px-1 py-0.5 rounded">reactions:write</span>
+              </div>
+              <p>
+                3. Click <strong>Install to Workspace</strong> at the top, then copy the <strong>Bot User OAuth Token</strong> (starts with <code className="text-zinc-800 font-semibold">xoxb-...</code>).
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Credential Input */}
         {authType !== "no_auth" && (
           <div className="flex flex-col gap-1.5">
@@ -220,6 +260,8 @@ export function ConnectModal({
               {activeConfig?.label ||
                 (isGitHub
                   ? "Personal Access Token (PAT)"
+                  : isSlack
+                  ? "Bot User OAuth Token (xoxb-...) or User Token"
                   : "API Key or Access Token")}
             </label>
             <input
@@ -228,7 +270,11 @@ export function ConnectModal({
               onChange={(e) => setApiKey(e.target.value)}
               placeholder={
                 activeConfig?.placeholder ||
-                (isGitHub ? "github_pat_... or ghp_..." : "Enter secret key or token...")
+                (isGitHub
+                  ? "github_pat_... or ghp_..."
+                  : isSlack
+                  ? "xoxb-1234567890-..."
+                  : "Enter secret key or token...")
               }
               required
               className="h-9 px-3 text-xs font-mono bg-white border border-zinc-200 rounded-md focus:outline-none focus:ring-1 focus:ring-zinc-400 text-zinc-900 placeholder:text-zinc-400"
