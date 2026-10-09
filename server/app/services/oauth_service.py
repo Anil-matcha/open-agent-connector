@@ -2,6 +2,7 @@ import asyncio
 import base64
 import hashlib
 import json
+import os
 import secrets
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional, Tuple
@@ -47,6 +48,84 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
             "https://www.googleapis.com/auth/calendar.events",
             "https://www.googleapis.com/auth/calendar.readonly",
             "https://www.googleapis.com/auth/calendar"
+        ],
+    },
+    "googledrive": {
+        "display_name": "Google Drive",
+        "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth",
+        "token_url": "https://oauth2.googleapis.com/token",
+        "default_scopes": [
+            "https://www.googleapis.com/auth/drive",
+            "https://www.googleapis.com/auth/drive.readonly",
+            "https://www.googleapis.com/auth/drive.file"
+        ],
+    },
+    "googlesheets": {
+        "display_name": "Google Sheets",
+        "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth",
+        "token_url": "https://oauth2.googleapis.com/token",
+        "default_scopes": [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/spreadsheets.readonly",
+            "https://www.googleapis.com/auth/drive.readonly"
+        ],
+    },
+    "googledocs": {
+        "display_name": "Google Docs",
+        "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth",
+        "token_url": "https://oauth2.googleapis.com/token",
+        "default_scopes": [
+            "https://www.googleapis.com/auth/documents",
+            "https://www.googleapis.com/auth/documents.readonly",
+            "https://www.googleapis.com/auth/drive.file"
+        ],
+    },
+    "googletasks": {
+        "display_name": "Google Tasks",
+        "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth",
+        "token_url": "https://oauth2.googleapis.com/token",
+        "default_scopes": [
+            "https://www.googleapis.com/auth/tasks",
+            "https://www.googleapis.com/auth/tasks.readonly"
+        ],
+    },
+    "googlemeet": {
+        "display_name": "Google Meet",
+        "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth",
+        "token_url": "https://oauth2.googleapis.com/token",
+        "default_scopes": [
+            "https://www.googleapis.com/auth/meetings.space.created",
+            "https://www.googleapis.com/auth/meetings.space.readonly"
+        ],
+    },
+    "googlechat": {
+        "display_name": "Google Chat",
+        "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth",
+        "token_url": "https://oauth2.googleapis.com/token",
+        "default_scopes": [
+            "https://www.googleapis.com/auth/chat.spaces.readonly",
+            "https://www.googleapis.com/auth/chat.messages.readonly",
+            "https://www.googleapis.com/auth/chat.messages.create"
+        ],
+    },
+    "googleforms": {
+        "display_name": "Google Forms",
+        "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth",
+        "token_url": "https://oauth2.googleapis.com/token",
+        "default_scopes": [
+            "https://www.googleapis.com/auth/forms.body",
+            "https://www.googleapis.com/auth/forms.body.readonly",
+            "https://www.googleapis.com/auth/forms.responses.readonly"
+        ],
+    },
+    "googlephotos": {
+        "display_name": "Google Photos",
+        "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth",
+        "token_url": "https://oauth2.googleapis.com/token",
+        "default_scopes": [
+            "https://www.googleapis.com/auth/photoslibrary.readonly.appcreateddata",
+            "https://www.googleapis.com/auth/photoslibrary.appendonly",
+            "https://www.googleapis.com/auth/photospicker.mediaitems.readonly"
         ],
     },
     "youtube": {
@@ -122,8 +201,32 @@ class OAuthService:
                 pass
         
         # Fallback to environment variables if defined
-        env_client_id = getattr(settings, f"{service.upper()}_CLIENT_ID", None)
-        env_client_secret = getattr(settings, f"{service.upper()}_CLIENT_SECRET", None)
+        candidates = [service.upper()]
+        if service.lower() in ("twitter", "x"):
+            candidates.extend(["TWITTER", "X"])
+        elif service.lower() in ("whatsapp",):
+            candidates.extend(["WHATSAPP", "META", "FACEBOOK"])
+        elif service.lower().startswith("google") or service.lower() in ("gmail", "youtube"):
+            candidates.extend(["GOOGLE", "GOOGLE_WORKSPACE"])
+
+        env_client_id = None
+        env_client_secret = None
+        for cand in candidates:
+            cid = (
+                getattr(settings, f"{cand}_CLIENT_ID", None)
+                or os.environ.get(f"CONNECTOR_{cand}_CLIENT_ID")
+                or os.environ.get(f"{cand}_CLIENT_ID")
+            )
+            csec = (
+                getattr(settings, f"{cand}_CLIENT_SECRET", None)
+                or os.environ.get(f"CONNECTOR_{cand}_CLIENT_SECRET")
+                or os.environ.get(f"{cand}_CLIENT_SECRET")
+            )
+            if cid and csec:
+                env_client_id = cid
+                env_client_secret = csec
+                break
+
         if env_client_id and env_client_secret:
             return {
                 "client_id": env_client_id,

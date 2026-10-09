@@ -1,7 +1,7 @@
 """
 Gmail Provider for ConnectorHub.
 Loads and registers actions from the centralized 'actions_catalog.json'.
-Aligned with the official Google Gmail REST API v1 specifications and open-connector definitions.
+Aligned with the official Google Gmail REST API v1 specifications.
 """
 import base64
 import urllib.parse

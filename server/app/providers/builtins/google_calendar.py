@@ -1,7 +1,7 @@
 """
 Google Calendar Provider for ConnectorHub.
 Loads and registers actions from the centralized 'actions_catalog.json'.
-Aligned with official Google Calendar REST API v3 specifications and open-connector definitions.
+Aligned with official Google Calendar REST API v3 specifications.
 """
 import urllib.parse
 from typing import Dict, Any, Optional, List

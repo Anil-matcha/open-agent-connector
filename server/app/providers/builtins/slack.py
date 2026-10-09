@@ -1,7 +1,7 @@
 """
 Slack Provider for ConnectorHub.
 Loads and registers actions from 'actions_catalog.json'.
-Aligned with the official Slack Web API specifications and open-connector definitions.
+Aligned with the official Slack Web API specifications.
 """
 import json
 from pathlib import Path

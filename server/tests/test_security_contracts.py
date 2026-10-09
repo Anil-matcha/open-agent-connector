@@ -12,7 +12,7 @@ BASE_URL = "http://127.0.0.1:8000"
 
 def run_tests():
     print("==================================================")
-    print("[SECURITY] RUNNING OPEN AGENT CONNECTOR SECURITY CONTRACT TESTS")
+    print("[SECURITY] RUNNING CONNECTORHUB SECURITY CONTRACT TESTS")
     print("==================================================\n")
 
     client = httpx.Client(base_url=BASE_URL, timeout=15)

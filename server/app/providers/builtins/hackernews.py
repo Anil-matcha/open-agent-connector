@@ -105,7 +105,15 @@ class HackerNewsProvider(Provider):
                     "label": "Public Access (No Authentication)",
                     "description": "Public Hacker News Firebase & Algolia APIs. No credentials required.",
                     "docs_url": "https://github.com/HackerNews/API",
-                    "docs_label": "Hacker News API Docs"
+                    "docs_label": "Hacker News API Docs",
+                    "setup_guide": {
+                        "title": "Hacker News Public API",
+                        "instructions": [
+                            "Hacker News requires no credentials or API keys.",
+                            "Directly query top stories, specific items, or run story search via Algolia.",
+                            "Click 'Connect' to enable Hacker News tools in your agent runtime."
+                        ]
+                    }
                 }
             ]
         )

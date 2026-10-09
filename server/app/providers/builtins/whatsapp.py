@@ -84,7 +84,11 @@ class WhatsAppDynamicAction(Action):
                 "template": inputs.pop("template", {})
             }
         elif self.method in ["POST", "PUT", "PATCH"]:
-            body = inputs
+            body = dict(inputs)
+            if "/messages" in self.endpoint_template and isinstance(body, dict):
+                body.setdefault("messaging_product", "whatsapp")
+                if "recipient_type" not in body and "to" in body:
+                    body.setdefault("recipient_type", "individual")
         else:
             for k, v in inputs.items():
                 if v is not None:

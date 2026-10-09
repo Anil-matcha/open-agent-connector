@@ -10,6 +10,14 @@ from app.providers.builtins.whatsapp import WhatsAppProvider
 from app.providers.builtins.twitter import TwitterProvider
 from app.providers.builtins.telegram import TelegramProvider
 from app.providers.builtins.youtube import YouTubeProvider
+from app.providers.builtins.google_drive import GoogleDriveProvider
+from app.providers.builtins.google_sheets import GoogleSheetsProvider
+from app.providers.builtins.google_docs import GoogleDocsProvider
+from app.providers.builtins.google_tasks import GoogleTasksProvider
+from app.providers.builtins.google_meet import GoogleMeetProvider
+from app.providers.builtins.google_chat import GoogleChatProvider
+from app.providers.builtins.google_forms import GoogleFormsProvider
+from app.providers.builtins.google_photos import GooglePhotosProvider
 
 class ProviderRegistry:
     def __init__(self):
@@ -23,6 +31,14 @@ class ProviderRegistry:
         self.register(SlackProvider())
         self.register(GmailProvider())
         self.register(GoogleCalendarProvider())
+        self.register(GoogleDriveProvider())
+        self.register(GoogleSheetsProvider())
+        self.register(GoogleDocsProvider())
+        self.register(GoogleTasksProvider())
+        self.register(GoogleMeetProvider())
+        self.register(GoogleChatProvider())
+        self.register(GoogleFormsProvider())
+        self.register(GooglePhotosProvider())
         self.register(WhatsAppProvider())
         self.register(TwitterProvider())
         self.register(TelegramProvider())

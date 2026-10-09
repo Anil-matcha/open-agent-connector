@@ -64,7 +64,14 @@ class CustomHttpProvider(Provider):
                 {
                     "type": "no_auth",
                     "label": "Anonymous / Public HTTP Request",
-                    "description": "Send unauthenticated HTTP calls or webhooks to public APIs."
+                    "description": "Send unauthenticated HTTP calls or webhooks to public APIs.",
+                    "setup_guide": {
+                        "title": "Public HTTP / Webhook Guide",
+                        "instructions": [
+                            "Send unauthenticated HTTP calls or webhooks to public APIs.",
+                            "All outbound traffic is protected by strict SSRF guardrails blocking private IPs and loopbacks."
+                        ]
+                    }
                 },
                 {
                     "type": "api_key",
@@ -72,9 +79,10 @@ class CustomHttpProvider(Provider):
                     "placeholder": "Bearer secret_token_xyz or api_key_...",
                     "description": "Optionally attach an Authorization Bearer header to all requests.",
                     "setup_guide": {
-                        "title": "Custom HTTP Setup Guide",
+                        "title": "Custom HTTP / Bearer Auth Guide",
                         "instructions": [
-                            "Enter an optional API key or Bearer token to be sent with outbound requests."
+                            "Enter an optional API key or Bearer token to be sent with outbound requests.",
+                            "If specified, the token will be attached as 'Authorization: Bearer <token>'."
                         ]
                     }
                 }
