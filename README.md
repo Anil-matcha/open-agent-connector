@@ -2,7 +2,7 @@
 
 **An open-source, self-hosted integration gateway for AI agents.** Connect accounts to app APIs, keep credentials in your own runtime, and let agents discover and run actions through the Model Context Protocol (MCP) or a REST API.
 
-This project is for developers who want to inspect, run, and extend their own agent integration layer. It is an early-stage open-source option to evaluate alongside [Composio](https://composio.dev/), [Nango](https://nango.dev/), [Merge.dev](https://www.merge.dev/), and [Arcade.dev](https://www.arcade.dev/). Those platforms offer broader catalogs and managed capabilities; Open Agent Connector currently prioritizes a compact self-hosted implementation that you can modify.
+This project is for developers who want to inspect, run, and extend their own agent integration layer. It is an open-source option to evaluate alongside [Composio](https://composio.dev/), [Nango](https://nango.dev/), [Merge.dev](https://www.merge.dev/), and [Arcade.dev](https://www.arcade.dev/). Those platforms offer broader catalogs and managed capabilities; Open Agent Connector currently prioritizes a compact self-hosted implementation that you can modify.
 
 ## Project description
 
@@ -27,7 +27,7 @@ The current built-in providers are **GitHub**, **Slack**, **Hacker News**, and *
 
 These products overlap in connecting apps to software and AI agents, but they have different scopes. Composio centers on a large app toolkit and agent execution platform. Nango focuses on building and operating product integrations, including auth and sync. Merge.dev provides unified APIs and common models across product integration categories. Arcade.dev focuses on agent-ready tools, authentication, and runtime controls. Open Agent Connector is a smaller self-hosted project for teams who want to own and extend the integration service.
 
-Choose based on the catalog breadth, managed operations, authentication, security controls, and support your application needs. Open Agent Connector is still early-stage and should not be treated as feature-equivalent to those established services.
+Choose based on the catalog breadth, managed operations, authentication, security controls, and support your application needs. Open Agent Connector has a smaller catalog and fewer production operations features than those established services.
 
 ## Architecture
 
@@ -234,4 +234,4 @@ For API changes, run the backend locally with Uvicorn's reload option and use `/
 
 ## Project status
 
-Open Agent Connector is an early-stage project. Expect a smaller integration catalog and fewer production operations features than mature integration platforms. Contributions that improve provider coverage, authentication, authorization, deployment guidance, and observability are welcome.
+Open Agent Connector offers a focused integration catalog and is continuing to expand its production operations features. Contributions that improve provider coverage, authentication, authorization, deployment guidance, and observability are welcome.
