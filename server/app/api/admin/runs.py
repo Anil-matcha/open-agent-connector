@@ -16,22 +16,31 @@ async def list_runs(
     actionId: Optional[str] = None,
     ok: Optional[bool] = None,
     limit: int = 50,
+    offset: int = 0,
     admin: Principal = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):
-    stmt = select(RunLog).order_by(desc(RunLog.started_at)).limit(limit)
+    total_stmt = select(func.count(RunLog.id))
+    stmt = select(RunLog).order_by(desc(RunLog.started_at)).offset(offset).limit(limit)
     if service:
+        total_stmt = total_stmt.where(RunLog.service == service)
         stmt = stmt.where(RunLog.service == service)
     if actionId:
+        total_stmt = total_stmt.where(RunLog.action_id == actionId)
         stmt = stmt.where(RunLog.action_id == actionId)
     if ok is not None:
+        total_stmt = total_stmt.where(RunLog.ok == ok)
         stmt = stmt.where(RunLog.ok == ok)
 
+    total = (await db.execute(total_stmt)).scalar() or 0
     result = await db.execute(stmt)
     runs = result.scalars().all()
 
     return {
         "success": True,
+        "total": total,
+        "offset": offset,
+        "limit": limit,
         "data": [
             {
                 "id": r.id,

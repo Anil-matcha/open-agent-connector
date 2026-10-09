@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Header, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Header, Query, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Dict, Any, Optional
 from pydantic import BaseModel
@@ -84,8 +84,10 @@ async def get_action(
 async def execute_action(
     action_id: str,
     payload: ActionExecutionInput,
+    response: Response,
     idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key"),
     alias_header: Optional[str] = Header(None, alias="x-connector-alias"),
+    request_id_header: Optional[str] = Header(None, alias="X-Request-ID"),
     principal: Principal = Depends(require_runtime_or_admin),
     db: AsyncSession = Depends(get_db)
 ):
@@ -104,6 +106,11 @@ async def execute_action(
             idempotency_key=idempotency_key,
             principal_id=principal.id
         )
+        exec_id = result.get("meta", {}).get("executionId") or request_id_header
+        if exec_id:
+            response.headers["X-Request-ID"] = exec_id
+            response.headers["X-Correlation-ID"] = exec_id
+
         if not result.get("success"):
             status_code = result.get("status_code", 400)
             raise HTTPException(status_code=status_code, detail=result.get("error"))

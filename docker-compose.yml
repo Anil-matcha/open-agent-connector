@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - connector_data:/app/data
+    environment:
+      - PROJECT_NAME=ConnectorHub
+      - HOST=0.0.0.0
+      - PORT=8000
+    restart: unless-stopped
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://server:8000
+    depends_on:
+      - server
+    restart: unless-stopped
+
+volumes:
+  connector_data:
+    driver: local

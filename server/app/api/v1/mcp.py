@@ -43,11 +43,15 @@ async def handle_mcp_jsonrpc(request: Request, db: AsyncSession = Depends(get_db
 
     # 1. MCP Protocol Handshake: 'initialize'
     if method == "initialize":
+        client_version = params.get("protocolVersion")
+        supported_versions = ["2025-11-25", "2024-11-05"]
+        negotiated_version = client_version if client_version in supported_versions else "2025-11-25"
+
         return {
             "jsonrpc": "2.0",
             "id": rpc_id,
             "result": {
-                "protocolVersion": "2024-11-05",
+                "protocolVersion": negotiated_version,
                 "capabilities": {
                     "tools": {
                         "listChanged": False
