@@ -279,6 +279,36 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "authorize_url": "https://airtable.com/oauth2/v1/authorize",
         "token_url": "https://airtable.com/oauth2/v1/token",
         "default_scopes": ["data.records:read", "data.records:write", "schema.bases:read", "schema.bases:write"],
+    },
+    "gitlab": {
+        "display_name": "GitLab",
+        "authorize_url": "https://gitlab.com/oauth/authorize",
+        "token_url": "https://gitlab.com/oauth/token",
+        "default_scopes": ["api", "read_api", "read_user"],
+    },
+    "bitbucket": {
+        "display_name": "Bitbucket",
+        "authorize_url": "https://bitbucket.org/site/oauth2/authorize",
+        "token_url": "https://bitbucket.org/site/oauth2/access_token",
+        "default_scopes": ["account", "repository", "pullrequest", "pipeline"],
+    },
+    "supabase": {
+        "display_name": "Supabase",
+        "authorize_url": "https://api.supabase.com/v1/oauth/authorize",
+        "token_url": "https://api.supabase.com/v1/oauth/token",
+        "default_scopes": ["all"],
+    },
+    "cloudflare_worker": {
+        "display_name": "Cloudflare Worker",
+        "authorize_url": "https://dash.cloudflare.com/oauth2/auth",
+        "token_url": "https://api.cloudflare.com/client/v4/oauth2/token",
+        "default_scopes": ["workers-scripts:write"],
+    },
+    "cloudflare_r2": {
+        "display_name": "Cloudflare R2",
+        "authorize_url": "https://dash.cloudflare.com/oauth2/auth",
+        "token_url": "https://api.cloudflare.com/client/v4/oauth2/token",
+        "default_scopes": ["workers-r2:write", "workers-r2:read"],
     }
 }
 
@@ -324,6 +354,14 @@ class OAuthService:
             candidates.extend(["MICROSOFT", "AZURE", "MS", "MICROSOFT_GRAPH"])
         elif service.lower() == "jira":
             candidates.extend(["JIRA", "ATLASSIAN"])
+        elif service.lower() in ("cloudflare_worker", "cloudflare_r2"):
+            candidates.extend(["CLOUDFLARE", "CF"])
+        elif service.lower() == "digital_ocean":
+            candidates.extend(["DIGITALOCEAN", "DO"])
+        elif service.lower() == "docker_hub":
+            candidates.extend(["DOCKER", "DOCKERHUB"])
+        elif service.lower() == "aws_s3":
+            candidates.extend(["AWS", "S3"])
 
         env_client_id = None
         env_client_secret = None

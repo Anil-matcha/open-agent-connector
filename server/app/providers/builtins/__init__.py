@@ -30,6 +30,14 @@ from app.providers.builtins.communication import (
 from app.providers.builtins.developer import (
     GitHubProvider,
     HackerNewsProvider,
+    GitLabProvider,
+    BitbucketProvider,
+    SupabaseProvider,
+    CloudflareWorkerProvider,
+    CloudflareR2Provider,
+    AWSS3Provider,
+    DockerHubProvider,
+    DigitalOceanProvider,
 )
 from app.providers.builtins.project_management import (
     NotionProvider,
@@ -81,9 +89,17 @@ __all__ = [
     "WhatsAppProvider",
     "TelegramProvider",
     "TwitterProvider",
-    # Developer Tools
+    # Developer Tools & Cloud Infrastructure
     "GitHubProvider",
     "HackerNewsProvider",
+    "GitLabProvider",
+    "BitbucketProvider",
+    "SupabaseProvider",
+    "CloudflareWorkerProvider",
+    "CloudflareR2Provider",
+    "AWSS3Provider",
+    "DockerHubProvider",
+    "DigitalOceanProvider",
     # Utility
     "CustomHttpProvider",
 ]

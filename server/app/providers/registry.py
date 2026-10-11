@@ -36,10 +36,18 @@ from app.providers.builtins.communication import (
     TwitterProvider,
 )
 
-# Developer Tools
+# Developer Tools & Cloud Infrastructure
 from app.providers.builtins.developer import (
     GitHubProvider,
     HackerNewsProvider,
+    GitLabProvider,
+    BitbucketProvider,
+    SupabaseProvider,
+    CloudflareWorkerProvider,
+    CloudflareR2Provider,
+    AWSS3Provider,
+    DockerHubProvider,
+    DigitalOceanProvider,
 )
 
 # Project Management & Issue Tracking Providers
@@ -65,9 +73,17 @@ class ProviderRegistry:
         self._actions: Dict[str, Action] = {}
         self._action_to_provider: Dict[str, str] = {}
         
-        # 1. Developer Tools
+        # 1. Developer Tools & Cloud Infrastructure
         self.register(GitHubProvider())
         self.register(HackerNewsProvider())
+        self.register(GitLabProvider())
+        self.register(BitbucketProvider())
+        self.register(SupabaseProvider())
+        self.register(CloudflareWorkerProvider())
+        self.register(CloudflareR2Provider())
+        self.register(AWSS3Provider())
+        self.register(DockerHubProvider())
+        self.register(DigitalOceanProvider())
 
         # 2. Project Management & Issue Tracking
         self.register(NotionProvider())
