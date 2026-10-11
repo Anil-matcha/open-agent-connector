@@ -167,6 +167,76 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
             "users.read",
             "offline.access"
         ],
+    },
+    "outlook": {
+        "display_name": "Outlook",
+        "authorize_url": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+        "token_url": "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+        "default_scopes": [
+            "User.Read",
+            "Mail.Read",
+            "Mail.ReadWrite",
+            "Mail.Send",
+            "offline_access"
+        ],
+    },
+    "outlook_calendar": {
+        "display_name": "Outlook Calendar",
+        "authorize_url": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+        "token_url": "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+        "default_scopes": [
+            "User.Read",
+            "Calendars.Read",
+            "Calendars.ReadWrite",
+            "offline_access"
+        ],
+    },
+    "one_drive": {
+        "display_name": "OneDrive",
+        "authorize_url": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+        "token_url": "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+        "default_scopes": [
+            "User.Read",
+            "Files.Read",
+            "Files.ReadWrite",
+            "offline_access"
+        ],
+    },
+    "microsoft_teams": {
+        "display_name": "Microsoft Teams",
+        "authorize_url": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+        "token_url": "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+        "default_scopes": [
+            "User.Read",
+            "Team.ReadBasic.All",
+            "Channel.ReadBasic.All",
+            "ChannelMessage.Send",
+            "Chat.Read",
+            "ChatMessage.Send",
+            "offline_access"
+        ],
+    },
+    "microsoft_todo": {
+        "display_name": "Microsoft To Do",
+        "authorize_url": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+        "token_url": "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+        "default_scopes": [
+            "User.Read",
+            "Tasks.Read",
+            "Tasks.ReadWrite",
+            "offline_access"
+        ],
+    },
+    "excel": {
+        "display_name": "Excel",
+        "authorize_url": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+        "token_url": "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+        "default_scopes": [
+            "User.Read",
+            "Files.Read",
+            "Files.ReadWrite",
+            "offline_access"
+        ],
     }
 }
 
@@ -208,6 +278,8 @@ class OAuthService:
             candidates.extend(["WHATSAPP", "META", "FACEBOOK"])
         elif service.lower().startswith("google") or service.lower() in ("gmail", "youtube"):
             candidates.extend(["GOOGLE", "GOOGLE_WORKSPACE"])
+        elif service.lower() in ("outlook", "outlook_calendar", "one_drive", "onedrive", "microsoft_teams", "microsoft_todo", "excel") or "microsoft" in service.lower():
+            candidates.extend(["MICROSOFT", "AZURE", "MS", "MICROSOFT_GRAPH"])
 
         env_client_id = None
         env_client_secret = None

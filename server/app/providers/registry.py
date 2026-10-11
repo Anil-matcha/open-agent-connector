@@ -1,23 +1,51 @@
 from typing import Dict, List, Optional
 from app.providers.base import Provider, Action
-from app.providers.builtins.hackernews import HackerNewsProvider
-from app.providers.builtins.github import GitHubProvider
-from app.providers.builtins.slack import SlackProvider
-from app.providers.builtins.custom_http import CustomHttpProvider
-from app.providers.builtins.gmail import GmailProvider
-from app.providers.builtins.google_calendar import GoogleCalendarProvider
-from app.providers.builtins.whatsapp import WhatsAppProvider
-from app.providers.builtins.twitter import TwitterProvider
-from app.providers.builtins.telegram import TelegramProvider
-from app.providers.builtins.youtube import YouTubeProvider
-from app.providers.builtins.google_drive import GoogleDriveProvider
-from app.providers.builtins.google_sheets import GoogleSheetsProvider
-from app.providers.builtins.google_docs import GoogleDocsProvider
-from app.providers.builtins.google_tasks import GoogleTasksProvider
-from app.providers.builtins.google_meet import GoogleMeetProvider
-from app.providers.builtins.google_chat import GoogleChatProvider
-from app.providers.builtins.google_forms import GoogleFormsProvider
-from app.providers.builtins.google_photos import GooglePhotosProvider
+
+# Google Ecosystem Providers
+from app.providers.builtins.google import (
+    GmailProvider,
+    GoogleCalendarProvider,
+    GoogleDriveProvider,
+    GoogleSheetsProvider,
+    GoogleDocsProvider,
+    GoogleTasksProvider,
+    GoogleMeetProvider,
+    GoogleChatProvider,
+    GoogleFormsProvider,
+    GooglePhotosProvider,
+    YouTubeProvider,
+)
+
+# Microsoft Ecosystem Providers
+from app.providers.builtins.microsoft import (
+    OutlookProvider,
+    OutlookCalendarProvider,
+    OneDriveProvider,
+    MicrosoftTeamsProvider,
+    MicrosoftTodoProvider,
+    ExcelProvider,
+    MicrosoftClarityProvider,
+    MicrosoftTextTranslateProvider,
+)
+
+# Communication & Social Providers
+from app.providers.builtins.communication import (
+    SlackProvider,
+    WhatsAppProvider,
+    TelegramProvider,
+    TwitterProvider,
+)
+
+# Developer Tools
+from app.providers.builtins.developer import (
+    GitHubProvider,
+    HackerNewsProvider,
+)
+
+# Utility Providers
+from app.providers.builtins.utility import (
+    CustomHttpProvider,
+)
 
 class ProviderRegistry:
     def __init__(self):
@@ -25,10 +53,17 @@ class ProviderRegistry:
         self._actions: Dict[str, Action] = {}
         self._action_to_provider: Dict[str, str] = {}
         
-        # Register core builtins
-        self.register(HackerNewsProvider())
+        # 1. Developer Tools
         self.register(GitHubProvider())
+        self.register(HackerNewsProvider())
+
+        # 2. Communication & Social
         self.register(SlackProvider())
+        self.register(WhatsAppProvider())
+        self.register(TwitterProvider())
+        self.register(TelegramProvider())
+
+        # 3. Google Workspace Ecosystem
         self.register(GmailProvider())
         self.register(GoogleCalendarProvider())
         self.register(GoogleDriveProvider())
@@ -39,10 +74,19 @@ class ProviderRegistry:
         self.register(GoogleChatProvider())
         self.register(GoogleFormsProvider())
         self.register(GooglePhotosProvider())
-        self.register(WhatsAppProvider())
-        self.register(TwitterProvider())
-        self.register(TelegramProvider())
         self.register(YouTubeProvider())
+
+        # 4. Microsoft Ecosystem
+        self.register(OutlookProvider())
+        self.register(OutlookCalendarProvider())
+        self.register(OneDriveProvider())
+        self.register(MicrosoftTeamsProvider())
+        self.register(MicrosoftTodoProvider())
+        self.register(ExcelProvider())
+        self.register(MicrosoftClarityProvider())
+        self.register(MicrosoftTextTranslateProvider())
+
+        # 5. Utilities
         self.register(CustomHttpProvider())
 
     def register(self, provider: Provider):
