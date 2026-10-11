@@ -237,6 +237,48 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
             "Files.ReadWrite",
             "offline_access"
         ],
+    },
+    "notion": {
+        "display_name": "Notion",
+        "authorize_url": "https://api.notion.com/v1/oauth/authorize",
+        "token_url": "https://api.notion.com/v1/oauth/token",
+        "default_scopes": [],
+    },
+    "linear": {
+        "display_name": "Linear",
+        "authorize_url": "https://linear.app/oauth/authorize",
+        "token_url": "https://api.linear.app/oauth/token",
+        "default_scopes": ["read", "write", "issues:create", "comments:create"],
+    },
+    "jira": {
+        "display_name": "Jira",
+        "authorize_url": "https://auth.atlassian.com/authorize",
+        "token_url": "https://auth.atlassian.com/oauth/token",
+        "default_scopes": ["read:jira-work", "write:jira-work", "read:jira-user", "offline_access"],
+    },
+    "asana": {
+        "display_name": "Asana",
+        "authorize_url": "https://app.asana.com/-/oauth_authorize",
+        "token_url": "https://app.asana.com/-/oauth_token",
+        "default_scopes": ["default"],
+    },
+    "clickup": {
+        "display_name": "ClickUp",
+        "authorize_url": "https://app.clickup.com/api",
+        "token_url": "https://api.clickup.com/api/v2/oauth/token",
+        "default_scopes": [],
+    },
+    "monday": {
+        "display_name": "Monday.com",
+        "authorize_url": "https://auth.monday.com/oauth2/authorize",
+        "token_url": "https://auth.monday.com/oauth2/token",
+        "default_scopes": ["boards:read", "boards:write", "workspaces:read", "users:read", "me:read"],
+    },
+    "airtable": {
+        "display_name": "Airtable",
+        "authorize_url": "https://airtable.com/oauth2/v1/authorize",
+        "token_url": "https://airtable.com/oauth2/v1/token",
+        "default_scopes": ["data.records:read", "data.records:write", "schema.bases:read", "schema.bases:write"],
     }
 }
 
@@ -280,6 +322,8 @@ class OAuthService:
             candidates.extend(["GOOGLE", "GOOGLE_WORKSPACE"])
         elif service.lower() in ("outlook", "outlook_calendar", "one_drive", "onedrive", "microsoft_teams", "microsoft_todo", "excel") or "microsoft" in service.lower():
             candidates.extend(["MICROSOFT", "AZURE", "MS", "MICROSOFT_GRAPH"])
+        elif service.lower() == "jira":
+            candidates.extend(["JIRA", "ATLASSIAN"])
 
         env_client_id = None
         env_client_secret = None

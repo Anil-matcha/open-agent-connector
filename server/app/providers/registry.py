@@ -42,6 +42,18 @@ from app.providers.builtins.developer import (
     HackerNewsProvider,
 )
 
+# Project Management & Issue Tracking Providers
+from app.providers.builtins.project_management import (
+    NotionProvider,
+    LinearProvider,
+    JiraProvider,
+    AsanaProvider,
+    ClickUpProvider,
+    MondayProvider,
+    AirtableProvider,
+    CodaProvider,
+)
+
 # Utility Providers
 from app.providers.builtins.utility import (
     CustomHttpProvider,
@@ -57,13 +69,23 @@ class ProviderRegistry:
         self.register(GitHubProvider())
         self.register(HackerNewsProvider())
 
-        # 2. Communication & Social
+        # 2. Project Management & Issue Tracking
+        self.register(NotionProvider())
+        self.register(LinearProvider())
+        self.register(JiraProvider())
+        self.register(AsanaProvider())
+        self.register(ClickUpProvider())
+        self.register(MondayProvider())
+        self.register(AirtableProvider())
+        self.register(CodaProvider())
+
+        # 3. Communication & Social
         self.register(SlackProvider())
         self.register(WhatsAppProvider())
         self.register(TwitterProvider())
         self.register(TelegramProvider())
 
-        # 3. Google Workspace Ecosystem
+        # 4. Google Workspace Ecosystem
         self.register(GmailProvider())
         self.register(GoogleCalendarProvider())
         self.register(GoogleDriveProvider())
@@ -76,7 +98,7 @@ class ProviderRegistry:
         self.register(GooglePhotosProvider())
         self.register(YouTubeProvider())
 
-        # 4. Microsoft Ecosystem
+        # 5. Microsoft Ecosystem
         self.register(OutlookProvider())
         self.register(OutlookCalendarProvider())
         self.register(OneDriveProvider())
@@ -86,7 +108,7 @@ class ProviderRegistry:
         self.register(MicrosoftClarityProvider())
         self.register(MicrosoftTextTranslateProvider())
 
-        # 5. Utilities
+        # 6. Utilities
         self.register(CustomHttpProvider())
 
     def register(self, provider: Provider):

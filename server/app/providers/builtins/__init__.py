@@ -31,6 +31,16 @@ from app.providers.builtins.developer import (
     GitHubProvider,
     HackerNewsProvider,
 )
+from app.providers.builtins.project_management import (
+    NotionProvider,
+    LinearProvider,
+    JiraProvider,
+    AsanaProvider,
+    ClickUpProvider,
+    MondayProvider,
+    AirtableProvider,
+    CodaProvider,
+)
 from app.providers.builtins.utility import (
     CustomHttpProvider,
 )
@@ -57,6 +67,15 @@ __all__ = [
     "ExcelProvider",
     "MicrosoftClarityProvider",
     "MicrosoftTextTranslateProvider",
+    # Project Management & Issue Tracking
+    "NotionProvider",
+    "LinearProvider",
+    "JiraProvider",
+    "AsanaProvider",
+    "ClickUpProvider",
+    "MondayProvider",
+    "AirtableProvider",
+    "CodaProvider",
     # Communication & Social
     "SlackProvider",
     "WhatsAppProvider",
