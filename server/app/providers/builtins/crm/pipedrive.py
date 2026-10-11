@@ -45,6 +45,7 @@ PIPEDRIVE_ENDPOINT_MAP = {
 
 def _pipedrive_headers(token: str) -> Dict[str, str]:
     return {
+        "Authorization": f"Bearer {token}",
         "x-api-token": token,
         "Accept": "application/json",
         "Content-Type": "application/json",
@@ -125,7 +126,7 @@ class PipedriveProvider(Provider):
             service="pipedrive",
             display_name="Pipedrive",
             category="CRM",
-            auth_types=["api_key"],
+            auth_types=["api_key", "oauth2"],
             description="Visual sales CRM and pipeline management software designed by salespeople, for salespeople.",
             homepage_url="https://www.pipedrive.com",
             base_url=PIPEDRIVE_API_BASE,

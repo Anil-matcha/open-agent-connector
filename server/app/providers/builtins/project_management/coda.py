@@ -88,7 +88,7 @@ class CodaProvider(Provider):
             service="coda",
             display_name="Coda",
             category="Project Management",
-            auth_types=["api_key"],
+            auth_types=["api_key", "oauth2"],
             description="All-in-one collaborative doc platform bringing words, data, and workflows together.",
             homepage_url="https://coda.io",
             base_url=CODA_API_BASE,

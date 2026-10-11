@@ -67,6 +67,13 @@ from app.providers.builtins.crm import (
     BrevoProvider,
     CustomerIOProvider,
 )
+from app.providers.builtins.ecommerce import (
+    StripeProvider,
+    PayPalProvider,
+    ShopifyProvider,
+    LemonSqueezyProvider,
+    SquareProvider,
+)
 from app.providers.builtins.utility import (
     CustomHttpProvider,
 )
@@ -134,6 +141,12 @@ __all__ = [
     "MailchimpProvider",
     "BrevoProvider",
     "CustomerIOProvider",
+    # Payments & E-Commerce
+    "StripeProvider",
+    "PayPalProvider",
+    "ShopifyProvider",
+    "LemonSqueezyProvider",
+    "SquareProvider",
     # Utility
     "CustomHttpProvider",
 ]

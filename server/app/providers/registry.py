@@ -84,6 +84,15 @@ from app.providers.builtins.crm import (
     CustomerIOProvider,
 )
 
+# Payments & E-Commerce Providers
+from app.providers.builtins.ecommerce import (
+    StripeProvider,
+    PayPalProvider,
+    ShopifyProvider,
+    LemonSqueezyProvider,
+    SquareProvider,
+)
+
 # Utility Providers
 from app.providers.builtins.utility import (
     CustomHttpProvider,
@@ -164,7 +173,14 @@ class ProviderRegistry:
         self.register(BrevoProvider())
         self.register(CustomerIOProvider())
 
-        # 8. Utilities
+        # 8. Payments & E-Commerce
+        self.register(StripeProvider())
+        self.register(PayPalProvider())
+        self.register(ShopifyProvider())
+        self.register(LemonSqueezyProvider())
+        self.register(SquareProvider())
+
+        # 9. Utilities
         self.register(CustomHttpProvider())
 
     def register(self, provider: Provider):

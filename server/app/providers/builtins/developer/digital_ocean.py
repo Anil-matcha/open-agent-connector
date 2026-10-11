@@ -88,7 +88,7 @@ class DigitalOceanProvider(Provider):
             service="digital_ocean",
             display_name="DigitalOcean",
             category="Developer Tools",
-            auth_types=["api_key"],
+            auth_types=["api_key", "oauth2"],
             description="Cloud services platform that helps developers build, deploy, and scale applications easily with Droplets, Kubernetes, Databases, and App Platform.",
             homepage_url="https://www.digitalocean.com",
             base_url=DIGITALOCEAN_API_BASE,

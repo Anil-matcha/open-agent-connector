@@ -333,6 +333,54 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "authorize_url": "https://{subdomain}.zendesk.com/oauth/authorizations/new",
         "token_url": "https://{subdomain}.zendesk.com/oauth/tokens",
         "default_scopes": ["read", "write"],
+    },
+    "shopify": {
+        "display_name": "Shopify",
+        "authorize_url": "https://{shopDomain}.myshopify.com/admin/oauth/authorize",
+        "token_url": "https://{shopDomain}.myshopify.com/admin/oauth/access_token",
+        "default_scopes": ["read_content", "read_products", "read_themes"],
+    },
+    "square": {
+        "display_name": "Square",
+        "authorize_url": "https://connect.squareup.com/oauth2/authorize",
+        "token_url": "https://connect.squareup.com/oauth2/token",
+        "default_scopes": ["CUSTOMERS_READ", "CUSTOMERS_WRITE", "MERCHANT_PROFILE_READ"],
+    },
+    "stripe": {
+        "display_name": "Stripe",
+        "authorize_url": "https://connect.stripe.com/oauth/authorize",
+        "token_url": "https://connect.stripe.com/oauth/token",
+        "default_scopes": ["read_write"],
+    },
+    "paypal": {
+        "display_name": "PayPal",
+        "authorize_url": "https://www.paypal.com/signin/authorize",
+        "token_url": "https://api-m.paypal.com/v1/oauth2/token",
+        "default_scopes": ["openid", "profile", "email"],
+    },
+    "lemon_squeezy": {
+        "display_name": "Lemon Squeezy",
+        "authorize_url": "https://app.lemonsqueezy.com/oauth/authorize",
+        "token_url": "https://api.lemonsqueezy.com/oauth/token",
+        "default_scopes": [],
+    },
+    "pipedrive": {
+        "display_name": "Pipedrive",
+        "authorize_url": "https://oauth.pipedrive.com/oauth/authorize",
+        "token_url": "https://oauth.pipedrive.com/oauth/token",
+        "default_scopes": ["deals:full", "contacts:full", "activities:full"],
+    },
+    "digital_ocean": {
+        "display_name": "DigitalOcean",
+        "authorize_url": "https://cloud.digitalocean.com/v1/oauth/authorize",
+        "token_url": "https://cloud.digitalocean.com/v1/oauth/token",
+        "default_scopes": ["read", "write"],
+    },
+    "coda": {
+        "display_name": "Coda",
+        "authorize_url": "https://coda.io/oauth/authorize",
+        "token_url": "https://coda.io/oauth/token",
+        "default_scopes": [],
     }
 }
 
@@ -414,6 +462,18 @@ class OAuthService:
             candidates.extend(["BREVO", "SENDINBLUE"])
         elif service.lower() == "customerio":
             candidates.extend(["CUSTOMERIO", "CUSTOMER_IO"])
+        elif service.lower() == "stripe":
+            candidates.extend(["STRIPE"])
+        elif service.lower() == "paypal":
+            candidates.extend(["PAYPAL"])
+        elif service.lower() == "shopify":
+            candidates.extend(["SHOPIFY"])
+        elif service.lower() == "lemon_squeezy":
+            candidates.extend(["LEMON_SQUEEZY", "LEMONSQUEEZY"])
+        elif service.lower() == "square":
+            candidates.extend(["SQUARE"])
+        elif service.lower() == "coda":
+            candidates.extend(["CODA"])
 
         env_client_id = None
         env_client_secret = None
@@ -509,7 +569,12 @@ class OAuthService:
         if scope_str:
             params["scope"] = scope_str
 
-        auth_url = f"{provider_meta['authorize_url']}?{urlencode(params)}"
+        auth_url_base = provider_meta['authorize_url']
+        subdomain = (config or {}).get("subdomain") or (config or {}).get("shopDomain") or (config or {}).get("shop") or ""
+        if "{" in auth_url_base and subdomain:
+            auth_url_base = auth_url_base.replace("{subdomain}", subdomain).replace("{shopDomain}", subdomain)
+
+        auth_url = f"{auth_url_base}?{urlencode(params)}"
         return {
             "authorization_url": auth_url,
             "state": state,
@@ -558,6 +623,9 @@ class OAuthService:
             raise ValueError(f"Unknown OAuth provider: '{service}'.")
 
         token_url = provider_meta["token_url"]
+        subdomain = (config or {}).get("subdomain") or (config or {}).get("shopDomain") or (config or {}).get("shop") or ""
+        if "{" in token_url and subdomain:
+            token_url = token_url.replace("{subdomain}", subdomain).replace("{shopDomain}", subdomain)
         
         # Prepare token exchange payload
         token_payload = {
@@ -735,10 +803,15 @@ class OAuthService:
                     "refresh_token": refresh_token,
                     "grant_type": "refresh_token"
                 }
+                refresh_token_url = provider_meta["token_url"]
+                subdomain = (config or {}).get("subdomain") or (config or {}).get("shopDomain") or (config or {}).get("shop") or ""
+                if "{" in refresh_token_url and subdomain:
+                    refresh_token_url = refresh_token_url.replace("{subdomain}", subdomain).replace("{shopDomain}", subdomain)
+
                 resp = await execute_guarded_request(
                     client=client,
                     method="POST",
-                    url=provider_meta["token_url"],
+                    url=refresh_token_url,
                     data=refresh_payload,
                     headers={"Accept": "application/json"}
                 )
