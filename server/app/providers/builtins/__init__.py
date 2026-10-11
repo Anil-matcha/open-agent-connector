@@ -49,6 +49,15 @@ from app.providers.builtins.project_management import (
     AirtableProvider,
     CodaProvider,
 )
+from app.providers.builtins.ai import (
+    OpenAIProvider,
+    AnthropicProvider,
+    PerplexityProvider,
+    GroqCloudProvider,
+    CohereProvider,
+    ElevenLabsProvider,
+    FirecrawlProvider,
+)
 from app.providers.builtins.utility import (
     CustomHttpProvider,
 )
@@ -100,6 +109,14 @@ __all__ = [
     "AWSS3Provider",
     "DockerHubProvider",
     "DigitalOceanProvider",
+    # AI & LLM Services
+    "OpenAIProvider",
+    "AnthropicProvider",
+    "PerplexityProvider",
+    "GroqCloudProvider",
+    "CohereProvider",
+    "ElevenLabsProvider",
+    "FirecrawlProvider",
     # Utility
     "CustomHttpProvider",
 ]

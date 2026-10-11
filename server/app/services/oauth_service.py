@@ -362,6 +362,20 @@ class OAuthService:
             candidates.extend(["DOCKER", "DOCKERHUB"])
         elif service.lower() == "aws_s3":
             candidates.extend(["AWS", "S3"])
+        elif service.lower() == "openai":
+            candidates.extend(["OPENAI"])
+        elif service.lower() == "anthropic":
+            candidates.extend(["ANTHROPIC", "CLAUDE"])
+        elif service.lower() == "perplexity":
+            candidates.extend(["PERPLEXITY", "PPLX"])
+        elif service.lower() == "groqcloud":
+            candidates.extend(["GROQCLOUD", "GROQ"])
+        elif service.lower() == "cohere":
+            candidates.extend(["COHERE"])
+        elif service.lower() == "elevenlabs":
+            candidates.extend(["ELEVENLABS", "XI"])
+        elif service.lower() == "firecrawl":
+            candidates.extend(["FIRECRAWL"])
 
         env_client_id = None
         env_client_secret = None

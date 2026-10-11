@@ -62,6 +62,17 @@ from app.providers.builtins.project_management import (
     CodaProvider,
 )
 
+# AI & LLM Services Providers
+from app.providers.builtins.ai import (
+    OpenAIProvider,
+    AnthropicProvider,
+    PerplexityProvider,
+    GroqCloudProvider,
+    CohereProvider,
+    ElevenLabsProvider,
+    FirecrawlProvider,
+)
+
 # Utility Providers
 from app.providers.builtins.utility import (
     CustomHttpProvider,
@@ -124,7 +135,16 @@ class ProviderRegistry:
         self.register(MicrosoftClarityProvider())
         self.register(MicrosoftTextTranslateProvider())
 
-        # 6. Utilities
+        # 6. AI & LLM Services
+        self.register(OpenAIProvider())
+        self.register(AnthropicProvider())
+        self.register(PerplexityProvider())
+        self.register(GroqCloudProvider())
+        self.register(CohereProvider())
+        self.register(ElevenLabsProvider())
+        self.register(FirecrawlProvider())
+
+        # 7. Utilities
         self.register(CustomHttpProvider())
 
     def register(self, provider: Provider):
