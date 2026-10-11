@@ -58,6 +58,15 @@ from app.providers.builtins.ai import (
     ElevenLabsProvider,
     FirecrawlProvider,
 )
+from app.providers.builtins.crm import (
+    HubSpotProvider,
+    PipedriveProvider,
+    ZendeskProvider,
+    IntercomProvider,
+    MailchimpProvider,
+    BrevoProvider,
+    CustomerIOProvider,
+)
 from app.providers.builtins.utility import (
     CustomHttpProvider,
 )
@@ -117,6 +126,14 @@ __all__ = [
     "CohereProvider",
     "ElevenLabsProvider",
     "FirecrawlProvider",
+    # CRM, Helpdesk & Marketing
+    "HubSpotProvider",
+    "PipedriveProvider",
+    "ZendeskProvider",
+    "IntercomProvider",
+    "MailchimpProvider",
+    "BrevoProvider",
+    "CustomerIOProvider",
     # Utility
     "CustomHttpProvider",
 ]

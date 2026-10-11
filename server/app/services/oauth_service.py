@@ -309,6 +309,30 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "authorize_url": "https://dash.cloudflare.com/oauth2/auth",
         "token_url": "https://api.cloudflare.com/client/v4/oauth2/token",
         "default_scopes": ["workers-r2:write", "workers-r2:read"],
+    },
+    "hubspot": {
+        "display_name": "HubSpot",
+        "authorize_url": "https://app.hubspot.com/oauth/authorize",
+        "token_url": "https://api.hubapi.com/oauth/v1/token",
+        "default_scopes": ["crm.objects.contacts.read", "crm.objects.companies.read", "crm.objects.deals.read"],
+    },
+    "intercom": {
+        "display_name": "Intercom",
+        "authorize_url": "https://app.intercom.com/oauth",
+        "token_url": "https://api.intercom.io/auth/eagle/token",
+        "default_scopes": [],
+    },
+    "mailchimp": {
+        "display_name": "Mailchimp",
+        "authorize_url": "https://login.mailchimp.com/oauth2/authorize",
+        "token_url": "https://login.mailchimp.com/oauth2/token",
+        "default_scopes": [],
+    },
+    "zendesk": {
+        "display_name": "Zendesk",
+        "authorize_url": "https://{subdomain}.zendesk.com/oauth/authorizations/new",
+        "token_url": "https://{subdomain}.zendesk.com/oauth/tokens",
+        "default_scopes": ["read", "write"],
     }
 }
 
@@ -376,6 +400,20 @@ class OAuthService:
             candidates.extend(["ELEVENLABS", "XI"])
         elif service.lower() == "firecrawl":
             candidates.extend(["FIRECRAWL"])
+        elif service.lower() == "hubspot":
+            candidates.extend(["HUBSPOT"])
+        elif service.lower() == "pipedrive":
+            candidates.extend(["PIPEDRIVE"])
+        elif service.lower() == "zendesk":
+            candidates.extend(["ZENDESK"])
+        elif service.lower() == "intercom":
+            candidates.extend(["INTERCOM"])
+        elif service.lower() == "mailchimp":
+            candidates.extend(["MAILCHIMP"])
+        elif service.lower() == "brevo":
+            candidates.extend(["BREVO", "SENDINBLUE"])
+        elif service.lower() == "customerio":
+            candidates.extend(["CUSTOMERIO", "CUSTOMER_IO"])
 
         env_client_id = None
         env_client_secret = None

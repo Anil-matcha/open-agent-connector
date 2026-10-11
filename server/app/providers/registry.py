@@ -73,6 +73,17 @@ from app.providers.builtins.ai import (
     FirecrawlProvider,
 )
 
+# CRM, Helpdesk & Marketing Providers
+from app.providers.builtins.crm import (
+    HubSpotProvider,
+    PipedriveProvider,
+    ZendeskProvider,
+    IntercomProvider,
+    MailchimpProvider,
+    BrevoProvider,
+    CustomerIOProvider,
+)
+
 # Utility Providers
 from app.providers.builtins.utility import (
     CustomHttpProvider,
@@ -144,7 +155,16 @@ class ProviderRegistry:
         self.register(ElevenLabsProvider())
         self.register(FirecrawlProvider())
 
-        # 7. Utilities
+        # 7. CRM, Helpdesk & Marketing
+        self.register(HubSpotProvider())
+        self.register(PipedriveProvider())
+        self.register(ZendeskProvider())
+        self.register(IntercomProvider())
+        self.register(MailchimpProvider())
+        self.register(BrevoProvider())
+        self.register(CustomerIOProvider())
+
+        # 8. Utilities
         self.register(CustomHttpProvider())
 
     def register(self, provider: Provider):
