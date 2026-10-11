@@ -14,12 +14,37 @@ from app.core.ssrf import assert_public_url, execute_guarded_request
 
 ATLASSIAN_API_BASE = "https://api.atlassian.com"
 
+def _normalize_jira_url(raw: Optional[str]) -> str:
+    if not raw:
+        return ""
+    val = str(raw).strip().rstrip("/")
+    if not val:
+        return ""
+    if val.startswith("http://") or val.startswith("https://"):
+        return val
+    if not val.endswith(".atlassian.net") and "." not in val:
+        val = f"{val}.atlassian.net"
+    return f"https://{val}"
+
 def _resolve_jira_auth(credential: Optional[Dict[str, Any]]) -> Tuple[Dict[str, str], str]:
     """Returns headers and effective base url for Jira request."""
     cred = credential or {}
     token = cred.get("accessToken") or cred.get("apiKey") or cred.get("token")
     email = cred.get("email") or cred.get("username")
-    base_url = (cred.get("baseUrl") or cred.get("domain") or "").rstrip("/")
+    raw_base = cred.get("baseUrl") or cred.get("domain") or cred.get("instanceUrl")
+    base_url = _normalize_jira_url(raw_base)
+
+    if not token:
+        raise ValueError("Jira API Token or OAuth Access Token required. Please connect your Jira account first.")
+
+    token_str = str(token).strip()
+
+    # Check if token was provided as "email:api_token"
+    if not email and ":" in token_str and not token_str.startswith("Bearer "):
+        parts = token_str.split(":", 1)
+        if "@" in parts[0]:
+            email = parts[0].strip()
+            token_str = parts[1].strip()
 
     headers = {
         "Accept": "application/json",
@@ -27,18 +52,14 @@ def _resolve_jira_auth(credential: Optional[Dict[str, Any]]) -> Tuple[Dict[str, 
         "User-Agent": "ConnectorHub/1.0"
     }
 
-    if not token:
-        raise ValueError("Jira API Token or OAuth Access Token required. Please connect your Jira account first.")
-
     # Basic auth (email:api_token) if email is provided
-    if email and not str(token).startswith("Bearer "):
-        token_str = str(token).strip()
+    if email and not token_str.startswith("Bearer "):
         auth_str = f"{email}:{token_str}"
         encoded = base64.b64encode(auth_str.encode("utf-8")).decode("utf-8")
         headers["Authorization"] = f"Basic {encoded}"
     else:
         # Bearer token for OAuth 2.0 or PAT
-        headers["Authorization"] = f"Bearer {token}" if not str(token).startswith("Bearer ") else str(token)
+        headers["Authorization"] = f"Bearer {token_str}" if not token_str.startswith("Bearer ") else token_str
 
     effective_base = base_url if base_url else ATLASSIAN_API_BASE
     return headers, effective_base
@@ -197,6 +218,31 @@ class JiraProvider(Provider):
 
     async def validate_credentials(self, credential: Dict[str, Any], client: httpx.AsyncClient) -> Dict[str, Any]:
         """Validate Jira credentials against /rest/api/3/myself or Atlassian accessible-resources."""
+        cred = credential or {}
+        token = cred.get("accessToken") or cred.get("apiKey") or cred.get("token")
+        email = cred.get("email") or cred.get("username")
+        raw_base = cred.get("baseUrl") or cred.get("domain") or cred.get("instanceUrl")
+        token_str = str(token or "").strip()
+
+        # If using Atlassian API token (not a 3LO OAuth JWT), baseUrl and email are required
+        if not token_str.startswith("eyJ"):
+            # Check if token was provided in email:token composite format
+            has_embedded_email = ":" in token_str and "@" in token_str.split(":", 1)[0]
+            effective_email = email or (token_str.split(":", 1)[0] if has_embedded_email else None)
+            
+            missing = []
+            if not raw_base:
+                missing.append("Jira Instance URL (e.g. https://your-domain.atlassian.net)")
+            if not effective_email:
+                missing.append("Account Email (e.g. you@company.com)")
+            
+            if missing:
+                raise ValueError(
+                    f"Atlassian API Token requires {' and '.join(missing)}. "
+                    "Atlassian Cloud authenticates via HTTP Basic authentication (email:api_token) "
+                    "sent directly to your Jira site instance."
+                )
+
         headers, base_url = _resolve_jira_auth(credential)
 
         if base_url == ATLASSIAN_API_BASE:

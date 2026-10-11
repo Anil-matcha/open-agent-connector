@@ -15,6 +15,15 @@ interface SetupGuide {
   scopes?: string[];
 }
 
+interface AuthConfigField {
+  key: string;
+  label: string;
+  type?: string;
+  required?: boolean;
+  placeholder?: string;
+  description?: string;
+}
+
 interface AuthConfigItem {
   type: string;
   label?: string;
@@ -23,6 +32,7 @@ interface AuthConfigItem {
   docs_url?: string;
   docs_label?: string;
   setup_guide?: SetupGuide;
+  fields?: AuthConfigField[];
 }
 
 interface ConnectModalProps {
@@ -46,11 +56,18 @@ export function ConnectModal({
 }: ConnectModalProps) {
   const [authType, setAuthType] = useState(authTypes[0] || "api_key");
   const [connectionName, setConnectionName] = useState("default");
-  const [apiKey, setApiKey] = useState("");
+  const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
   const [oauthConfigured, setOauthConfigured] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    setAuthType(authTypes[0] || "api_key");
+    setConnectionName("default");
+    setFormValues({});
+    setError(null);
+  }, [service, isOpen]);
 
   React.useEffect(() => {
     if (authTypes.includes("oauth2")) {
@@ -106,8 +123,30 @@ export function ConnectModal({
     setError(null);
 
     try {
-      if (authType !== "no_auth" && !apiKey.trim()) {
-        throw new Error("Please enter your token or API key.");
+      const activeFields = activeConfig?.fields;
+      const values: Record<string, string> = { ...formValues };
+
+      if (authType !== "no_auth") {
+        if (activeFields && activeFields.length > 0) {
+          for (const f of activeFields) {
+            if (f.required !== false && (!values[f.key] || !values[f.key].trim())) {
+              throw new Error(`Please enter ${f.label}.`);
+            }
+          }
+        } else {
+          const singleVal = values["apiKey"] || values["accessToken"] || "";
+          if (!singleVal.trim()) {
+            throw new Error("Please enter your token or API key.");
+          }
+        }
+      }
+
+      // Ensure backward-compatible aliases for single-field consumers
+      if (values.apiKey && !values.accessToken) {
+        values.accessToken = values.apiKey;
+      }
+      if (values.accessToken && !values.apiKey) {
+        values.apiKey = values.accessToken;
       }
 
       await fetchApi(`/api/connections/${service}`, {
@@ -115,10 +154,7 @@ export function ConnectModal({
         body: JSON.stringify({
           authType,
           connectionName: connectionName.trim() || "default",
-          values: {
-            apiKey: apiKey.trim(),
-            accessToken: apiKey.trim(),
-          },
+          values,
         }),
       });
 
@@ -253,24 +289,58 @@ export function ConnectModal({
           </div>
         )}
 
-        {/* Credential Input */}
+        {/* Credential Input(s) */}
         {authType !== "no_auth" && (
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-zinc-700">
-              {activeConfig?.label || (authType === "oauth2" ? "OAuth Access Token" : "API Key or Access Token")}
-            </label>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder={activeConfig?.placeholder || "Enter secret key or token..."}
-              required
-              className="h-9 px-3 text-xs font-mono bg-white border border-zinc-200 rounded-md focus:outline-none focus:ring-1 focus:ring-zinc-400 text-zinc-900 placeholder:text-zinc-400"
-            />
-            {activeConfig?.description && (
-              <p className="text-[11px] text-zinc-400">{activeConfig.description}</p>
+          <>
+            {activeConfig?.fields && activeConfig.fields.length > 0 ? (
+              activeConfig.fields.map((field) => (
+                <div key={field.key} className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-medium text-zinc-700">
+                      {field.label}
+                      {field.required !== false && <span className="text-rose-500 ml-0.5">*</span>}
+                    </label>
+                  </div>
+                  <input
+                    type={field.type === "password" ? "password" : "text"}
+                    value={formValues[field.key] || ""}
+                    onChange={(e) =>
+                      setFormValues((prev) => ({ ...prev, [field.key]: e.target.value }))
+                    }
+                    placeholder={field.placeholder || `Enter ${field.label}...`}
+                    required={field.required !== false}
+                    className="h-9 px-3 text-xs font-mono bg-white border border-zinc-200 rounded-md focus:outline-none focus:ring-1 focus:ring-zinc-400 text-zinc-900 placeholder:text-zinc-400"
+                  />
+                  {field.description && (
+                    <p className="text-[11px] text-zinc-400">{field.description}</p>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-zinc-700">
+                  {activeConfig?.label || (authType === "oauth2" ? "OAuth Access Token" : "API Key or Access Token")}
+                </label>
+                <input
+                  type="password"
+                  value={formValues["apiKey"] || ""}
+                  onChange={(e) =>
+                    setFormValues((prev) => ({
+                      ...prev,
+                      apiKey: e.target.value,
+                      accessToken: e.target.value,
+                    }))
+                  }
+                  placeholder={activeConfig?.placeholder || "Enter secret key or token..."}
+                  required
+                  className="h-9 px-3 text-xs font-mono bg-white border border-zinc-200 rounded-md focus:outline-none focus:ring-1 focus:ring-zinc-400 text-zinc-900 placeholder:text-zinc-400"
+                />
+                {activeConfig?.description && (
+                  <p className="text-[11px] text-zinc-400">{activeConfig.description}</p>
+                )}
+              </div>
             )}
-          </div>
+          </>
         )}
 
         <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-100">
