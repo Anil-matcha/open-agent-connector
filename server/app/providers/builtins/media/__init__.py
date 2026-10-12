@@ -7,6 +7,9 @@ from app.providers.builtins.media.spotify import SpotifyProvider
 from app.providers.builtins.media.reddit import RedditProvider
 from app.providers.builtins.media.dropbox import DropboxProvider
 from app.providers.builtins.media.box import BoxProvider
+from app.providers.builtins.media.wordpress import WordPressProvider
+from app.providers.builtins.media.webflow import WebflowProvider
+from app.providers.builtins.media.ghost import GhostProvider
 
 __all__ = [
     "DiscordProvider",
@@ -15,4 +18,7 @@ __all__ = [
     "RedditProvider",
     "DropboxProvider",
     "BoxProvider",
+    "WordPressProvider",
+    "WebflowProvider",
+    "GhostProvider",
 ]

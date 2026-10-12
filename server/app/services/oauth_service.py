@@ -536,6 +536,36 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "authorize_url": "https://app.pandadoc.com/oauth2/authorize",
         "token_url": "https://api.pandadoc.com/oauth2/access_token",
         "default_scopes": ["read", "write"],
+    },
+    "calendly": {
+        "display_name": "Calendly",
+        "authorize_url": "https://auth.calendly.com/oauth/authorize",
+        "token_url": "https://auth.calendly.com/oauth/token",
+        "default_scopes": ["availability:write", "event_types:read", "scheduled_events:write", "users:read"],
+    },
+    "figma": {
+        "display_name": "Figma",
+        "authorize_url": "https://www.figma.com/oauth",
+        "token_url": "https://api.figma.com/v1/oauth/token",
+        "default_scopes": ["current_user:read", "file_metadata:read", "file_content:read", "file_comments:read", "file_comments:write"],
+    },
+    "wordpress": {
+        "display_name": "WordPress",
+        "authorize_url": "https://public-api.wordpress.com/oauth2/authorize",
+        "token_url": "https://public-api.wordpress.com/oauth2/token",
+        "default_scopes": [],
+    },
+    "webflow": {
+        "display_name": "Webflow",
+        "authorize_url": "https://webflow.com/oauth/authorize",
+        "token_url": "https://api.webflow.com/oauth/access_token",
+        "default_scopes": ["sites:read", "sites:write", "cms:read", "cms:write"],
+    },
+    "helpscout": {
+        "display_name": "Help Scout",
+        "authorize_url": "https://secure.helpscout.net/authentication/authorizeClientApplication",
+        "token_url": "https://api.helpscout.net/v2/oauth2/token",
+        "default_scopes": [],
     }
 }
 
@@ -659,6 +689,22 @@ class OAuthService:
             candidates.extend(["WORKDAY"])
         elif service.lower() == "wrike":
             candidates.extend(["WRIKE"])
+        elif service.lower() == "calendly":
+            candidates.extend(["CALENDLY"])
+        elif service.lower() == "figma":
+            candidates.extend(["FIGMA"])
+        elif service.lower() in ("wordpress", "wp"):
+            candidates.extend(["WORDPRESS", "WP"])
+        elif service.lower() == "webflow":
+            candidates.extend(["WEBFLOW"])
+        elif service.lower() in ("helpscout", "help_scout"):
+            candidates.extend(["HELPSCOUT", "HELP_SCOUT"])
+        elif service.lower() in ("launch_darkly", "launchdarkly"):
+            candidates.extend(["LAUNCH_DARKLY", "LAUNCHDARKLY"])
+        elif service.lower() in ("upstash_redis", "upstash"):
+            candidates.extend(["UPSTASH_REDIS", "UPSTASH"])
+        elif service.lower() in ("activecampaign", "active_campaign"):
+            candidates.extend(["ACTIVECAMPAIGN", "ACTIVE_CAMPAIGN"])
 
         env_client_id = None
         env_client_secret = None

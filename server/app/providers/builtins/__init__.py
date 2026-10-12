@@ -49,6 +49,8 @@ from app.providers.builtins.project_management import (
     PandaDocProvider,
     WrikeProvider,
     SmartsheetProvider,
+    CalendlyProvider,
+    FigmaProvider,
 )
 from app.providers.builtins.developer import (
     GitHubProvider,
@@ -71,6 +73,10 @@ from app.providers.builtins.developer import (
     CircleCIProvider,
     DatadogProvider,
     PagerDutyProvider,
+    LaunchDarklyProvider,
+    NeonProvider,
+    TursoProvider,
+    UpstashRedisProvider,
 )
 from app.providers.builtins.ai import (
     OpenAIProvider,
@@ -100,6 +106,9 @@ from app.providers.builtins.crm import (
     CloseProvider,
     SalesloftProvider,
     GongProvider,
+    HelpScoutProvider,
+    KlaviyoProvider,
+    ActiveCampaignProvider,
 )
 from app.providers.builtins.ecommerce import (
     StripeProvider,
@@ -118,6 +127,9 @@ from app.providers.builtins.media import (
     RedditProvider,
     DropboxProvider,
     BoxProvider,
+    WordPressProvider,
+    WebflowProvider,
+    GhostProvider,
 )
 from app.providers.builtins.utility import (
     CustomHttpProvider,
@@ -128,6 +140,10 @@ from app.providers.builtins.utility import (
     RipplingProvider,
     BambooHRProvider,
     TallyProvider,
+    WorkOSProvider,
+    ClerkProvider,
+    MixpanelProvider,
+    SegmentProvider,
 )
 
 __all__ = [
@@ -179,6 +195,8 @@ __all__ = [
     "PandaDocProvider",
     "WrikeProvider",
     "SmartsheetProvider",
+    "CalendlyProvider",
+    "FigmaProvider",
     # Developer Tools & Cloud Infrastructure
     "GitHubProvider",
     "HackerNewsProvider",
@@ -200,6 +218,10 @@ __all__ = [
     "CircleCIProvider",
     "DatadogProvider",
     "PagerDutyProvider",
+    "LaunchDarklyProvider",
+    "NeonProvider",
+    "TursoProvider",
+    "UpstashRedisProvider",
     # AI & LLM Services
     "OpenAIProvider",
     "AnthropicProvider",
@@ -227,6 +249,9 @@ __all__ = [
     "CloseProvider",
     "SalesloftProvider",
     "GongProvider",
+    "HelpScoutProvider",
+    "KlaviyoProvider",
+    "ActiveCampaignProvider",
     # Payments & E-Commerce
     "StripeProvider",
     "PayPalProvider",
@@ -243,6 +268,9 @@ __all__ = [
     "RedditProvider",
     "DropboxProvider",
     "BoxProvider",
+    "WordPressProvider",
+    "WebflowProvider",
+    "GhostProvider",
     # Utility, Identity, HR & Forms
     "CustomHttpProvider",
     "OktaProvider",
@@ -252,4 +280,8 @@ __all__ = [
     "RipplingProvider",
     "BambooHRProvider",
     "TallyProvider",
+    "WorkOSProvider",
+    "ClerkProvider",
+    "MixpanelProvider",
+    "SegmentProvider",
 ]

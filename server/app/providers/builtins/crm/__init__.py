@@ -12,6 +12,9 @@ from app.providers.builtins.crm.customerio import CustomerIOProvider
 from app.providers.builtins.crm.close import CloseProvider
 from app.providers.builtins.crm.salesloft import SalesloftProvider
 from app.providers.builtins.crm.gong import GongProvider
+from app.providers.builtins.crm.helpscout import HelpScoutProvider
+from app.providers.builtins.crm.klaviyo import KlaviyoProvider
+from app.providers.builtins.crm.activecampaign import ActiveCampaignProvider
 
 __all__ = [
     "HubSpotProvider",
@@ -24,5 +27,8 @@ __all__ = [
     "CloseProvider",
     "SalesloftProvider",
     "GongProvider",
+    "HelpScoutProvider",
+    "KlaviyoProvider",
+    "ActiveCampaignProvider",
 ]
 

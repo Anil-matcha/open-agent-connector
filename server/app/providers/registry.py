@@ -65,6 +65,10 @@ from app.providers.builtins.developer import (
     CircleCIProvider,
     DatadogProvider,
     PagerDutyProvider,
+    LaunchDarklyProvider,
+    NeonProvider,
+    TursoProvider,
+    UpstashRedisProvider,
 )
 
 # Project Management & Issue Tracking Providers
@@ -83,6 +87,8 @@ from app.providers.builtins.project_management import (
     PandaDocProvider,
     WrikeProvider,
     SmartsheetProvider,
+    CalendlyProvider,
+    FigmaProvider,
 )
 
 # AI & LLM Services Providers
@@ -116,6 +122,9 @@ from app.providers.builtins.crm import (
     CloseProvider,
     SalesloftProvider,
     GongProvider,
+    HelpScoutProvider,
+    KlaviyoProvider,
+    ActiveCampaignProvider,
 )
 
 # Payments & E-Commerce Providers
@@ -138,6 +147,9 @@ from app.providers.builtins.media import (
     RedditProvider,
     DropboxProvider,
     BoxProvider,
+    WordPressProvider,
+    WebflowProvider,
+    GhostProvider,
 )
 
 # Utility Providers
@@ -150,6 +162,10 @@ from app.providers.builtins.utility import (
     RipplingProvider,
     BambooHRProvider,
     TallyProvider,
+    WorkOSProvider,
+    ClerkProvider,
+    MixpanelProvider,
+    SegmentProvider,
 )
 
 class ProviderRegistry:
@@ -179,6 +195,10 @@ class ProviderRegistry:
         self.register(CircleCIProvider())
         self.register(DatadogProvider())
         self.register(PagerDutyProvider())
+        self.register(LaunchDarklyProvider())
+        self.register(NeonProvider())
+        self.register(TursoProvider())
+        self.register(UpstashRedisProvider())
 
         # 2. Project Management & Issue Tracking
         self.register(NotionProvider())
@@ -195,6 +215,8 @@ class ProviderRegistry:
         self.register(PandaDocProvider())
         self.register(WrikeProvider())
         self.register(SmartsheetProvider())
+        self.register(CalendlyProvider())
+        self.register(FigmaProvider())
 
         # 3. Communication & Social
         self.register(SlackProvider())
@@ -260,6 +282,9 @@ class ProviderRegistry:
         self.register(CloseProvider())
         self.register(SalesloftProvider())
         self.register(GongProvider())
+        self.register(HelpScoutProvider())
+        self.register(KlaviyoProvider())
+        self.register(ActiveCampaignProvider())
 
         # 8. Payments & E-Commerce
         self.register(StripeProvider())
@@ -278,6 +303,9 @@ class ProviderRegistry:
         self.register(RedditProvider())
         self.register(DropboxProvider())
         self.register(BoxProvider())
+        self.register(WordPressProvider())
+        self.register(WebflowProvider())
+        self.register(GhostProvider())
 
         # 10. Utilities & Forms / Identity / HR
         self.register(CustomHttpProvider())
@@ -288,6 +316,10 @@ class ProviderRegistry:
         self.register(RipplingProvider())
         self.register(BambooHRProvider())
         self.register(TallyProvider())
+        self.register(WorkOSProvider())
+        self.register(ClerkProvider())
+        self.register(MixpanelProvider())
+        self.register(SegmentProvider())
 
     def register(self, provider: Provider):
         self._providers[provider.service] = provider

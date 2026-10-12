@@ -6,6 +6,10 @@ from app.providers.builtins.utility.typeform import TypeformProvider
 from app.providers.builtins.utility.rippling import RipplingProvider
 from app.providers.builtins.utility.bamboohr import BambooHRProvider
 from app.providers.builtins.utility.tally import TallyProvider
+from app.providers.builtins.utility.workos import WorkOSProvider
+from app.providers.builtins.utility.clerk import ClerkProvider
+from app.providers.builtins.utility.mixpanel import MixpanelProvider
+from app.providers.builtins.utility.segment import SegmentProvider
 
 __all__ = [
     "CustomHttpProvider",
@@ -16,5 +20,9 @@ __all__ = [
     "RipplingProvider",
     "BambooHRProvider",
     "TallyProvider",
+    "WorkOSProvider",
+    "ClerkProvider",
+    "MixpanelProvider",
+    "SegmentProvider",
 ]
 

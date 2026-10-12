@@ -18,6 +18,10 @@ from app.providers.builtins.developer.grafana import GrafanaProvider
 from app.providers.builtins.developer.circleci import CircleCIProvider
 from app.providers.builtins.developer.datadog import DatadogProvider
 from app.providers.builtins.developer.pagerduty import PagerDutyProvider
+from app.providers.builtins.developer.launch_darkly import LaunchDarklyProvider
+from app.providers.builtins.developer.neon import NeonProvider
+from app.providers.builtins.developer.turso import TursoProvider
+from app.providers.builtins.developer.upstash_redis import UpstashRedisProvider
 
 __all__ = [
     "GitHubProvider",
@@ -40,4 +44,8 @@ __all__ = [
     "CircleCIProvider",
     "DatadogProvider",
     "PagerDutyProvider",
+    "LaunchDarklyProvider",
+    "NeonProvider",
+    "TursoProvider",
+    "UpstashRedisProvider",
 ]

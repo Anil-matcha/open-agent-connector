@@ -16,6 +16,8 @@ from app.providers.builtins.project_management.todoist import TodoistProvider
 from app.providers.builtins.project_management.pandadoc import PandaDocProvider
 from app.providers.builtins.project_management.wrike import WrikeProvider
 from app.providers.builtins.project_management.smartsheet import SmartsheetProvider
+from app.providers.builtins.project_management.calendly import CalendlyProvider
+from app.providers.builtins.project_management.figma import FigmaProvider
 
 __all__ = [
     "NotionProvider",
@@ -32,5 +34,7 @@ __all__ = [
     "PandaDocProvider",
     "WrikeProvider",
     "SmartsheetProvider",
+    "CalendlyProvider",
+    "FigmaProvider",
 ]
 
