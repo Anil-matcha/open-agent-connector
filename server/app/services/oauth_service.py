@@ -381,6 +381,66 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "authorize_url": "https://coda.io/oauth/authorize",
         "token_url": "https://coda.io/oauth/token",
         "default_scopes": [],
+    },
+    "discord": {
+        "display_name": "Discord",
+        "authorize_url": "https://discord.com/oauth2/authorize",
+        "token_url": "https://discord.com/api/oauth2/token",
+        "default_scopes": [
+            "identify",
+            "email",
+            "guilds",
+            "guilds.members.read",
+            "connections",
+            "applications.entitlements",
+            "role_connections.write",
+            "openid"
+        ],
+    },
+    "linkedin": {
+        "display_name": "LinkedIn",
+        "authorize_url": "https://www.linkedin.com/oauth/v2/authorization",
+        "token_url": "https://www.linkedin.com/oauth/v2/accessToken",
+        "default_scopes": ["openid", "profile", "email", "w_member_social"],
+    },
+    "spotify": {
+        "display_name": "Spotify",
+        "authorize_url": "https://accounts.spotify.com/authorize",
+        "token_url": "https://accounts.spotify.com/api/token",
+        "default_scopes": [
+            "user-read-private",
+            "user-read-email",
+            "user-read-playback-state",
+            "user-modify-playback-state",
+            "playlist-read-private",
+            "playlist-modify-public"
+        ],
+    },
+    "reddit": {
+        "display_name": "Reddit",
+        "authorize_url": "https://www.reddit.com/api/v1/authorize",
+        "token_url": "https://www.reddit.com/api/v1/access_token",
+        "default_scopes": ["identity", "read", "submit", "edit"],
+    },
+    "dropbox": {
+        "display_name": "Dropbox",
+        "authorize_url": "https://www.dropbox.com/oauth2/authorize",
+        "token_url": "https://api.dropboxapi.com/oauth2/token",
+        "default_scopes": [
+            "account_info.read",
+            "files.metadata.read",
+            "files.metadata.write",
+            "files.content.read",
+            "files.content.write",
+            "sharing.read",
+            "sharing.write"
+        ],
+    },
+    "box": {
+        "display_name": "Box",
+        "authorize_url": "https://account.box.com/api/oauth2/authorize",
+        "token_url": "https://api.box.com/oauth2/token",
+        "default_scopes": ["root_readwrite", "manage_webhook"],
     }
 }
 
@@ -474,6 +534,18 @@ class OAuthService:
             candidates.extend(["SQUARE"])
         elif service.lower() == "coda":
             candidates.extend(["CODA"])
+        elif service.lower() == "discord":
+            candidates.extend(["DISCORD"])
+        elif service.lower() == "linkedin":
+            candidates.extend(["LINKEDIN"])
+        elif service.lower() == "spotify":
+            candidates.extend(["SPOTIFY"])
+        elif service.lower() == "reddit":
+            candidates.extend(["REDDIT"])
+        elif service.lower() == "dropbox":
+            candidates.extend(["DROPBOX"])
+        elif service.lower() == "box":
+            candidates.extend(["BOX"])
 
         env_client_id = None
         env_client_secret = None

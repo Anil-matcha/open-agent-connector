@@ -93,6 +93,16 @@ from app.providers.builtins.ecommerce import (
     SquareProvider,
 )
 
+# Social, Media & Storage Providers
+from app.providers.builtins.media import (
+    DiscordProvider,
+    LinkedInProvider,
+    SpotifyProvider,
+    RedditProvider,
+    DropboxProvider,
+    BoxProvider,
+)
+
 # Utility Providers
 from app.providers.builtins.utility import (
     CustomHttpProvider,
@@ -180,7 +190,15 @@ class ProviderRegistry:
         self.register(LemonSqueezyProvider())
         self.register(SquareProvider())
 
-        # 9. Utilities
+        # 9. Social, Media & Storage
+        self.register(DiscordProvider())
+        self.register(LinkedInProvider())
+        self.register(SpotifyProvider())
+        self.register(RedditProvider())
+        self.register(DropboxProvider())
+        self.register(BoxProvider())
+
+        # 10. Utilities
         self.register(CustomHttpProvider())
 
     def register(self, provider: Provider):

@@ -74,6 +74,14 @@ from app.providers.builtins.ecommerce import (
     LemonSqueezyProvider,
     SquareProvider,
 )
+from app.providers.builtins.media import (
+    DiscordProvider,
+    LinkedInProvider,
+    SpotifyProvider,
+    RedditProvider,
+    DropboxProvider,
+    BoxProvider,
+)
 from app.providers.builtins.utility import (
     CustomHttpProvider,
 )
@@ -147,6 +155,13 @@ __all__ = [
     "ShopifyProvider",
     "LemonSqueezyProvider",
     "SquareProvider",
+    # Social, Media & Storage
+    "DiscordProvider",
+    "LinkedInProvider",
+    "SpotifyProvider",
+    "RedditProvider",
+    "DropboxProvider",
+    "BoxProvider",
     # Utility
     "CustomHttpProvider",
 ]
