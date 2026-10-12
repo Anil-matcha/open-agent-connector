@@ -14,6 +14,7 @@ from app.providers.builtins.google import (
     GoogleFormsProvider,
     GooglePhotosProvider,
     YouTubeProvider,
+    GoogleAnalyticsProvider,
 )
 
 # Microsoft Ecosystem Providers
@@ -89,6 +90,10 @@ from app.providers.builtins.developer import (
     ReadMeProvider,
     GoogleBigQueryProvider,
     AppStoreServerProvider,
+    DatabricksProvider,
+    MetabaseProvider,
+    AxiomProvider,
+    GrafanaCloudProvider,
 )
 
 # Project Management & Issue Tracking Providers
@@ -161,6 +166,11 @@ from app.providers.builtins.crm import (
     SellerspriteMcpProvider,
     TwitterapiIoProvider,
     ApolloProvider,
+    FathomProvider,
+    UmamiProvider,
+    DataboxProvider,
+    AmplitudeProvider,
+    PlausibleAnalyticsProvider,
 )
 
 # Payments & E-Commerce Providers
@@ -180,6 +190,8 @@ from app.providers.builtins.ecommerce import (
     RecurlyProvider,
     ChargebeeProvider,
     WiseProvider,
+    XiaohongshuStoreProvider,
+    WeixinStoreProvider,
 )
 
 # Social, Media & Storage Providers
@@ -193,6 +205,10 @@ from app.providers.builtins.media import (
     WordPressProvider,
     WebflowProvider,
     GhostProvider,
+    PaperlessNgxProvider,
+    AmaraProvider,
+    VimeoProvider,
+    UnsplashProvider,
 )
 
 # Utility Providers
@@ -209,6 +225,8 @@ from app.providers.builtins.utility import (
     ClerkProvider,
     MixpanelProvider,
     SegmentProvider,
+    OuraProvider,
+    StravaProvider,
 )
 
 class ProviderRegistry:
@@ -253,6 +271,10 @@ class ProviderRegistry:
         self.register(ReadMeProvider())
         self.register(GoogleBigQueryProvider())
         self.register(AppStoreServerProvider())
+        self.register(DatabricksProvider())
+        self.register(MetabaseProvider())
+        self.register(AxiomProvider())
+        self.register(GrafanaCloudProvider())
 
         # 2. Project Management & Issue Tracking
         self.register(NotionProvider())
@@ -310,6 +332,7 @@ class ProviderRegistry:
         self.register(GoogleFormsProvider())
         self.register(GooglePhotosProvider())
         self.register(YouTubeProvider())
+        self.register(GoogleAnalyticsProvider())
 
         # 5. Microsoft Ecosystem
         self.register(OutlookProvider())
@@ -364,6 +387,11 @@ class ProviderRegistry:
         self.register(SellerspriteMcpProvider())
         self.register(TwitterapiIoProvider())
         self.register(ApolloProvider())
+        self.register(FathomProvider())
+        self.register(UmamiProvider())
+        self.register(DataboxProvider())
+        self.register(AmplitudeProvider())
+        self.register(PlausibleAnalyticsProvider())
 
         # 8. Payments & E-Commerce
         self.register(StripeProvider())
@@ -381,6 +409,8 @@ class ProviderRegistry:
         self.register(RecurlyProvider())
         self.register(ChargebeeProvider())
         self.register(WiseProvider())
+        self.register(XiaohongshuStoreProvider())
+        self.register(WeixinStoreProvider())
 
         # 9. Social, Media & Storage
         self.register(DiscordProvider())
@@ -392,6 +422,10 @@ class ProviderRegistry:
         self.register(WordPressProvider())
         self.register(WebflowProvider())
         self.register(GhostProvider())
+        self.register(PaperlessNgxProvider())
+        self.register(AmaraProvider())
+        self.register(VimeoProvider())
+        self.register(UnsplashProvider())
 
         # 10. Utilities & Forms / Identity / HR
         self.register(CustomHttpProvider())
@@ -406,6 +440,8 @@ class ProviderRegistry:
         self.register(ClerkProvider())
         self.register(MixpanelProvider())
         self.register(SegmentProvider())
+        self.register(OuraProvider())
+        self.register(StravaProvider())
 
     def register(self, provider: Provider):
         self._providers[provider.service] = provider

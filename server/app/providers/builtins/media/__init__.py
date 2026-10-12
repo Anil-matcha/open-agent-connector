@@ -10,6 +10,10 @@ from app.providers.builtins.media.box import BoxProvider
 from app.providers.builtins.media.wordpress import WordPressProvider
 from app.providers.builtins.media.webflow import WebflowProvider
 from app.providers.builtins.media.ghost import GhostProvider
+from app.providers.builtins.media.paperless_ngx import PaperlessNgxProvider
+from app.providers.builtins.media.amara import AmaraProvider
+from app.providers.builtins.media.vimeo import VimeoProvider
+from app.providers.builtins.media.unsplash import UnsplashProvider
 
 __all__ = [
     "DiscordProvider",
@@ -21,4 +25,8 @@ __all__ = [
     "WordPressProvider",
     "WebflowProvider",
     "GhostProvider",
+    "PaperlessNgxProvider",
+    "AmaraProvider",
+    "VimeoProvider",
+    "UnsplashProvider",
 ]

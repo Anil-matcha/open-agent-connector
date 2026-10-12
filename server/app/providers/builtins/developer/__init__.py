@@ -33,7 +33,10 @@ from app.providers.builtins.developer.oracle_cloud import OracleCloudProvider
 from app.providers.builtins.developer.readme import ReadMeProvider
 from app.providers.builtins.developer.google_bigquery import GoogleBigQueryProvider
 from app.providers.builtins.developer.app_store_server import AppStoreServerProvider
-
+from app.providers.builtins.developer.databricks import DatabricksProvider
+from app.providers.builtins.developer.metabase import MetabaseProvider
+from app.providers.builtins.developer.axiom import AxiomProvider
+from app.providers.builtins.developer.grafana_cloud import GrafanaCloudProvider
 
 __all__ = [
     "GitHubProvider",
@@ -71,4 +74,8 @@ __all__ = [
     "ReadMeProvider",
     "GoogleBigQueryProvider",
     "AppStoreServerProvider",
+    "DatabricksProvider",
+    "MetabaseProvider",
+    "AxiomProvider",
+    "GrafanaCloudProvider",
 ]

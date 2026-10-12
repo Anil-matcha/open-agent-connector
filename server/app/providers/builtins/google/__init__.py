@@ -9,6 +9,7 @@ from app.providers.builtins.google.google_chat import GoogleChatProvider
 from app.providers.builtins.google.google_forms import GoogleFormsProvider
 from app.providers.builtins.google.google_photos import GooglePhotosProvider
 from app.providers.builtins.google.youtube import YouTubeProvider
+from app.providers.builtins.google.google_analytics import GoogleAnalyticsProvider
 
 __all__ = [
     "GmailProvider",
@@ -22,4 +23,5 @@ __all__ = [
     "GoogleFormsProvider",
     "GooglePhotosProvider",
     "YouTubeProvider",
+    "GoogleAnalyticsProvider",
 ]

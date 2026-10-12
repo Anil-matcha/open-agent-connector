@@ -1,6 +1,6 @@
 """
 Payments & E-Commerce Provider Suite.
-Provides integrations for Stripe, PayPal, Shopify, Lemon Squeezy, and Square.
+Provides integrations for Stripe, PayPal, Shopify, Lemon Squeezy, Square, and eCommerce platforms.
 """
 from app.providers.builtins.ecommerce.stripe import StripeProvider
 from app.providers.builtins.ecommerce.paypal import PayPalProvider
@@ -17,7 +17,8 @@ from app.providers.builtins.ecommerce.financial_modeling_prep import FinancialMo
 from app.providers.builtins.ecommerce.recurly import RecurlyProvider
 from app.providers.builtins.ecommerce.chargebee import ChargebeeProvider
 from app.providers.builtins.ecommerce.wise import WiseProvider
-
+from app.providers.builtins.ecommerce.xiaohongshu_store import XiaohongshuStoreProvider
+from app.providers.builtins.ecommerce.weixin_store import WeixinStoreProvider
 
 __all__ = [
     "StripeProvider",
@@ -35,5 +36,6 @@ __all__ = [
     "RecurlyProvider",
     "ChargebeeProvider",
     "WiseProvider",
+    "XiaohongshuStoreProvider",
+    "WeixinStoreProvider",
 ]
-

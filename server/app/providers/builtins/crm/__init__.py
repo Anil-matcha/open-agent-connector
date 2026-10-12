@@ -1,6 +1,6 @@
 """
 CRM, Helpdesk & Marketing Provider Suite.
-Provides integrations for HubSpot, Pipedrive, Zendesk, Intercom, Mailchimp, Brevo, and Customer.io.
+Provides integrations for HubSpot, Pipedrive, Zendesk, Intercom, Mailchimp, Brevo, Customer.io, and analytics services.
 """
 from app.providers.builtins.crm.hubspot import HubSpotProvider
 from app.providers.builtins.crm.pipedrive import PipedriveProvider
@@ -22,6 +22,11 @@ from app.providers.builtins.crm.patsnap_mcp import PatsnapMcpProvider
 from app.providers.builtins.crm.sellersprite_mcp import SellerspriteMcpProvider
 from app.providers.builtins.crm.twitterapi_io import TwitterapiIoProvider
 from app.providers.builtins.crm.apollo import ApolloProvider
+from app.providers.builtins.crm.fathom import FathomProvider
+from app.providers.builtins.crm.umami import UmamiProvider
+from app.providers.builtins.crm.databox import DataboxProvider
+from app.providers.builtins.crm.amplitude import AmplitudeProvider
+from app.providers.builtins.crm.plausible_analytics import PlausibleAnalyticsProvider
 
 __all__ = [
     "HubSpotProvider",
@@ -44,4 +49,9 @@ __all__ = [
     "SellerspriteMcpProvider",
     "TwitterapiIoProvider",
     "ApolloProvider",
+    "FathomProvider",
+    "UmamiProvider",
+    "DataboxProvider",
+    "AmplitudeProvider",
+    "PlausibleAnalyticsProvider",
 ]

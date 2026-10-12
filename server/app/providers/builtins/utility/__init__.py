@@ -10,6 +10,8 @@ from app.providers.builtins.utility.workos import WorkOSProvider
 from app.providers.builtins.utility.clerk import ClerkProvider
 from app.providers.builtins.utility.mixpanel import MixpanelProvider
 from app.providers.builtins.utility.segment import SegmentProvider
+from app.providers.builtins.utility.oura import OuraProvider
+from app.providers.builtins.utility.strava import StravaProvider
 
 __all__ = [
     "CustomHttpProvider",
@@ -24,5 +26,6 @@ __all__ = [
     "ClerkProvider",
     "MixpanelProvider",
     "SegmentProvider",
+    "OuraProvider",
+    "StravaProvider",
 ]
-
