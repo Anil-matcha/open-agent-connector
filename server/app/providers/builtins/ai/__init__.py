@@ -23,6 +23,13 @@ from app.providers.builtins.ai.fusion_api import FusionApiProvider
 from app.providers.builtins.ai.pixellab import PixelLabProvider
 from app.providers.builtins.ai.vapi import VapiProvider
 from app.providers.builtins.ai.voiceflow import VoiceflowProvider
+from app.providers.builtins.ai.huggingface import HuggingfaceProvider
+from app.providers.builtins.ai.chatbotkit import ChatbotkitProvider
+from app.providers.builtins.ai.anthropic_admin import AnthropicAdminProvider
+from app.providers.builtins.ai.jigsawstack import JigsawstackProvider
+from app.providers.builtins.ai.jimeng_ai import JimengAiProvider
+from app.providers.builtins.ai.sunoapi import SunoapiProvider
+from app.providers.builtins.ai.qianfan import QianfanProvider
 
 
 __all__ = [
@@ -46,4 +53,11 @@ __all__ = [
     "PixelLabProvider",
     "VapiProvider",
     "VoiceflowProvider",
+    "HuggingfaceProvider",
+    "ChatbotkitProvider",
+    "AnthropicAdminProvider",
+    "JigsawstackProvider",
+    "JimengAiProvider",
+    "SunoapiProvider",
+    "QianfanProvider",
 ]

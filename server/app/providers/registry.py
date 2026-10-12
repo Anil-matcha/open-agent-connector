@@ -94,6 +94,13 @@ from app.providers.builtins.developer import (
     MetabaseProvider,
     AxiomProvider,
     GrafanaCloudProvider,
+    ElasticsearchProvider,
+    NocodbProvider,
+    ConvexProvider,
+    PlanetscaleProvider,
+    RenderProvider,
+    VultrProvider,
+    AlgoliaProvider,
 )
 
 # Project Management & Issue Tracking Providers
@@ -142,6 +149,13 @@ from app.providers.builtins.ai import (
     PixelLabProvider,
     VapiProvider,
     VoiceflowProvider,
+    HuggingfaceProvider,
+    ChatbotkitProvider,
+    AnthropicAdminProvider,
+    JigsawstackProvider,
+    JimengAiProvider,
+    SunoapiProvider,
+    QianfanProvider,
 )
 
 # CRM, Helpdesk & Marketing Providers
@@ -275,6 +289,13 @@ class ProviderRegistry:
         self.register(MetabaseProvider())
         self.register(AxiomProvider())
         self.register(GrafanaCloudProvider())
+        self.register(ElasticsearchProvider())
+        self.register(NocodbProvider())
+        self.register(ConvexProvider())
+        self.register(PlanetscaleProvider())
+        self.register(RenderProvider())
+        self.register(VultrProvider())
+        self.register(AlgoliaProvider())
 
         # 2. Project Management & Issue Tracking
         self.register(NotionProvider())
@@ -365,6 +386,13 @@ class ProviderRegistry:
         self.register(PixelLabProvider())
         self.register(VapiProvider())
         self.register(VoiceflowProvider())
+        self.register(HuggingfaceProvider())
+        self.register(ChatbotkitProvider())
+        self.register(AnthropicAdminProvider())
+        self.register(JigsawstackProvider())
+        self.register(JimengAiProvider())
+        self.register(SunoapiProvider())
+        self.register(QianfanProvider())
 
         # 7. CRM, Helpdesk & Marketing
         self.register(HubSpotProvider())

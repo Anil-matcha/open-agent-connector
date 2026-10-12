@@ -37,6 +37,13 @@ from app.providers.builtins.developer.databricks import DatabricksProvider
 from app.providers.builtins.developer.metabase import MetabaseProvider
 from app.providers.builtins.developer.axiom import AxiomProvider
 from app.providers.builtins.developer.grafana_cloud import GrafanaCloudProvider
+from app.providers.builtins.developer.elasticsearch import ElasticsearchProvider
+from app.providers.builtins.developer.nocodb import NocodbProvider
+from app.providers.builtins.developer.convex import ConvexProvider
+from app.providers.builtins.developer.planetscale import PlanetscaleProvider
+from app.providers.builtins.developer.render import RenderProvider
+from app.providers.builtins.developer.vultr import VultrProvider
+from app.providers.builtins.developer.algolia import AlgoliaProvider
 
 __all__ = [
     "GitHubProvider",
@@ -78,4 +85,11 @@ __all__ = [
     "MetabaseProvider",
     "AxiomProvider",
     "GrafanaCloudProvider",
+    "ElasticsearchProvider",
+    "NocodbProvider",
+    "ConvexProvider",
+    "PlanetscaleProvider",
+    "RenderProvider",
+    "VultrProvider",
+    "AlgoliaProvider",
 ]
