@@ -48,6 +48,16 @@ from app.providers.builtins.developer import (
     AWSS3Provider,
     DockerHubProvider,
     DigitalOceanProvider,
+    PostmanProvider,
+    TailscaleProvider,
+    PostHogProvider,
+    VercelProvider,
+    NewRelicProvider,
+    SentryProvider,
+    GrafanaProvider,
+    CircleCIProvider,
+    DatadogProvider,
+    PagerDutyProvider,
 )
 
 # Project Management & Issue Tracking Providers
@@ -71,6 +81,14 @@ from app.providers.builtins.ai import (
     CohereProvider,
     ElevenLabsProvider,
     FirecrawlProvider,
+    MistralAIProvider,
+    V0Provider,
+    PineconeProvider,
+    ReplicateProvider,
+    QdrantProvider,
+    WeaviateProvider,
+    DeepSeekProvider,
+    TogetherAIProvider,
 )
 
 # CRM, Helpdesk & Marketing Providers
@@ -125,6 +143,16 @@ class ProviderRegistry:
         self.register(AWSS3Provider())
         self.register(DockerHubProvider())
         self.register(DigitalOceanProvider())
+        self.register(PostmanProvider())
+        self.register(TailscaleProvider())
+        self.register(PostHogProvider())
+        self.register(VercelProvider())
+        self.register(NewRelicProvider())
+        self.register(SentryProvider())
+        self.register(GrafanaProvider())
+        self.register(CircleCIProvider())
+        self.register(DatadogProvider())
+        self.register(PagerDutyProvider())
 
         # 2. Project Management & Issue Tracking
         self.register(NotionProvider())
@@ -173,6 +201,14 @@ class ProviderRegistry:
         self.register(CohereProvider())
         self.register(ElevenLabsProvider())
         self.register(FirecrawlProvider())
+        self.register(MistralAIProvider())
+        self.register(V0Provider())
+        self.register(PineconeProvider())
+        self.register(ReplicateProvider())
+        self.register(QdrantProvider())
+        self.register(WeaviateProvider())
+        self.register(DeepSeekProvider())
+        self.register(TogetherAIProvider())
 
         # 7. CRM, Helpdesk & Marketing
         self.register(HubSpotProvider())

@@ -1,6 +1,7 @@
 """
 AI & LLM Services Provider Suite.
-Provides integrations for OpenAI, Anthropic, Perplexity, GroqCloud, Cohere, ElevenLabs, and Firecrawl.
+Provides integrations for OpenAI, Anthropic, Perplexity, GroqCloud, Cohere, ElevenLabs, Firecrawl,
+Mistral AI, v0, Pinecone, Replicate, Qdrant Cloud, Weaviate, DeepSeek, and Together AI.
 """
 from app.providers.builtins.ai.openai import OpenAIProvider
 from app.providers.builtins.ai.anthropic import AnthropicProvider
@@ -9,6 +10,14 @@ from app.providers.builtins.ai.groqcloud import GroqCloudProvider
 from app.providers.builtins.ai.cohere import CohereProvider
 from app.providers.builtins.ai.elevenlabs import ElevenLabsProvider
 from app.providers.builtins.ai.firecrawl import FirecrawlProvider
+from app.providers.builtins.ai.mistral_ai import MistralAIProvider
+from app.providers.builtins.ai.v0 import V0Provider
+from app.providers.builtins.ai.pinecone import PineconeProvider
+from app.providers.builtins.ai.replicate import ReplicateProvider
+from app.providers.builtins.ai.qdrant import QdrantProvider
+from app.providers.builtins.ai.weaviate import WeaviateProvider
+from app.providers.builtins.ai.deepseek import DeepSeekProvider
+from app.providers.builtins.ai.together_ai import TogetherAIProvider
 
 __all__ = [
     "OpenAIProvider",
@@ -18,4 +27,12 @@ __all__ = [
     "CohereProvider",
     "ElevenLabsProvider",
     "FirecrawlProvider",
+    "MistralAIProvider",
+    "V0Provider",
+    "PineconeProvider",
+    "ReplicateProvider",
+    "QdrantProvider",
+    "WeaviateProvider",
+    "DeepSeekProvider",
+    "TogetherAIProvider",
 ]

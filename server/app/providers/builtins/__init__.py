@@ -27,6 +27,16 @@ from app.providers.builtins.communication import (
     TelegramProvider,
     TwitterProvider,
 )
+from app.providers.builtins.project_management import (
+    NotionProvider,
+    LinearProvider,
+    JiraProvider,
+    AsanaProvider,
+    ClickUpProvider,
+    MondayProvider,
+    AirtableProvider,
+    CodaProvider,
+)
 from app.providers.builtins.developer import (
     GitHubProvider,
     HackerNewsProvider,
@@ -38,16 +48,16 @@ from app.providers.builtins.developer import (
     AWSS3Provider,
     DockerHubProvider,
     DigitalOceanProvider,
-)
-from app.providers.builtins.project_management import (
-    NotionProvider,
-    LinearProvider,
-    JiraProvider,
-    AsanaProvider,
-    ClickUpProvider,
-    MondayProvider,
-    AirtableProvider,
-    CodaProvider,
+    PostmanProvider,
+    TailscaleProvider,
+    PostHogProvider,
+    VercelProvider,
+    NewRelicProvider,
+    SentryProvider,
+    GrafanaProvider,
+    CircleCIProvider,
+    DatadogProvider,
+    PagerDutyProvider,
 )
 from app.providers.builtins.ai import (
     OpenAIProvider,
@@ -57,6 +67,14 @@ from app.providers.builtins.ai import (
     CohereProvider,
     ElevenLabsProvider,
     FirecrawlProvider,
+    MistralAIProvider,
+    V0Provider,
+    PineconeProvider,
+    ReplicateProvider,
+    QdrantProvider,
+    WeaviateProvider,
+    DeepSeekProvider,
+    TogetherAIProvider,
 )
 from app.providers.builtins.crm import (
     HubSpotProvider,
@@ -108,6 +126,11 @@ __all__ = [
     "ExcelProvider",
     "MicrosoftClarityProvider",
     "MicrosoftTextTranslateProvider",
+    # Communication & Social
+    "SlackProvider",
+    "WhatsAppProvider",
+    "TelegramProvider",
+    "TwitterProvider",
     # Project Management & Issue Tracking
     "NotionProvider",
     "LinearProvider",
@@ -117,11 +140,6 @@ __all__ = [
     "MondayProvider",
     "AirtableProvider",
     "CodaProvider",
-    # Communication & Social
-    "SlackProvider",
-    "WhatsAppProvider",
-    "TelegramProvider",
-    "TwitterProvider",
     # Developer Tools & Cloud Infrastructure
     "GitHubProvider",
     "HackerNewsProvider",
@@ -133,6 +151,16 @@ __all__ = [
     "AWSS3Provider",
     "DockerHubProvider",
     "DigitalOceanProvider",
+    "PostmanProvider",
+    "TailscaleProvider",
+    "PostHogProvider",
+    "VercelProvider",
+    "NewRelicProvider",
+    "SentryProvider",
+    "GrafanaProvider",
+    "CircleCIProvider",
+    "DatadogProvider",
+    "PagerDutyProvider",
     # AI & LLM Services
     "OpenAIProvider",
     "AnthropicProvider",
@@ -141,6 +169,14 @@ __all__ = [
     "CohereProvider",
     "ElevenLabsProvider",
     "FirecrawlProvider",
+    "MistralAIProvider",
+    "V0Provider",
+    "PineconeProvider",
+    "ReplicateProvider",
+    "QdrantProvider",
+    "WeaviateProvider",
+    "DeepSeekProvider",
+    "TogetherAIProvider",
     # CRM, Helpdesk & Marketing
     "HubSpotProvider",
     "PipedriveProvider",

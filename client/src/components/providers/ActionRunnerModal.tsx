@@ -28,10 +28,46 @@ interface ActionRunnerModalProps {
     name: string;
     description: string;
     service?: string;
-    inputSchema: any;
+    inputSchema?: any;
+    input_schema?: any;
     outputSchema?: any;
+    output_schema?: any;
     requiredScopes?: string[];
+    required_scopes?: string[];
   } | null;
+}
+
+function generateSampleObject(schema: any): any {
+  if (!schema || typeof schema !== "object") return {};
+  if (schema.default !== undefined) return schema.default;
+  if (schema.type === "array") {
+    if (schema.items) return [generateSampleObject(schema.items)];
+    return [];
+  }
+  if (schema.type === "object" || schema.properties) {
+    const res: Record<string, any> = {};
+    const props = schema.properties || {};
+    for (const [k, v] of Object.entries(props)) {
+      const p = v as any;
+      if (p.default !== undefined) {
+        res[k] = p.default;
+      } else if (p.type === "string") {
+        res[k] = p.enum ? p.enum[0] : (k === "name" ? "Sample name" : "");
+      } else if (p.type === "number" || p.type === "integer") {
+        res[k] = 1;
+      } else if (p.type === "boolean") {
+        res[k] = false;
+      } else if (p.type === "object") {
+        res[k] = generateSampleObject(p);
+      } else if (p.type === "array") {
+        res[k] = [];
+      } else {
+        res[k] = "";
+      }
+    }
+    return res;
+  }
+  return "";
 }
 
 export function ActionRunnerModal({
@@ -55,10 +91,17 @@ export function ActionRunnerModal({
   useEffect(() => {
     if (action) {
       const defaultInputs: Record<string, any> = {};
-      const props = action.inputSchema?.properties || {};
+      const inSchema = action.inputSchema || (action as any).input_schema || {};
+      const props = inSchema.properties || {};
       Object.entries(props).forEach(([k, v]: [string, any]) => {
         if (v.default !== undefined) {
-          defaultInputs[k] = v.default;
+          defaultInputs[k] = typeof v.default === "object" ? JSON.stringify(v.default, null, 2) : v.default;
+        } else if (v.type === "object") {
+          const sample = generateSampleObject(v);
+          defaultInputs[k] = Object.keys(sample).length > 0 ? JSON.stringify(sample, null, 2) : "{}";
+        } else if (v.type === "array" && v.items) {
+          const sample = [generateSampleObject(v.items)];
+          defaultInputs[k] = JSON.stringify(sample, null, 2);
         }
       });
       setInputs(defaultInputs);
@@ -102,8 +145,9 @@ export function ActionRunnerModal({
 
   if (!action) return null;
 
-  const schemaProperties = action.inputSchema?.properties || {};
-  const requiredFields = action.inputSchema?.required || [];
+  const inSchema = action.inputSchema || (action as any).input_schema || {};
+  const schemaProperties = inSchema.properties || {};
+  const requiredFields = inSchema.required || [];
 
   const connectionOptions = connections.map((c) => ({
     value: c.connectionName,
@@ -129,9 +173,24 @@ export function ActionRunnerModal({
 
     try {
       const cleanedInput: Record<string, any> = {};
-      Object.entries(inputs).forEach(([k, v]) => {
-        if (v !== undefined && v !== "") cleanedInput[k] = v;
-      });
+      for (const [k, v] of Object.entries(inputs)) {
+        if (v !== undefined && v !== "") {
+          const propDef = schemaProperties[k];
+          if (typeof v === "string" && (propDef?.type === "object" || propDef?.type === "array" || v.trim().startsWith("{") || v.trim().startsWith("["))) {
+            try {
+              cleanedInput[k] = JSON.parse(v.trim());
+              continue;
+            } catch (jsonErr: any) {
+              if (propDef?.type === "object" || propDef?.type === "array") {
+                setError(`Invalid JSON syntax in parameter "${k}": ${jsonErr.message}`);
+                setLoading(false);
+                return;
+              }
+            }
+          }
+          cleanedInput[k] = v;
+        }
+      }
 
       const res = await fetchApi(`/v1/actions/${action?.id}`, {
         method: "POST",
@@ -238,7 +297,9 @@ export function ActionRunnerModal({
             <span className="text-xs font-semibold text-zinc-700">Input Parameters</span>
             {Object.entries(schemaProperties).map(([key, prop]: [string, any]) => {
               const isRequired = requiredFields.includes(key);
+              const isObjectOrArray = prop.type === "object" || prop.type === "array";
               const isMultiline =
+                isObjectOrArray ||
                 key.toLowerCase().includes("body") ||
                 key.toLowerCase().includes("content") ||
                 key.toLowerCase().includes("description") ||
@@ -268,10 +329,24 @@ export function ActionRunnerModal({
                     />
                   ) : isMultiline ? (
                     <textarea
-                      rows={3}
-                      value={inputs[key] ?? ""}
-                      onChange={(e) => handleInputChange(key, e.target.value, "string")}
-                      placeholder={prop.default ? `Default: ${prop.default}` : ""}
+                      rows={isObjectOrArray ? 6 : 3}
+                      value={
+                        typeof inputs[key] === "object"
+                          ? JSON.stringify(inputs[key], null, 2)
+                          : inputs[key] ?? ""
+                      }
+                      onChange={(e) => handleInputChange(key, e.target.value, prop.type || "string")}
+                      placeholder={
+                        prop.default !== undefined
+                          ? typeof prop.default === "object"
+                            ? JSON.stringify(prop.default, null, 2)
+                            : `Default: ${prop.default}`
+                          : prop.type === "array"
+                          ? '[\n  "item"\n]'
+                          : prop.type === "object"
+                          ? '{\n  "key": "value"\n}'
+                          : ""
+                      }
                       required={isRequired}
                       className="p-2.5 text-xs bg-white border border-zinc-200 rounded-md focus:outline-none focus:ring-1 focus:ring-zinc-400 text-zinc-900 font-mono"
                     />
