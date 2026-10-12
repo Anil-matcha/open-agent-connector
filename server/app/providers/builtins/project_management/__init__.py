@@ -18,6 +18,11 @@ from app.providers.builtins.project_management.wrike import WrikeProvider
 from app.providers.builtins.project_management.smartsheet import SmartsheetProvider
 from app.providers.builtins.project_management.calendly import CalendlyProvider
 from app.providers.builtins.project_management.figma import FigmaProvider
+from app.providers.builtins.project_management.n8n import N8nProvider
+from app.providers.builtins.project_management.sunsama_mcp import SunsamaMcpProvider
+from app.providers.builtins.project_management.karakeep import KarakeepProvider
+from app.providers.builtins.project_management.mingdao import MingdaoProvider
+
 
 __all__ = [
     "NotionProvider",
@@ -36,5 +41,9 @@ __all__ = [
     "SmartsheetProvider",
     "CalendlyProvider",
     "FigmaProvider",
+    "N8nProvider",
+    "SunsamaMcpProvider",
+    "KarakeepProvider",
+    "MingdaoProvider",
 ]
 

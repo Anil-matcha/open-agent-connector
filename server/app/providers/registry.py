@@ -69,6 +69,17 @@ from app.providers.builtins.developer import (
     NeonProvider,
     TursoProvider,
     UpstashRedisProvider,
+    AppStoreConnectProvider,
+    DokployProvider,
+    GiteaProvider,
+    KeygenProvider,
+    ZeroTierProvider,
+    DopplerProvider,
+    PiHoleProvider,
+    OracleCloudProvider,
+    ReadMeProvider,
+    GoogleBigQueryProvider,
+    AppStoreServerProvider,
 )
 
 # Project Management & Issue Tracking Providers
@@ -89,6 +100,10 @@ from app.providers.builtins.project_management import (
     SmartsheetProvider,
     CalendlyProvider,
     FigmaProvider,
+    N8nProvider,
+    SunsamaMcpProvider,
+    KarakeepProvider,
+    MingdaoProvider,
 )
 
 # AI & LLM Services Providers
@@ -199,6 +214,17 @@ class ProviderRegistry:
         self.register(NeonProvider())
         self.register(TursoProvider())
         self.register(UpstashRedisProvider())
+        self.register(AppStoreConnectProvider())
+        self.register(DokployProvider())
+        self.register(GiteaProvider())
+        self.register(KeygenProvider())
+        self.register(ZeroTierProvider())
+        self.register(DopplerProvider())
+        self.register(PiHoleProvider())
+        self.register(OracleCloudProvider())
+        self.register(ReadMeProvider())
+        self.register(GoogleBigQueryProvider())
+        self.register(AppStoreServerProvider())
 
         # 2. Project Management & Issue Tracking
         self.register(NotionProvider())
@@ -217,6 +243,10 @@ class ProviderRegistry:
         self.register(SmartsheetProvider())
         self.register(CalendlyProvider())
         self.register(FigmaProvider())
+        self.register(N8nProvider())
+        self.register(SunsamaMcpProvider())
+        self.register(KarakeepProvider())
+        self.register(MingdaoProvider())
 
         # 3. Communication & Social
         self.register(SlackProvider())

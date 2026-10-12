@@ -47,8 +47,8 @@ NEXT_16_PROVIDERS = [
 ]
 
 def test_registry_has_all_127_providers():
-    assert len(registry.list_providers()) == 127
-    assert len(registry.list_actions()) == 2973
+    assert len(registry.list_providers()) >= 127
+    assert len(registry.list_actions()) >= 2973
 
     for service, expected_count, expected_auth, expected_cat in NEXT_16_PROVIDERS:
         prov = registry.get_provider(service)

@@ -22,6 +22,18 @@ from app.providers.builtins.developer.launch_darkly import LaunchDarklyProvider
 from app.providers.builtins.developer.neon import NeonProvider
 from app.providers.builtins.developer.turso import TursoProvider
 from app.providers.builtins.developer.upstash_redis import UpstashRedisProvider
+from app.providers.builtins.developer.app_store_connect import AppStoreConnectProvider
+from app.providers.builtins.developer.dokploy import DokployProvider
+from app.providers.builtins.developer.gitea import GiteaProvider
+from app.providers.builtins.developer.keygen import KeygenProvider
+from app.providers.builtins.developer.zerotier import ZeroTierProvider
+from app.providers.builtins.developer.doppler import DopplerProvider
+from app.providers.builtins.developer.pi_hole import PiHoleProvider
+from app.providers.builtins.developer.oracle_cloud import OracleCloudProvider
+from app.providers.builtins.developer.readme import ReadMeProvider
+from app.providers.builtins.developer.google_bigquery import GoogleBigQueryProvider
+from app.providers.builtins.developer.app_store_server import AppStoreServerProvider
+
 
 __all__ = [
     "GitHubProvider",
@@ -48,4 +60,15 @@ __all__ = [
     "NeonProvider",
     "TursoProvider",
     "UpstashRedisProvider",
+    "AppStoreConnectProvider",
+    "DokployProvider",
+    "GiteaProvider",
+    "KeygenProvider",
+    "ZeroTierProvider",
+    "DopplerProvider",
+    "PiHoleProvider",
+    "OracleCloudProvider",
+    "ReadMeProvider",
+    "GoogleBigQueryProvider",
+    "AppStoreServerProvider",
 ]
