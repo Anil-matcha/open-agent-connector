@@ -109,6 +109,9 @@ from app.providers.builtins.developer import (
     RenderProvider,
     VultrProvider,
     AlgoliaProvider,
+    CloudflareDnsProvider,
+    MakeProvider,
+    PipedreamProvider,
 )
 
 # Project Management & Issue Tracking Providers
@@ -133,6 +136,14 @@ from app.providers.builtins.project_management import (
     SunsamaMcpProvider,
     KarakeepProvider,
     MingdaoProvider,
+    TogglProvider,
+    CapsuleCrmProvider,
+    ClickMeetingProvider,
+    NozbeTeamsProvider,
+    QuipteamsProvider,
+    KoboToolboxProvider,
+    DropboxSignProvider,
+    SystemeIoProvider,
 )
 
 # AI & LLM Services Providers
@@ -238,6 +249,9 @@ from app.providers.builtins.media import (
     AmaraProvider,
     VimeoProvider,
     UnsplashProvider,
+    ContentfulProvider,
+    StoryblokProvider,
+    SanityProvider,
 )
 
 # Utility Providers
@@ -256,6 +270,11 @@ from app.providers.builtins.utility import (
     SegmentProvider,
     OuraProvider,
     StravaProvider,
+    HomeAssistantProvider,
+    HomeBoxProvider,
+    IpdataCoProvider,
+    IpinfoIoProvider,
+    MapboxProvider,
 )
 
 class ProviderRegistry:
@@ -311,6 +330,9 @@ class ProviderRegistry:
         self.register(RenderProvider())
         self.register(VultrProvider())
         self.register(AlgoliaProvider())
+        self.register(CloudflareDnsProvider())
+        self.register(MakeProvider())
+        self.register(PipedreamProvider())
 
         # 2. Project Management & Issue Tracking
         self.register(NotionProvider())
@@ -333,6 +355,14 @@ class ProviderRegistry:
         self.register(SunsamaMcpProvider())
         self.register(KarakeepProvider())
         self.register(MingdaoProvider())
+        self.register(TogglProvider())
+        self.register(CapsuleCrmProvider())
+        self.register(ClickMeetingProvider())
+        self.register(NozbeTeamsProvider())
+        self.register(QuipteamsProvider())
+        self.register(KoboToolboxProvider())
+        self.register(DropboxSignProvider())
+        self.register(SystemeIoProvider())
 
         # 3. Communication & Social
         self.register(SlackProvider())
@@ -484,6 +514,9 @@ class ProviderRegistry:
         self.register(AmaraProvider())
         self.register(VimeoProvider())
         self.register(UnsplashProvider())
+        self.register(ContentfulProvider())
+        self.register(StoryblokProvider())
+        self.register(SanityProvider())
 
         # 10. Utilities & Forms / Identity / HR
         self.register(CustomHttpProvider())
@@ -500,6 +533,11 @@ class ProviderRegistry:
         self.register(SegmentProvider())
         self.register(OuraProvider())
         self.register(StravaProvider())
+        self.register(HomeAssistantProvider())
+        self.register(HomeBoxProvider())
+        self.register(IpdataCoProvider())
+        self.register(IpinfoIoProvider())
+        self.register(MapboxProvider())
 
     def register(self, provider: Provider):
         self._providers[provider.service] = provider

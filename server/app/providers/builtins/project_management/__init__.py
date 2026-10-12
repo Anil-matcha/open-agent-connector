@@ -22,6 +22,14 @@ from app.providers.builtins.project_management.n8n import N8nProvider
 from app.providers.builtins.project_management.sunsama_mcp import SunsamaMcpProvider
 from app.providers.builtins.project_management.karakeep import KarakeepProvider
 from app.providers.builtins.project_management.mingdao import MingdaoProvider
+from app.providers.builtins.project_management.toggl import TogglProvider
+from app.providers.builtins.project_management.capsule_crm import CapsuleCrmProvider
+from app.providers.builtins.project_management.clickmeeting import ClickMeetingProvider
+from app.providers.builtins.project_management.nozbe_teams import NozbeTeamsProvider
+from app.providers.builtins.project_management.quipteams import QuipteamsProvider
+from app.providers.builtins.project_management.kobotoolbox import KoboToolboxProvider
+from app.providers.builtins.project_management.dropbox_sign import DropboxSignProvider
+from app.providers.builtins.project_management.systeme_io import SystemeIoProvider
 
 
 __all__ = [
@@ -45,5 +53,13 @@ __all__ = [
     "SunsamaMcpProvider",
     "KarakeepProvider",
     "MingdaoProvider",
+    "TogglProvider",
+    "CapsuleCrmProvider",
+    "ClickMeetingProvider",
+    "NozbeTeamsProvider",
+    "QuipteamsProvider",
+    "KoboToolboxProvider",
+    "DropboxSignProvider",
+    "SystemeIoProvider",
 ]
 

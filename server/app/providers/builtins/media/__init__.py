@@ -14,6 +14,9 @@ from app.providers.builtins.media.paperless_ngx import PaperlessNgxProvider
 from app.providers.builtins.media.amara import AmaraProvider
 from app.providers.builtins.media.vimeo import VimeoProvider
 from app.providers.builtins.media.unsplash import UnsplashProvider
+from app.providers.builtins.media.contentful import ContentfulProvider
+from app.providers.builtins.media.storyblok import StoryblokProvider
+from app.providers.builtins.media.sanity import SanityProvider
 
 __all__ = [
     "DiscordProvider",
@@ -29,4 +32,7 @@ __all__ = [
     "AmaraProvider",
     "VimeoProvider",
     "UnsplashProvider",
+    "ContentfulProvider",
+    "StoryblokProvider",
+    "SanityProvider",
 ]

@@ -44,6 +44,9 @@ from app.providers.builtins.developer.planetscale import PlanetscaleProvider
 from app.providers.builtins.developer.render import RenderProvider
 from app.providers.builtins.developer.vultr import VultrProvider
 from app.providers.builtins.developer.algolia import AlgoliaProvider
+from app.providers.builtins.developer.cloudflare_dns import CloudflareDnsProvider
+from app.providers.builtins.developer.make import MakeProvider
+from app.providers.builtins.developer.pipedream import PipedreamProvider
 
 __all__ = [
     "GitHubProvider",
@@ -92,4 +95,7 @@ __all__ = [
     "RenderProvider",
     "VultrProvider",
     "AlgoliaProvider",
+    "CloudflareDnsProvider",
+    "MakeProvider",
+    "PipedreamProvider",
 ]

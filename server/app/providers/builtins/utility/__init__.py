@@ -12,6 +12,11 @@ from app.providers.builtins.utility.mixpanel import MixpanelProvider
 from app.providers.builtins.utility.segment import SegmentProvider
 from app.providers.builtins.utility.oura import OuraProvider
 from app.providers.builtins.utility.strava import StravaProvider
+from app.providers.builtins.utility.home_assistant import HomeAssistantProvider
+from app.providers.builtins.utility.homebox import HomeBoxProvider
+from app.providers.builtins.utility.ipdata_co import IpdataCoProvider
+from app.providers.builtins.utility.ipinfo_io import IpinfoIoProvider
+from app.providers.builtins.utility.mapbox import MapboxProvider
 
 __all__ = [
     "CustomHttpProvider",
@@ -28,4 +33,9 @@ __all__ = [
     "SegmentProvider",
     "OuraProvider",
     "StravaProvider",
+    "HomeAssistantProvider",
+    "HomeBoxProvider",
+    "IpdataCoProvider",
+    "IpinfoIoProvider",
+    "MapboxProvider",
 ]

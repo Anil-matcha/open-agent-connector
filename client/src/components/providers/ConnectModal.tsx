@@ -5,7 +5,8 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import { fetchApi } from "@/lib/api";
-import { ExternalLink, ShieldCheck, KeyRound, AlertCircle } from "lucide-react";
+import Link from "next/link";
+import { ExternalLink, ShieldCheck, KeyRound, AlertCircle, Play, ArrowRight } from "lucide-react";
 
 interface SetupGuide {
   title?: string;
@@ -343,13 +344,25 @@ export function ConnectModal({
           </>
         )}
 
-        <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-100">
-          <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>
-            Cancel
-          </Button>
-          <Button type="submit" variant="primary" loading={loading}>
-            {loading ? "Validating & Saving..." : "Validate & Connect"}
-          </Button>
+        <div className="flex items-center justify-between gap-2 pt-3 border-t border-zinc-100">
+          <Link
+            href={`/actions?service=${service}`}
+            onClick={onClose}
+            className="text-xs text-zinc-500 hover:text-zinc-900 flex items-center gap-1.5 font-medium transition-colors"
+          >
+            <Play size={11} className="text-zinc-400" />
+            <span>Browse {displayName} Actions</span>
+            <ArrowRight size={11} className="text-zinc-400" />
+          </Link>
+
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" loading={loading}>
+              {loading ? "Validating & Saving..." : "Validate & Connect"}
+            </Button>
+          </div>
         </div>
       </form>
     </Modal>
