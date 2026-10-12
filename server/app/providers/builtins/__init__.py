@@ -26,6 +26,13 @@ from app.providers.builtins.communication import (
     WhatsAppProvider,
     TelegramProvider,
     TwitterProvider,
+    MailtrapProvider,
+    WebexProvider,
+    ResendProvider,
+    PostmarkProvider,
+    TwilioProvider,
+    ZoomProvider,
+    SendGridProvider,
 )
 from app.providers.builtins.project_management import (
     NotionProvider,
@@ -91,6 +98,9 @@ from app.providers.builtins.ecommerce import (
     ShopifyProvider,
     LemonSqueezyProvider,
     SquareProvider,
+    QuickBooksProvider,
+    WooCommerceProvider,
+    XeroProvider,
 )
 from app.providers.builtins.media import (
     DiscordProvider,
@@ -131,6 +141,13 @@ __all__ = [
     "WhatsAppProvider",
     "TelegramProvider",
     "TwitterProvider",
+    "MailtrapProvider",
+    "WebexProvider",
+    "ResendProvider",
+    "PostmarkProvider",
+    "TwilioProvider",
+    "ZoomProvider",
+    "SendGridProvider",
     # Project Management & Issue Tracking
     "NotionProvider",
     "LinearProvider",
@@ -191,6 +208,9 @@ __all__ = [
     "ShopifyProvider",
     "LemonSqueezyProvider",
     "SquareProvider",
+    "QuickBooksProvider",
+    "WooCommerceProvider",
+    "XeroProvider",
     # Social, Media & Storage
     "DiscordProvider",
     "LinkedInProvider",

@@ -441,6 +441,47 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "authorize_url": "https://account.box.com/api/oauth2/authorize",
         "token_url": "https://api.box.com/oauth2/token",
         "default_scopes": ["root_readwrite", "manage_webhook"],
+    },
+    "quickbooks": {
+        "display_name": "QuickBooks Online",
+        "authorize_url": "https://appcenter.intuit.com/connect/oauth2",
+        "token_url": "https://oauth.platform.intuit.com/op/v1/token",
+        "default_scopes": ["com.intuit.quickbooks.accounting"],
+    },
+    "xero": {
+        "display_name": "Xero",
+        "authorize_url": "https://login.xero.com/identity/connect/authorize",
+        "token_url": "https://identity.xero.com/connect/token",
+        "default_scopes": [
+            "offline_access",
+            "accounting.transactions",
+            "accounting.contacts",
+            "accounting.settings",
+            "accounting.reports.read"
+        ],
+    },
+    "webex": {
+        "display_name": "Webex",
+        "authorize_url": "https://webexapis.com/v1/authorize",
+        "token_url": "https://webexapis.com/v1/access_token",
+        "default_scopes": [
+            "spark:kms",
+            "spark:people_read",
+            "spark:messages_read",
+            "spark:messages_write",
+            "spark:rooms_read",
+            "spark:rooms_write",
+            "spark:memberships_read",
+            "spark:memberships_write",
+            "spark:teams_read",
+            "spark:teams_write"
+        ],
+    },
+    "zoom": {
+        "display_name": "Zoom",
+        "authorize_url": "https://zoom.us/oauth/authorize",
+        "token_url": "https://zoom.us/oauth/token",
+        "default_scopes": ["user:read", "meeting:read", "meeting:write"],
     }
 }
 

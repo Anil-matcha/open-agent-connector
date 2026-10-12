@@ -7,6 +7,9 @@ from app.providers.builtins.ecommerce.paypal import PayPalProvider
 from app.providers.builtins.ecommerce.shopify import ShopifyProvider
 from app.providers.builtins.ecommerce.lemon_squeezy import LemonSqueezyProvider
 from app.providers.builtins.ecommerce.square import SquareProvider
+from app.providers.builtins.ecommerce.quickbooks import QuickBooksProvider
+from app.providers.builtins.ecommerce.woocommerce import WooCommerceProvider
+from app.providers.builtins.ecommerce.xero import XeroProvider
 
 __all__ = [
     "StripeProvider",
@@ -14,4 +17,8 @@ __all__ = [
     "ShopifyProvider",
     "LemonSqueezyProvider",
     "SquareProvider",
+    "QuickBooksProvider",
+    "WooCommerceProvider",
+    "XeroProvider",
 ]
+

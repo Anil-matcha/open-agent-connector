@@ -34,6 +34,13 @@ from app.providers.builtins.communication import (
     WhatsAppProvider,
     TelegramProvider,
     TwitterProvider,
+    MailtrapProvider,
+    WebexProvider,
+    ResendProvider,
+    PostmarkProvider,
+    TwilioProvider,
+    ZoomProvider,
+    SendGridProvider,
 )
 
 # Developer Tools & Cloud Infrastructure
@@ -109,6 +116,9 @@ from app.providers.builtins.ecommerce import (
     ShopifyProvider,
     LemonSqueezyProvider,
     SquareProvider,
+    QuickBooksProvider,
+    WooCommerceProvider,
+    XeroProvider,
 )
 
 # Social, Media & Storage Providers
@@ -169,6 +179,13 @@ class ProviderRegistry:
         self.register(WhatsAppProvider())
         self.register(TwitterProvider())
         self.register(TelegramProvider())
+        self.register(MailtrapProvider())
+        self.register(WebexProvider())
+        self.register(ResendProvider())
+        self.register(PostmarkProvider())
+        self.register(TwilioProvider())
+        self.register(ZoomProvider())
+        self.register(SendGridProvider())
 
         # 4. Google Workspace Ecosystem
         self.register(GmailProvider())
@@ -225,6 +242,9 @@ class ProviderRegistry:
         self.register(ShopifyProvider())
         self.register(LemonSqueezyProvider())
         self.register(SquareProvider())
+        self.register(QuickBooksProvider())
+        self.register(WooCommerceProvider())
+        self.register(XeroProvider())
 
         # 9. Social, Media & Storage
         self.register(DiscordProvider())
