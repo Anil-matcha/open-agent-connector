@@ -9,6 +9,15 @@ from app.providers.builtins.communication.postmark import PostmarkProvider
 from app.providers.builtins.communication.twilio import TwilioProvider
 from app.providers.builtins.communication.zoom import ZoomProvider
 from app.providers.builtins.communication.sendgrid import SendGridProvider
+from app.providers.builtins.communication.feishu import FeishuProvider
+from app.providers.builtins.communication.feishu_app_bot import FeishuAppBotProvider
+from app.providers.builtins.communication.agent_mail import AgentMailProvider
+from app.providers.builtins.communication.discordbot import DiscordBotProvider
+from app.providers.builtins.communication.wecom_bot import WeComBotProvider
+from app.providers.builtins.communication.weixin_official_account import WeixinOfficialAccountProvider
+from app.providers.builtins.communication.pushover import PushoverProvider
+from app.providers.builtins.communication.front import FrontProvider
+from app.providers.builtins.communication.freshdesk import FreshdeskProvider
 
 __all__ = [
     "SlackProvider",
@@ -22,5 +31,13 @@ __all__ = [
     "TwilioProvider",
     "ZoomProvider",
     "SendGridProvider",
+    "FeishuProvider",
+    "FeishuAppBotProvider",
+    "AgentMailProvider",
+    "DiscordBotProvider",
+    "WeComBotProvider",
+    "WeixinOfficialAccountProvider",
+    "PushoverProvider",
+    "FrontProvider",
+    "FreshdeskProvider",
 ]
-

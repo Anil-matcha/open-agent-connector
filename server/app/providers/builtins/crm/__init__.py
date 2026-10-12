@@ -15,6 +15,13 @@ from app.providers.builtins.crm.gong import GongProvider
 from app.providers.builtins.crm.helpscout import HelpScoutProvider
 from app.providers.builtins.crm.klaviyo import KlaviyoProvider
 from app.providers.builtins.crm.activecampaign import ActiveCampaignProvider
+from app.providers.builtins.crm.apple_ads import AppleAdsProvider
+from app.providers.builtins.crm.fastmoss_mcp import FastmossMcpProvider
+from app.providers.builtins.crm.bing_webmaster import BingWebmasterProvider
+from app.providers.builtins.crm.patsnap_mcp import PatsnapMcpProvider
+from app.providers.builtins.crm.sellersprite_mcp import SellerspriteMcpProvider
+from app.providers.builtins.crm.twitterapi_io import TwitterapiIoProvider
+from app.providers.builtins.crm.apollo import ApolloProvider
 
 __all__ = [
     "HubSpotProvider",
@@ -30,5 +37,11 @@ __all__ = [
     "HelpScoutProvider",
     "KlaviyoProvider",
     "ActiveCampaignProvider",
+    "AppleAdsProvider",
+    "FastmossMcpProvider",
+    "BingWebmasterProvider",
+    "PatsnapMcpProvider",
+    "SellerspriteMcpProvider",
+    "TwitterapiIoProvider",
+    "ApolloProvider",
 ]
-

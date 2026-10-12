@@ -41,6 +41,15 @@ from app.providers.builtins.communication import (
     TwilioProvider,
     ZoomProvider,
     SendGridProvider,
+    FeishuProvider,
+    FeishuAppBotProvider,
+    AgentMailProvider,
+    DiscordBotProvider,
+    WeComBotProvider,
+    WeixinOfficialAccountProvider,
+    PushoverProvider,
+    FrontProvider,
+    FreshdeskProvider,
 )
 
 # Developer Tools & Cloud Infrastructure
@@ -145,6 +154,13 @@ from app.providers.builtins.crm import (
     HelpScoutProvider,
     KlaviyoProvider,
     ActiveCampaignProvider,
+    AppleAdsProvider,
+    FastmossMcpProvider,
+    BingWebmasterProvider,
+    PatsnapMcpProvider,
+    SellerspriteMcpProvider,
+    TwitterapiIoProvider,
+    ApolloProvider,
 )
 
 # Payments & E-Commerce Providers
@@ -272,6 +288,15 @@ class ProviderRegistry:
         self.register(TwilioProvider())
         self.register(ZoomProvider())
         self.register(SendGridProvider())
+        self.register(FeishuProvider())
+        self.register(FeishuAppBotProvider())
+        self.register(AgentMailProvider())
+        self.register(DiscordBotProvider())
+        self.register(WeComBotProvider())
+        self.register(WeixinOfficialAccountProvider())
+        self.register(PushoverProvider())
+        self.register(FrontProvider())
+        self.register(FreshdeskProvider())
 
         # 4. Google Workspace Ecosystem
         self.register(GmailProvider())
@@ -332,6 +357,13 @@ class ProviderRegistry:
         self.register(HelpScoutProvider())
         self.register(KlaviyoProvider())
         self.register(ActiveCampaignProvider())
+        self.register(AppleAdsProvider())
+        self.register(FastmossMcpProvider())
+        self.register(BingWebmasterProvider())
+        self.register(PatsnapMcpProvider())
+        self.register(SellerspriteMcpProvider())
+        self.register(TwitterapiIoProvider())
+        self.register(ApolloProvider())
 
         # 8. Payments & E-Commerce
         self.register(StripeProvider())
