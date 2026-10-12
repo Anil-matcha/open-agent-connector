@@ -482,6 +482,60 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "authorize_url": "https://zoom.us/oauth/authorize",
         "token_url": "https://zoom.us/oauth/token",
         "default_scopes": ["user:read", "meeting:read", "meeting:write"],
+    },
+    "cal": {
+        "display_name": "Cal.com",
+        "authorize_url": "https://app.cal.com/auth/oauth2/authorize",
+        "token_url": "https://api.cal.com/v2/auth/oauth2/token",
+        "default_scopes": ["BOOKING_READ", "BOOKING_WRITE", "EVENT_TYPE_READ", "SCHEDULE_READ"],
+    },
+    "todoist": {
+        "display_name": "Todoist",
+        "authorize_url": "https://app.todoist.com/oauth/authorize",
+        "token_url": "https://api.todoist.com/oauth/access_token",
+        "default_scopes": ["data:read_write"],
+    },
+    "survey_monkey": {
+        "display_name": "SurveyMonkey",
+        "authorize_url": "https://api.surveymonkey.com/oauth/authorize",
+        "token_url": "https://api.surveymonkey.com/oauth/token",
+        "default_scopes": ["surveys_read", "responses_read_detail"],
+    },
+    "typeform": {
+        "display_name": "Typeform",
+        "authorize_url": "https://api.typeform.com/oauth/authorize",
+        "token_url": "https://api.typeform.com/oauth/token",
+        "default_scopes": ["forms:read", "responses:read", "workspaces:read"],
+    },
+    "workday": {
+        "display_name": "Workday",
+        "authorize_url": "https://{host}/ccx/oauth2/{tenant}/authorize",
+        "token_url": "https://{host}/ccx/oauth2/{tenant}/token",
+        "default_scopes": [],
+    },
+    "wrike": {
+        "display_name": "Wrike",
+        "authorize_url": "https://login.wrike.com/oauth2/v/tokens",
+        "token_url": "https://login.wrike.com/oauth2/v/tokens",
+        "default_scopes": ["Default,offline_access"],
+    },
+    "smartsheet": {
+        "display_name": "Smartsheet",
+        "authorize_url": "https://app.smartsheet.com/b/authorize",
+        "token_url": "https://api.smartsheet.com/2.0/token",
+        "default_scopes": ["READ_SHEETS", "WRITE_SHEETS"],
+    },
+    "salesloft": {
+        "display_name": "Salesloft",
+        "authorize_url": "https://accounts.salesloft.com/oauth/authorize",
+        "token_url": "https://accounts.salesloft.com/oauth/token",
+        "default_scopes": [],
+    },
+    "pandadoc": {
+        "display_name": "PandaDoc",
+        "authorize_url": "https://app.pandadoc.com/oauth2/authorize",
+        "token_url": "https://api.pandadoc.com/oauth2/access_token",
+        "default_scopes": ["read", "write"],
     }
 }
 
@@ -587,6 +641,24 @@ class OAuthService:
             candidates.extend(["DROPBOX"])
         elif service.lower() == "box":
             candidates.extend(["BOX"])
+        elif service.lower() in ("survey_monkey", "surveymonkey"):
+            candidates.extend(["SURVEY_MONKEY", "SURVEYMONKEY"])
+        elif service.lower() == "pandadoc":
+            candidates.extend(["PANDADOC", "PANDA_DOC"])
+        elif service.lower() == "smartsheet":
+            candidates.extend(["SMARTSHEET", "SMART_SHEET"])
+        elif service.lower() == "salesloft":
+            candidates.extend(["SALESLOFT", "SALES_LOFT"])
+        elif service.lower() == "cal":
+            candidates.extend(["CAL", "CAL_COM", "CALCOM"])
+        elif service.lower() == "todoist":
+            candidates.extend(["TODOIST"])
+        elif service.lower() == "typeform":
+            candidates.extend(["TYPEFORM"])
+        elif service.lower() == "workday":
+            candidates.extend(["WORKDAY"])
+        elif service.lower() == "wrike":
+            candidates.extend(["WRIKE"])
 
         env_client_id = None
         env_client_secret = None

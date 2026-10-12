@@ -9,6 +9,9 @@ from app.providers.builtins.crm.intercom import IntercomProvider
 from app.providers.builtins.crm.mailchimp import MailchimpProvider
 from app.providers.builtins.crm.brevo import BrevoProvider
 from app.providers.builtins.crm.customerio import CustomerIOProvider
+from app.providers.builtins.crm.close import CloseProvider
+from app.providers.builtins.crm.salesloft import SalesloftProvider
+from app.providers.builtins.crm.gong import GongProvider
 
 __all__ = [
     "HubSpotProvider",
@@ -18,4 +21,8 @@ __all__ = [
     "MailchimpProvider",
     "BrevoProvider",
     "CustomerIOProvider",
+    "CloseProvider",
+    "SalesloftProvider",
+    "GongProvider",
 ]
+

@@ -77,6 +77,12 @@ from app.providers.builtins.project_management import (
     MondayProvider,
     AirtableProvider,
     CodaProvider,
+    CalProvider,
+    TrelloProvider,
+    TodoistProvider,
+    PandaDocProvider,
+    WrikeProvider,
+    SmartsheetProvider,
 )
 
 # AI & LLM Services Providers
@@ -107,6 +113,9 @@ from app.providers.builtins.crm import (
     MailchimpProvider,
     BrevoProvider,
     CustomerIOProvider,
+    CloseProvider,
+    SalesloftProvider,
+    GongProvider,
 )
 
 # Payments & E-Commerce Providers
@@ -134,6 +143,13 @@ from app.providers.builtins.media import (
 # Utility Providers
 from app.providers.builtins.utility import (
     CustomHttpProvider,
+    OktaProvider,
+    SurveyMonkeyProvider,
+    WorkdayProvider,
+    TypeformProvider,
+    RipplingProvider,
+    BambooHRProvider,
+    TallyProvider,
 )
 
 class ProviderRegistry:
@@ -173,6 +189,12 @@ class ProviderRegistry:
         self.register(MondayProvider())
         self.register(AirtableProvider())
         self.register(CodaProvider())
+        self.register(CalProvider())
+        self.register(TrelloProvider())
+        self.register(TodoistProvider())
+        self.register(PandaDocProvider())
+        self.register(WrikeProvider())
+        self.register(SmartsheetProvider())
 
         # 3. Communication & Social
         self.register(SlackProvider())
@@ -235,6 +257,9 @@ class ProviderRegistry:
         self.register(MailchimpProvider())
         self.register(BrevoProvider())
         self.register(CustomerIOProvider())
+        self.register(CloseProvider())
+        self.register(SalesloftProvider())
+        self.register(GongProvider())
 
         # 8. Payments & E-Commerce
         self.register(StripeProvider())
@@ -254,8 +279,15 @@ class ProviderRegistry:
         self.register(DropboxProvider())
         self.register(BoxProvider())
 
-        # 10. Utilities
+        # 10. Utilities & Forms / Identity / HR
         self.register(CustomHttpProvider())
+        self.register(OktaProvider())
+        self.register(SurveyMonkeyProvider())
+        self.register(WorkdayProvider())
+        self.register(TypeformProvider())
+        self.register(RipplingProvider())
+        self.register(BambooHRProvider())
+        self.register(TallyProvider())
 
     def register(self, provider: Provider):
         self._providers[provider.service] = provider

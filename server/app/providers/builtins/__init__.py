@@ -43,6 +43,12 @@ from app.providers.builtins.project_management import (
     MondayProvider,
     AirtableProvider,
     CodaProvider,
+    CalProvider,
+    TrelloProvider,
+    TodoistProvider,
+    PandaDocProvider,
+    WrikeProvider,
+    SmartsheetProvider,
 )
 from app.providers.builtins.developer import (
     GitHubProvider,
@@ -91,6 +97,9 @@ from app.providers.builtins.crm import (
     MailchimpProvider,
     BrevoProvider,
     CustomerIOProvider,
+    CloseProvider,
+    SalesloftProvider,
+    GongProvider,
 )
 from app.providers.builtins.ecommerce import (
     StripeProvider,
@@ -112,6 +121,13 @@ from app.providers.builtins.media import (
 )
 from app.providers.builtins.utility import (
     CustomHttpProvider,
+    OktaProvider,
+    SurveyMonkeyProvider,
+    WorkdayProvider,
+    TypeformProvider,
+    RipplingProvider,
+    BambooHRProvider,
+    TallyProvider,
 )
 
 __all__ = [
@@ -157,6 +173,12 @@ __all__ = [
     "MondayProvider",
     "AirtableProvider",
     "CodaProvider",
+    "CalProvider",
+    "TrelloProvider",
+    "TodoistProvider",
+    "PandaDocProvider",
+    "WrikeProvider",
+    "SmartsheetProvider",
     # Developer Tools & Cloud Infrastructure
     "GitHubProvider",
     "HackerNewsProvider",
@@ -202,6 +224,9 @@ __all__ = [
     "MailchimpProvider",
     "BrevoProvider",
     "CustomerIOProvider",
+    "CloseProvider",
+    "SalesloftProvider",
+    "GongProvider",
     # Payments & E-Commerce
     "StripeProvider",
     "PayPalProvider",
@@ -218,6 +243,13 @@ __all__ = [
     "RedditProvider",
     "DropboxProvider",
     "BoxProvider",
-    # Utility
+    # Utility, Identity, HR & Forms
     "CustomHttpProvider",
+    "OktaProvider",
+    "SurveyMonkeyProvider",
+    "WorkdayProvider",
+    "TypeformProvider",
+    "RipplingProvider",
+    "BambooHRProvider",
+    "TallyProvider",
 ]
