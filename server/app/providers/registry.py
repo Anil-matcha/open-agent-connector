@@ -123,6 +123,11 @@ from app.providers.builtins.ai import (
     WeaviateProvider,
     DeepSeekProvider,
     TogetherAIProvider,
+    UnifapiProvider,
+    FusionApiProvider,
+    PixelLabProvider,
+    VapiProvider,
+    VoiceflowProvider,
 )
 
 # CRM, Helpdesk & Marketing Providers
@@ -152,6 +157,13 @@ from app.providers.builtins.ecommerce import (
     QuickBooksProvider,
     WooCommerceProvider,
     XeroProvider,
+    LongbridgeProvider,
+    AlphaVantageProvider,
+    PolygonIoProvider,
+    FinancialModelingPrepProvider,
+    RecurlyProvider,
+    ChargebeeProvider,
+    WiseProvider,
 )
 
 # Social, Media & Storage Providers
@@ -300,6 +312,11 @@ class ProviderRegistry:
         self.register(WeaviateProvider())
         self.register(DeepSeekProvider())
         self.register(TogetherAIProvider())
+        self.register(UnifapiProvider())
+        self.register(FusionApiProvider())
+        self.register(PixelLabProvider())
+        self.register(VapiProvider())
+        self.register(VoiceflowProvider())
 
         # 7. CRM, Helpdesk & Marketing
         self.register(HubSpotProvider())
@@ -325,6 +342,13 @@ class ProviderRegistry:
         self.register(QuickBooksProvider())
         self.register(WooCommerceProvider())
         self.register(XeroProvider())
+        self.register(LongbridgeProvider())
+        self.register(AlphaVantageProvider())
+        self.register(PolygonIoProvider())
+        self.register(FinancialModelingPrepProvider())
+        self.register(RecurlyProvider())
+        self.register(ChargebeeProvider())
+        self.register(WiseProvider())
 
         # 9. Social, Media & Storage
         self.register(DiscordProvider())

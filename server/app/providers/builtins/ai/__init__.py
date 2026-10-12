@@ -18,6 +18,12 @@ from app.providers.builtins.ai.qdrant import QdrantProvider
 from app.providers.builtins.ai.weaviate import WeaviateProvider
 from app.providers.builtins.ai.deepseek import DeepSeekProvider
 from app.providers.builtins.ai.together_ai import TogetherAIProvider
+from app.providers.builtins.ai.unifapi import UnifapiProvider
+from app.providers.builtins.ai.fusion_api import FusionApiProvider
+from app.providers.builtins.ai.pixellab import PixelLabProvider
+from app.providers.builtins.ai.vapi import VapiProvider
+from app.providers.builtins.ai.voiceflow import VoiceflowProvider
+
 
 __all__ = [
     "OpenAIProvider",
@@ -35,4 +41,9 @@ __all__ = [
     "WeaviateProvider",
     "DeepSeekProvider",
     "TogetherAIProvider",
+    "UnifapiProvider",
+    "FusionApiProvider",
+    "PixelLabProvider",
+    "VapiProvider",
+    "VoiceflowProvider",
 ]
