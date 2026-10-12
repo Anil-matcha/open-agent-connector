@@ -51,6 +51,14 @@ from app.providers.builtins.communication import (
     PushoverProvider,
     FrontProvider,
     FreshdeskProvider,
+    SendbirdProvider,
+    ListmonkProvider,
+    MailgunProvider,
+    FlexmailProvider,
+    CrispProvider,
+    TelnyxProvider,
+    VonageProvider,
+    OneSignalRestApiProvider,
 )
 
 # Developer Tools & Cloud Infrastructure
@@ -206,6 +214,13 @@ from app.providers.builtins.ecommerce import (
     WiseProvider,
     XiaohongshuStoreProvider,
     WeixinStoreProvider,
+    ShopifyAdminProvider,
+    ShopifyStorefrontProvider,
+    ShopifyPartnerProvider,
+    ShopeeProvider,
+    PaddleProvider,
+    GumroadProvider,
+    CoinGeckoProvider,
 )
 
 # Social, Media & Storage Providers
@@ -340,6 +355,14 @@ class ProviderRegistry:
         self.register(PushoverProvider())
         self.register(FrontProvider())
         self.register(FreshdeskProvider())
+        self.register(SendbirdProvider())
+        self.register(ListmonkProvider())
+        self.register(MailgunProvider())
+        self.register(FlexmailProvider())
+        self.register(CrispProvider())
+        self.register(TelnyxProvider())
+        self.register(VonageProvider())
+        self.register(OneSignalRestApiProvider())
 
         # 4. Google Workspace Ecosystem
         self.register(GmailProvider())
@@ -439,6 +462,13 @@ class ProviderRegistry:
         self.register(WiseProvider())
         self.register(XiaohongshuStoreProvider())
         self.register(WeixinStoreProvider())
+        self.register(ShopifyAdminProvider())
+        self.register(ShopifyStorefrontProvider())
+        self.register(ShopifyPartnerProvider())
+        self.register(ShopeeProvider())
+        self.register(PaddleProvider())
+        self.register(GumroadProvider())
+        self.register(CoinGeckoProvider())
 
         # 9. Social, Media & Storage
         self.register(DiscordProvider())

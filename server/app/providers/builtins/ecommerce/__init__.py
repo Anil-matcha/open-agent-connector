@@ -19,6 +19,13 @@ from app.providers.builtins.ecommerce.chargebee import ChargebeeProvider
 from app.providers.builtins.ecommerce.wise import WiseProvider
 from app.providers.builtins.ecommerce.xiaohongshu_store import XiaohongshuStoreProvider
 from app.providers.builtins.ecommerce.weixin_store import WeixinStoreProvider
+from app.providers.builtins.ecommerce.shopify_admin import ShopifyAdminProvider
+from app.providers.builtins.ecommerce.shopify_storefront import ShopifyStorefrontProvider
+from app.providers.builtins.ecommerce.shopify_partner import ShopifyPartnerProvider
+from app.providers.builtins.ecommerce.shopee import ShopeeProvider
+from app.providers.builtins.ecommerce.paddle import PaddleProvider
+from app.providers.builtins.ecommerce.gumroad import GumroadProvider
+from app.providers.builtins.ecommerce.coingecko import CoinGeckoProvider
 
 __all__ = [
     "StripeProvider",
@@ -38,4 +45,11 @@ __all__ = [
     "WiseProvider",
     "XiaohongshuStoreProvider",
     "WeixinStoreProvider",
+    "ShopifyAdminProvider",
+    "ShopifyStorefrontProvider",
+    "ShopifyPartnerProvider",
+    "ShopeeProvider",
+    "PaddleProvider",
+    "GumroadProvider",
+    "CoinGeckoProvider",
 ]

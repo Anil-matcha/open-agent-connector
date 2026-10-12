@@ -18,6 +18,14 @@ from app.providers.builtins.communication.weixin_official_account import WeixinO
 from app.providers.builtins.communication.pushover import PushoverProvider
 from app.providers.builtins.communication.front import FrontProvider
 from app.providers.builtins.communication.freshdesk import FreshdeskProvider
+from app.providers.builtins.communication.sendbird import SendbirdProvider
+from app.providers.builtins.communication.listmonk import ListmonkProvider
+from app.providers.builtins.communication.mailgun import MailgunProvider
+from app.providers.builtins.communication.flexmail import FlexmailProvider
+from app.providers.builtins.communication.crisp import CrispProvider
+from app.providers.builtins.communication.telnyx import TelnyxProvider
+from app.providers.builtins.communication.vonage import VonageProvider
+from app.providers.builtins.communication.onesignal_rest_api import OneSignalRestApiProvider
 
 __all__ = [
     "SlackProvider",
@@ -40,4 +48,12 @@ __all__ = [
     "PushoverProvider",
     "FrontProvider",
     "FreshdeskProvider",
+    "SendbirdProvider",
+    "ListmonkProvider",
+    "MailgunProvider",
+    "FlexmailProvider",
+    "CrispProvider",
+    "TelnyxProvider",
+    "VonageProvider",
+    "OneSignalRestApiProvider",
 ]
