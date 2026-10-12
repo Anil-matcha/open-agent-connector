@@ -1,53 +1,64 @@
 """
 Together AI Provider for ConnectorHub.
-High-performance cloud platform for training, fine-tuning, and running 100+ open-source AI models.
+Loads and registers 3 actions with exact route definitions and parameters.
 """
+import json
+import re
 import urllib.parse
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import httpx
 
 from app.providers.base import Provider, Action
 from app.providers.catalog import get_provider_actions
 from app.core.ssrf import assert_public_url, execute_guarded_request
 
-TOGETHER_AI_API_BASE = "https://api.together.xyz/v1"
+API_BASE = "https://api.together.ai/v1"
 
-def _together_ai_headers(token: str, credential: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
-    headers = {
+def _headers(token: str, credential: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    return {
         "Authorization": f"Bearer {token}",
         "Accept": "application/json",
         "Content-Type": "application/json",
         "User-Agent": "ConnectorHub/1.0"
     }
-    return headers
 
 def _extract_token(credential: Optional[Dict[str, Any]]) -> str:
     cred = credential or {}
-    token = None
-    for k in ['apiKey', 'token']:
+    for k in ["apiKey", "accessToken", "token", "key", "userKey"]:
         if cred.get(k):
-            token = cred[k]
-            break
-    if not token or not str(token).strip():
-        raise ValueError("Together AI API credential required. Please connect your Together AI account first.")
-    return str(token).strip()
+            return str(cred[k]).strip()
+    raise ValueError("Together AI credentials required. Please connect your account first.")
 
 def _resolve_base_url(credential: Optional[Dict[str, Any]]) -> str:
     cred = credential or {}
-    custom_base = cred.get("baseUrl") or cred.get("clusterUrl") or cred.get("url")
-    if custom_base and str(custom_base).strip():
-        return str(custom_base).strip().rstrip("/")
-    return TOGETHER_AI_API_BASE
+    for k in ["baseUrl", "clusterUrl", "host", "instanceUrl", "url"]:
+        if cred.get(k):
+            return str(cred[k]).strip().rstrip("/")
+    if "together_ai" == "datadog" and cred.get("site"):
+        return f"https://api.{cred['site'].strip().lstrip('https://').rstrip('/')}"
+    return API_BASE
 
-def _resolve_route(name: str) -> tuple[str, str]:
-    n = name.lower()
-    if "embedding" in n:
-        return "POST", "/embeddings"
-    elif "model" in n:
-        return "GET", "/models"
-    else:
-        return "POST", "/chat/completions"
-
+# Exact Route Specifications: action_name -> (method, endpoint, path_params, query_params)
+ROUTES: Dict[str, List[Any]] = {
+    "list_models": [
+        "GET",
+        "/models",
+        [],
+        []
+    ],
+    "create_chat_completion": [
+        "POST",
+        "/chat/completions",
+        [],
+        []
+    ],
+    "create_embedding": [
+        "POST",
+        "/embeddings",
+        [],
+        []
+    ]
+}
 
 class TogetherAIDynamicAction(Action):
     def __init__(self, action_meta: Dict[str, Any]):
@@ -55,153 +66,157 @@ class TogetherAIDynamicAction(Action):
             id=action_meta["id"],
             name=action_meta["name"],
             description=action_meta["description"],
-            category=action_meta.get("category", "AI"),
-            required_scopes=action_meta.get("required_scopes", []),
-            input_schema=action_meta.get("input_schema", {"type": "object", "properties": {}})
+            category=action_meta.get("category", "Modern AI & Vector DBs"),
+            required_scopes=action_meta.get("required_scopes") or action_meta.get("requiredScopes", []),
+            input_schema=action_meta.get("input_schema") or action_meta.get("inputSchema", {"type": "object", "properties": {}}),
+            output_schema=action_meta.get("output_schema") or action_meta.get("outputSchema", {"type": "object"})
         )
-        self.method, self.endpoint_template = _resolve_route(action_meta["name"])
+        self.action_meta = action_meta
+        act_name = action_meta["name"]
+        route_info = ROUTES.get(act_name) or [
+            action_meta.get("method", "GET"),
+            action_meta.get("endpoint", ""),
+            action_meta.get("pathParams", []),
+            action_meta.get("queryParams", [])
+        ]
+        self.method = route_info[0]
+        self.endpoint_template = route_info[1]
+        self.path_params = route_info[2]
+        self.query_params = set(route_info[3])
 
     async def execute(self, input_data: Dict[str, Any], credential: Optional[Dict[str, Any]], client: httpx.AsyncClient) -> Dict[str, Any]:
         token = _extract_token(credential)
         base_url = _resolve_base_url(credential)
         inputs = dict(input_data or {})
-        headers = _together_ai_headers(token, credential)
+        headers = _headers(token, credential)
 
         path = self.endpoint_template
-        for var in ["id", "projectId", "project_id", "project-slug", "workflow-id", "job-number", "tailnet", "organization_slug", "collection_name", "index_name", "chatId", "uid"]:
-            placeholder = "{" + var + "}"
-            if placeholder in path and var in inputs:
-                val = inputs.pop(var)
-                path = path.replace(placeholder, urllib.parse.quote(str(val), safe=""))
+        # Replace path variables (supporting camelCase, snake_case, and kebab-case)
+        path_matches = re.findall(r"\{([^\}]+)\}", path)
+        for var in path_matches:
+            val = None
+            candidates = [
+                var,
+                "".join(["_" + c.lower() if c.isupper() else c for c in var]).lstrip("_"),
+                var.replace("-", "_"),
+                "id",
+                "name"
+            ]
+            for cand in candidates:
+                if cand in inputs:
+                    val = inputs.pop(cand)
+                    break
+            if val is not None:
+                path = path.replace(chr(123) + var + chr(125), urllib.parse.quote(str(val), safe=""))
+
+        # Special endpoints overriding base URL
+        if "together_ai" == "deepseek" and self.name == "create_anthropic_message":
+            base_url = "https://api.deepseek.com/anthropic"
+        elif "together_ai" == "new_relic" and path.startswith("/graphql"):
+            base_url = "https://api.newrelic.com"
 
         url = f"{base_url}{path}"
         assert_public_url(url)
 
         req_method = self.method
-        json_body = inputs if req_method in ["POST", "PUT", "PATCH"] else None
-        params = {k: v for k, v in inputs.items() if v is not None} if req_method == "GET" else None
+        params = {}
+        body = {}
+
+        for k, v in inputs.items():
+            if v is None or v == "":
+                continue
+            if req_method in ["GET", "DELETE"] or k in self.query_params or k in ["limit", "offset", "cursor", "page", "per_page"]:
+                params[k] = v
+            else:
+                body[k] = v
+
+        # Payload wraps / transforms if required
+        if "together_ai" == "postman" and self.name == "create_a_collection":
+            if "collection" not in body and body:
+                body = {"collection": {"info": {"name": body.get("name", "New Collection"), "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"}, "item": []}}
+            elif isinstance(body.get("collection"), dict):
+                coll_info = body["collection"].setdefault("info", {})
+                if "schema" not in coll_info:
+                    coll_info["schema"] = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+        elif "together_ai" == "pagerduty" and self.name == "acknowledge_incident":
+            body = {"incident": {"type": "incident_reference", "status": "acknowledged"}}
+        elif "together_ai" == "pagerduty" and self.name == "resolve_incident":
+            body = {"incident": {"type": "incident_reference", "status": "resolved"}}
+
+        json_body = body if (req_method in ["POST", "PUT", "PATCH"] and body) else None
 
         resp = await execute_guarded_request(
             client=client,
             method=req_method,
             url=url,
             headers=headers,
-            json_body=json_body,
-            params=params
+            params=params if params else None,
+            json_body=json_body
         )
 
         try:
             data = resp.json()
         except Exception:
-            data = resp.text
+            data = {"raw_response": resp.text}
 
         if resp.status_code >= 400:
-            err_msg = str(data)
-            if isinstance(data, dict):
-                err_msg = data.get("message") or data.get("error") or data.get("detail") or str(data)
+            err_msg = data.get("message") or data.get("error") or data.get("detail") or resp.text
             raise ValueError(f"Together AI API error ({resp.status_code}): {err_msg}")
 
         return {"status": resp.status_code, "data": data}
+
 
 class TogetherAIProvider(Provider):
     def __init__(self):
         super().__init__(
             service="together_ai",
             display_name="Together AI",
-            category="AI",
-            auth_types=['api_key'],
-            description="High-performance cloud platform for training, fine-tuning, and running 100+ open-source AI models.",
-            homepage_url="https://www.together.ai",
-            base_url=TOGETHER_AI_API_BASE,
-            auth_configs=[
-                {
-                    "type": "api_key",
-                    "label": "Together AI API Key",
-                    "placeholder": "...",
-                    "description": "Together AI access token or API key.",
-                    "docs_url": "https://www.together.ai",
-                    "docs_label": "Together AI Documentation",
-                    "fields": [
-                        {
-                            "key": "apiKey",
-                            "label": "API Key",
-                            "type": "password",
-                            "required": True,
-                            "placeholder": "...",
-                            "description": "Together AI API key or access token."
-                        }
-                    ]
-                }
-            ]
+            category="Modern AI & Vector DBs",
+            auth_types=["api_key"] if "together_ai" not in ["datadog", "sentry"] else ["api_key", "oauth2"],
+            description="Together AI integration suite for ConnectorHub."
         )
-
-        for meta in get_provider_actions("together_ai"):
-            self.register_action(TogetherAIDynamicAction(meta))
+        for act in get_provider_actions("together_ai"):
+            self.register_action(TogetherAIDynamicAction(act))
 
     async def validate_credentials(self, credential: Dict[str, Any], client: httpx.AsyncClient) -> Dict[str, Any]:
         token = _extract_token(credential)
         base_url = _resolve_base_url(credential)
-        headers = _together_ai_headers(token, credential)
-        url = f"{base_url}/models"
-        assert_public_url(url)
+        headers = _headers(token, credential)
 
-        try:
-            resp = await execute_guarded_request(client=client, method="GET", url=url, headers=headers)
-        except Exception as e:
-            raise ValueError(f"Unable to reach Together AI API: {str(e)}")
-
-        if resp.status_code in [401, 403]:
-            raise ValueError("Invalid Together AI credentials. Returned 401/403 Unauthorized.")
-        elif resp.status_code >= 400:
-            raise ValueError(f"Together AI credential validation failed with status {resp.status_code}: {resp.text[:300]}")
-
-        try:
-            account_id = "together-account"
-            display_name = "Together AI Account"
-        except Exception:
-            account_id = "together_ai-account"
-            display_name = "Together AI Account"
-
-        return {
-            "account_id": str(account_id),
-            "display_name": display_name,
-            "granted_scopes": ["all"],
-            "avatar_url": None
-        }
-
-    async def proxy(
-        self,
-        endpoint: str,
-        method: str,
-        credential: Optional[Dict[str, Any]],
-        body: Any,
-        headers: Dict[str, str],
-        client: httpx.AsyncClient
-    ) -> Dict[str, Any]:
-        token = _extract_token(credential)
-        base_url = _resolve_base_url(credential)
-        clean_endpoint = endpoint if endpoint.startswith("/") else f"/{endpoint}"
-        target_url = f"{base_url}{clean_endpoint}"
-        assert_public_url(target_url)
-
-        req_headers = dict(headers or {})
-        req_headers.update(_together_ai_headers(token, credential))
+        val_url = f"{base_url}/models"
+        assert_public_url(val_url)
 
         resp = await execute_guarded_request(
             client=client,
-            method=method.upper(),
-            url=target_url,
-            headers=req_headers,
-            json_body=body if body and method.upper() in ["POST", "PUT", "PATCH"] else None
+            method="GET",
+            url=val_url,
+            headers=headers
         )
 
+        if resp.status_code in [401, 403]:
+            raise ValueError(f"Invalid Together AI credentials: {resp.status_code} {resp.text}")
+        elif resp.status_code >= 400:
+            raise ValueError(f"Together AI validation failed: {resp.status_code} {resp.text}")
+
         try:
-            resp_data = resp.json()
+            res_data = resp.json()
         except Exception:
-            resp_data = resp.text
+            res_data = {}
+
+        acc_id = None
+        disp_name = None
+        for key in ["id", "user_id", "userId", "username", "login", "email", "name", "account_id"]:
+            if isinstance(res_data, dict):
+                if key in res_data:
+                    acc_id = str(res_data[key])
+                    break
+                user_obj = res_data.get("user") or res_data.get("data")
+                if isinstance(user_obj, dict) and key in user_obj:
+                    acc_id = str(user_obj[key])
+                    disp_name = str(user_obj.get("name") or user_obj.get("username") or acc_id)
+                    break
 
         return {
-            "status": resp.status_code,
-            "headers": dict(resp.headers),
-            "data": resp_data
+            "account_id": acc_id or "connected_account",
+            "display_name": disp_name or f"Together AI ({acc_id or 'verified'})"
         }
