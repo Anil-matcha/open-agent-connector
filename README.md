@@ -138,6 +138,7 @@ Backend settings use the `CONNECTOR_` environment prefix. A `.env` file in the `
 | `CONNECTOR_ADMIN_TOKEN` | Bearer token for the admin API and management routes | Generated into `server/data/.admin_token` if unset |
 | `CONNECTOR_RUNTIME_TOKEN` | Optional static runtime token for `/v1` and `/mcp` | Unset (persistent DB tokens preferred) |
 | `CONNECTOR_EXPOSE_LOCAL_TOKEN` | Let `/api/auth/status` return the admin token to genuine loopback callers (never when proxy headers are present). Set `false` on any network-facing deployment. | `true` |
+| `CONNECTOR_ALLOW_PUBLIC_ACCESS` | Let visitors without a token use the console and API in a shared **public sandbox** (their own isolated tenant, never the operator's data). Leave it off on any instance that holds real credentials. | `false` |
 | `CONNECTOR_ALLOWED_RETURN_ORIGINS` | Comma-separated origins, besides `CONNECTOR_PUBLIC_ORIGIN`, that a `redirectUri` may point to after OAuth. Anything else is rejected, and the callback only ever redirects to the URL stored when the flow started. | `http://localhost:3000,http://127.0.0.1:3000` |
 | `CONNECTOR_ALLOW_PRIVATE_NETWORK` | Allow private network destinations for outbound requests | `false` |
 | `NEXT_PUBLIC_API_URL` | API base URL used by the browser frontend | `http://localhost:8000` |
@@ -269,7 +270,7 @@ OAuth state record), never from request input.
 - Connection names are unique per tenant, so two tenants can each have a `github` / `default` connection.
 - OAuth client credentials a tenant supplies are stored per tenant. Credentials from the server
   environment belong to the operator and are used only by the `default` tenant.
-- Unauthenticated visitors (when `CONNECTOR_ALLOW_PUBLIC_ACCESS` is on) live in a separate `public` tenant
+- Unauthenticated visitors (only when `CONNECTOR_ALLOW_PUBLIC_ACCESS` is turned on; it is off by default) live in a separate `public` tenant
   and never see the operator's data.
 - A multi-user or hosted layer plugs in through two hooks in `app.core.tenancy`:
   `register_principal_resolver(...)` maps its own credentials (API keys, sessions) to a `Principal` with a

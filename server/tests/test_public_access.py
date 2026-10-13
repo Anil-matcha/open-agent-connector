@@ -14,6 +14,12 @@ def client():
 admin_headers = {"Authorization": f"Bearer {settings.ADMIN_TOKEN}"}
 
 
+@pytest.fixture(autouse=True)
+def sandbox_enabled(monkeypatch):
+    """These tests exercise the public sandbox, which is off by default."""
+    monkeypatch.setattr(settings, "ALLOW_PUBLIC_ACCESS", True)
+
+
 def test_public_access_to_connections_and_providers(client):
     """Verify unauthenticated public visitors can list connections and oauth configs."""
     # 1. GET /api/connections without any token
@@ -76,3 +82,32 @@ def test_mcp_still_requires_authentication(client):
     """Ensure MCP protocol fails closed for unauthenticated requests even with public web access."""
     res = client.get("/mcp/tools")
     assert res.status_code == 401
+
+
+def test_public_access_is_off_by_default():
+    """A fresh install with no configuration must not hand out a working anonymous sandbox."""
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    env = {k: v for k, v in os.environ.items() if "ALLOW_PUBLIC_ACCESS" not in k}
+    env["PYTHONPATH"] = str(Path(__file__).resolve().parent.parent)
+    out = subprocess.run(
+        [sys.executable, "-c", "from app.core.config import settings; print(settings.ALLOW_PUBLIC_ACCESS)"],
+        env=env, cwd=env["PYTHONPATH"], capture_output=True, text=True, timeout=60,
+    )
+    assert out.stdout.strip().splitlines()[-1] == "False", out.stdout + out.stderr
+
+
+def test_anonymous_requests_are_rejected_when_the_sandbox_is_off(client, monkeypatch):
+    monkeypatch.setattr(settings, "ALLOW_PUBLIC_ACCESS", False)
+    assert client.get("/api/connections").status_code == 401
+    assert client.get("/api/runs").status_code == 401
+    assert client.get("/api/oauth/providers").status_code == 401
+    assert client.post("/api/runtime-tokens", json={"name": "x"}).status_code == 401
+    assert client.post("/v1/actions/github.get_current_user", json={"input": {}}).status_code == 401
+    assert client.get("/api/connections", headers={"Authorization": "Bearer not-a-token"}).status_code == 401
+    # the operator token still works, and the status route tells the console what is on offer
+    assert client.get("/api/connections", headers=admin_headers).status_code == 200
+    assert client.get("/api/auth/status").json()["allowPublicAccess"] is False

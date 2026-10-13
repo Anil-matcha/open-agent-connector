@@ -77,8 +77,9 @@ class Settings(BaseSettings):
 
     # Public Access Gate for Open Web Console
     ALLOW_PUBLIC_ACCESS: bool = Field(
-        default=os.environ.get("CONNECTOR_ALLOW_PUBLIC_ACCESS", os.environ.get("ALLOW_PUBLIC_ACCESS", "true")).lower() in ("true", "1", "yes"),
-        description="Allow public access to connect providers, manage tokens, and execute actions without an admin token."
+        default=os.environ.get("CONNECTOR_ALLOW_PUBLIC_ACCESS", os.environ.get("ALLOW_PUBLIC_ACCESS", "false")).lower() in ("true", "1", "yes"),
+        description=("Shared public sandbox: let visitors without a token use the console and API inside their own "
+                     "isolated tenant. Off by default; never enable it on an instance holding real credentials you do not want shared.")
     )
 
     # Origins (besides PUBLIC_ORIGIN) allowed as post-OAuth return URLs, comma separated.

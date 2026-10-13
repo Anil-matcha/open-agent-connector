@@ -351,7 +351,8 @@ def test_idempotency_keys_do_not_collide_across_tenants():
 
 # --- token extractors (how a hosted layer supplies credentials the core does not know) ---------------
 
-def test_registered_token_extractor_supplies_a_credential(client, seeded):
+def test_registered_token_extractor_supplies_a_credential(client, seeded, monkeypatch):
+    monkeypatch.setattr(settings, "ALLOW_PUBLIC_ACCESS", True)  # the "unregistered" half runs as a public visitor
     from app.core.tenancy import register_token_extractor, unregister_token_extractor
 
     def from_custom_header(request):

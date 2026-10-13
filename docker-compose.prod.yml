@@ -12,6 +12,8 @@ services:
       - CONNECTOR_ADMIN_TOKEN=${ADMIN_TOKEN}
       - CONNECTOR_ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - CONNECTOR_EXPOSE_LOCAL_TOKEN=false
+      # Shared public sandbox for visitors without a token. Off unless you set ALLOW_PUBLIC_ACCESS=true in .env.prod.
+      - CONNECTOR_ALLOW_PUBLIC_ACCESS=${ALLOW_PUBLIC_ACCESS:-false}
       # Extra origins allowed as post-OAuth return URLs (PUBLIC_ORIGIN is always allowed). Empty = none.
       - CONNECTOR_ALLOWED_RETURN_ORIGINS=${ALLOWED_RETURN_ORIGINS:-}
     healthcheck:
