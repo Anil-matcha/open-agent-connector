@@ -71,5 +71,7 @@ async def init_db():
         if existing_oauth_cols:
             if "expires_at" not in existing_oauth_cols:
                 await conn.execute(text("ALTER TABLE oauth_states ADD COLUMN expires_at VARCHAR(32)"))
+            if "auth_mode" not in existing_oauth_cols:
+                await conn.execute(text("ALTER TABLE oauth_states ADD COLUMN auth_mode VARCHAR(32) DEFAULT 'hosted'"))
 
 
