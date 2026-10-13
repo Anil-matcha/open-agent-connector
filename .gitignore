@@ -54,3 +54,7 @@ Thumbs.db
 
 PROVIDER_GUIDE.md
 scratch/
+# Production secrets (the real file lives only on the server)
+.env.prod
+.env.prod.*
+!.env.prod.example
