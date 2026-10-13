@@ -278,6 +278,7 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "display_name": "Airtable",
         "authorize_url": "https://airtable.com/oauth2/v1/authorize",
         "token_url": "https://airtable.com/oauth2/v1/token",
+        "token_auth_method": "basic",
         "default_scopes": ["data.records:read", "data.records:write", "schema.bases:read", "schema.bases:write"],
     },
     "gitlab": {
@@ -963,15 +964,26 @@ class OAuthService:
             token_url = token_url.replace("{subdomain}", subdomain).replace("{shopDomain}", subdomain)
         
         # Prepare token exchange payload
+        auth_method = provider_meta.get("token_auth_method", "body")
+        token_headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
         token_payload = {
-            "client_id": config["client_id"],
-            "client_secret": config["client_secret"],
             "code": code,
             "grant_type": "authorization_code"
         }
         if code_verifier:
             token_payload["code_verifier"] = code_verifier
         token_payload["redirect_uri"] = OAuthService.callback_url(service)
+
+        if auth_method == "basic":
+            basic_bytes = f"{config['client_id']}:{config['client_secret']}".encode("utf-8")
+            basic_b64 = base64.b64encode(basic_bytes).decode("utf-8")
+            token_headers["Authorization"] = f"Basic {basic_b64}"
+        else:
+            token_payload["client_id"] = config["client_id"]
+            token_payload["client_secret"] = config["client_secret"]
 
         client = await create_guarded_client()
         try:
@@ -980,7 +992,7 @@ class OAuthService:
                 method="POST",
                 url=token_url,
                 data=token_payload,
-                headers={"Accept": "application/json"}
+                headers=token_headers
             )
             if resp.status_code != 200:
                 raise ValueError(f"OAuth token exchange rejected by provider (status {resp.status_code}): {resp.text}")
@@ -1136,12 +1148,23 @@ class OAuthService:
 
             client = await create_guarded_client()
             try:
+                auth_method = provider_meta.get("token_auth_method", "body")
+                refresh_headers = {
+                    "Accept": "application/json",
+                    "Content-Type": "application/x-www-form-urlencoded"
+                }
                 refresh_payload = {
-                    "client_id": config["client_id"],
-                    "client_secret": config["client_secret"],
                     "refresh_token": refresh_token,
                     "grant_type": "refresh_token"
                 }
+                if auth_method == "basic":
+                    basic_bytes = f"{config['client_id']}:{config['client_secret']}".encode("utf-8")
+                    basic_b64 = base64.b64encode(basic_bytes).decode("utf-8")
+                    refresh_headers["Authorization"] = f"Basic {basic_b64}"
+                else:
+                    refresh_payload["client_id"] = config["client_id"]
+                    refresh_payload["client_secret"] = config["client_secret"]
+
                 refresh_token_url = provider_meta["token_url"]
                 subdomain = (config or {}).get("subdomain") or (config or {}).get("shopDomain") or (config or {}).get("shop") or ""
                 if "{" in refresh_token_url and subdomain:
@@ -1152,7 +1175,7 @@ class OAuthService:
                     method="POST",
                     url=refresh_token_url,
                     data=refresh_payload,
-                    headers={"Accept": "application/json"}
+                    headers=refresh_headers
                 )
 
                 if resp.status_code in (400, 401):
