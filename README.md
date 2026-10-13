@@ -289,3 +289,8 @@ CONNECTOR_ADMIN_TOKEN=test-admin python -m pytest tests/test_mcp_auth_regression
 ## Project status
 
 Open Agent Connector provides 236 registered providers and 8,024 catalog actions with fail-closed MCP authentication, runtime token authorization, AES-256-GCM encryption, SSRF protection with DNS rebinding defenses, and versioned Alembic database migrations. Contributions that improve provider coverage, documentation, and agent workflows are welcome.
+
+## License
+
+Open Agent Connector is licensed under the [Apache License 2.0](LICENSE). Unless you state otherwise, any
+contribution you submit for inclusion is licensed under the same terms (section 5 of the license).
