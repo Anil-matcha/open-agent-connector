@@ -570,6 +570,11 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
 }
 
 class OAuthService:
+    @staticmethod
+    def callback_url(service: str) -> str:
+        """Redirect URI registered with the provider; must match authorize and token exchange."""
+        return f"{settings.PUBLIC_ORIGIN.rstrip('/')}/api/oauth/{service}/callback"
+
     # In-memory per-connection locks to guarantee single-flight refresh operations
     _refresh_locks: Dict[str, asyncio.Lock] = {}
 
@@ -788,7 +793,7 @@ class OAuthService:
         scopes = custom_scopes or provider_meta.get("default_scopes", [])
         scope_str = " ".join(scopes) if service != "github" else ",".join(scopes)
 
-        callback_uri = f"http://localhost:8000/api/oauth/{service}/callback"
+        callback_uri = OAuthService.callback_url(service)
         params = {
             "client_id": client_id,
             "response_type": "code",
@@ -867,7 +872,7 @@ class OAuthService:
         }
         if code_verifier:
             token_payload["code_verifier"] = code_verifier
-        token_payload["redirect_uri"] = f"http://localhost:8000/api/oauth/{service}/callback"
+        token_payload["redirect_uri"] = OAuthService.callback_url(service)
 
         client = await create_guarded_client()
         try:

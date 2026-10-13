@@ -32,27 +32,31 @@ def test_mcp_discovery_requires_authentication():
     assert len(tools) > 5, "Admin should see discovery tools and action tools"
 
 def test_mcp_protocol_handshake_and_unauthenticated_gating():
-    """POST /mcp allows public handshake (initialize, ping) but fails closed on tool operations."""
-    # 1. Initialize (public handshake for capability negotiation)
+    """POST /mcp requires authentication on every RPC method, failing closed on unauthenticated calls."""
+    # 1. Unauthenticated initialize and ping must be rejected with 401
+    assert client.post("/mcp", json={"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}).status_code == 401
+    assert client.post("/mcp", json={"jsonrpc": "2.0", "id": 2, "method": "ping"}).status_code == 401
+
+    # 2. Authenticated initialize returns negotiated capabilities
     res_init = client.post("/mcp", json={
         "jsonrpc": "2.0",
         "id": 1,
         "method": "initialize",
         "params": {"protocolVersion": "2025-11-25"}
-    })
+    }, headers=admin_headers)
     assert res_init.status_code == 200
     assert res_init.json()["result"]["serverInfo"]["name"] == "connector-hub"
 
-    # 2. Ping (heartbeat)
+    # 3. Authenticated ping returns empty result
     res_ping = client.post("/mcp", json={
         "jsonrpc": "2.0",
         "id": 2,
         "method": "ping"
-    })
+    }, headers=admin_headers)
     assert res_ping.status_code == 200
     assert res_ping.json()["result"] == {}
 
-    # 3. Unauthenticated tools/list must be rejected with 401
+    # 4. Unauthenticated tools/list must be rejected with 401
     res_unauth_list = client.post("/mcp", json={
         "jsonrpc": "2.0",
         "id": 3,
@@ -251,37 +255,6 @@ def test_ssrf_validation_and_transport_pinning():
     with pytest.raises(SSRFViolationError):
         assert_public_url("file:///etc/passwd")
 
-def test_anonymous_mcp_loopback_opt_in_toggle():
-    """Verify that ALLOW_ANONYMOUS_MCP flag controls loopback access."""
-    # Ensure default is fail-closed
-    assert settings.ALLOW_ANONYMOUS_MCP is False
-
-    # Default: unauthenticated access fails closed
-    res_default = client.get("/mcp/tools")
-    assert res_default.status_code == 401
-
-    try:
-        # Opt-in explicitly for local developer loopback mode
-        settings.ALLOW_ANONYMOUS_MCP = True
-
-        # Loopback request now succeeds
-        res_optin = client.get("/mcp/tools")
-        assert res_optin.status_code == 200
-        tools = res_optin.json()["tools"]
-        assert len(tools) > 5
-
-        # POST /mcp tools/list also succeeds when opted in
-        res_post_list = client.post("/mcp", json={"jsonrpc": "2.0", "id": 20, "method": "tools/list", "params": {}})
-        assert res_post_list.status_code == 200
-        assert len(res_post_list.json()["result"]["tools"]) > 5
-
-    finally:
-        # Revert back to fail-closed
-        settings.ALLOW_ANONYMOUS_MCP = False
-
-    # Verify fail-closed is restored
-    res_restored = client.get("/mcp/tools")
-    assert res_restored.status_code == 401
 
 @pytest.mark.asyncio
 async def test_guarded_transport_loopback_connection_blocked():

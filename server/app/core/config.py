@@ -64,6 +64,9 @@ class Settings(BaseSettings):
         description="Optional static Bearer token for /v1 and /mcp"
     )
     
+    # Set CONNECTOR_EXPOSE_LOCAL_TOKEN=false on any network-facing deployment.
+    EXPOSE_LOCAL_TOKEN: bool = True
+
     # SSRF Protection
     ALLOW_PRIVATE_NETWORK: bool = False
 

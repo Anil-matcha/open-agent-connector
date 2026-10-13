@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Terminal, ExternalLink } from "lucide-react";
+import { API_BASE } from "@/lib/api";
 
 interface HeaderProps {
   title: string;
@@ -22,7 +23,7 @@ export function Header({ title, description, action }: HeaderProps) {
       <div className="flex items-center gap-3">
         {action}
         <a
-          href="http://localhost:8000/docs"
+          href={`${API_BASE}/docs`}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-zinc-600 hover:text-zinc-900 border border-zinc-200 rounded-md hover:bg-zinc-50 transition-colors"

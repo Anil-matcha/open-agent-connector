@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { API_BASE } from "@/lib/api";
 import {
   LayoutDashboard,
   Layers,
@@ -21,7 +22,7 @@ export function Sidebar() {
   useEffect(() => {
     async function checkHealth() {
       try {
-        const res = await fetch("http://localhost:8000/health");
+        const res = await fetch(`${API_BASE}/health`);
         setServerOnline(res.ok);
       } catch {
         setServerOnline(false);

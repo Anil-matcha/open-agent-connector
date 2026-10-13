@@ -6,17 +6,15 @@ This project is for developers who want to inspect, run, and extend their own ag
 
 ## Project description
 
-Open Agent Connector gives an agent a consistent way to discover connected services, find an action, read its input schema, and execute it. A FastAPI backend manages provider definitions, connections, outbound requests, and run records. A Next.js console provides screens for browsing providers and actions, managing connections and runtime tokens, and reviewing activity. SQLite stores application data locally by default.
-
-## Project description
-
 Open Agent Connector gives an agent a consistent way to discover connected services, find an action, read its input schema, and execute it. A FastAPI backend manages provider definitions, connections, outbound requests, and run records. A Next.js console provides screens for browsing providers and actions, managing connections and runtime tokens, and reviewing activity. SQLite stores application data locally by default, with PostgreSQL supported via SQLAlchemy async and Alembic migrations.
 
-The registry currently integrates **236 providers** with a catalog of **8,024 actions** spanning Developer tools, Project Management & CRM, Communication, Storage, AI/ML, E-Commerce, Social Media, Financial, and Utilities. For a complete list of all 236 providers, auth types, action counts, and category classifications, see [PROVIDER_GUIDE.md](PROVIDER_GUIDE.md).
+The catalog currently registers **236 providers** with **8,024 actions** (counted from `server/app/providers/registry.py` and `actions_catalog.json`) spanning Developer tools, Project Management & CRM, Communication, Storage, AI/ML, E-Commerce, Social Media, Financial, and Utilities. For a complete list of all 236 providers, auth types, action counts, and category classifications, see [PROVIDER_GUIDE.md](PROVIDER_GUIDE.md). Registered does not mean battle-tested: not every provider action or OAuth flow has been verified against a live account, so confirm the ones you depend on.
 
 ## Features
 
-- **MCP gateway:** Model Context Protocol (MCP) JSON-RPC 2.0 endpoint over `POST /mcp` and tool discovery over `GET /mcp/tools`. Fails closed by default; requires runtime or admin authentication with granular scope enforcement.
+- **MCP gateway:** Model Context Protocol (MCP) JSON-RPC 2.0 endpoint over `POST /mcp` and tool discovery over `GET /mcp/tools`. Every remote MCP call fails closed and requires an admin or runtime token with granular scope enforcement.
+- **Scoped runtime tokens:** hashed, revocable tokens with deny-by-default action grants plus optional connection and proxy restrictions.
+- **OAuth:** authorization URL, state and code exchange, encrypted token storage, and refresh for providers that support OAuth.
 - **Action discovery:** agents can list providers, search actions, inspect action guides and schemas, and execute actions.
 - **Direct MCP actions:** provider actions are exposed as individual MCP tools (scoped to caller token grants), alongside discovery and execution meta-tools.
 - **REST API:** list providers and actions, execute an action, or use a provider proxy where supported.
@@ -137,9 +135,9 @@ Backend settings use the `CONNECTOR_` environment prefix. A `.env` file in the `
 | `CONNECTOR_DATABASE_URL` | SQLAlchemy async database URL (SQLite or PostgreSQL) | SQLite file under `server/data/connector.db` |
 | `CONNECTOR_DATA_DIR` | Application data directory | `server/data/` |
 | `CONNECTOR_ENCRYPTION_KEY` | Stable AES-256 key used to encrypt stored credentials | Generated local key file if unset |
-| `CONNECTOR_ADMIN_TOKEN` | Bearer token required for `/api/*` management routes | Auto-generated in `server/data/.admin_token` |
-| `CONNECTOR_RUNTIME_TOKEN` | Optional static Bearer token for runtime action execution | `""` (persistent DB tokens preferred) |
-| `CONNECTOR_ALLOW_ANONYMOUS_MCP` | Explicit opt-in for unauthenticated MCP access (restricted to loopback) | `false` (fail-closed) |
+| `CONNECTOR_ADMIN_TOKEN` | Bearer token for the admin API and management routes | Generated into `server/data/.admin_token` if unset |
+| `CONNECTOR_RUNTIME_TOKEN` | Optional static runtime token for `/v1` and `/mcp` | Unset (persistent DB tokens preferred) |
+| `CONNECTOR_EXPOSE_LOCAL_TOKEN` | Let `/api/auth/status` return the admin token to genuine loopback callers (never when proxy headers are present). Set `false` on any network-facing deployment. | `true` |
 | `CONNECTOR_ALLOW_PRIVATE_NETWORK` | Allow private network destinations for outbound requests | `false` |
 | `NEXT_PUBLIC_API_URL` | API base URL used by the browser frontend | `http://localhost:8000` |
 
@@ -166,12 +164,14 @@ Configure an MCP client (such as Claude Desktop, Cursor, or Antigravity) that su
     "open-agent-connector": {
       "url": "http://localhost:8000/mcp",
       "headers": {
-        "Authorization": "Bearer <YOUR_RUNTIME_TOKEN_OR_ADMIN_TOKEN>"
+        "Authorization": "Bearer <runtime-or-admin-token>"
       }
     }
   }
 }
 ```
+
+A token is required. Unauthenticated, invalid, or revoked tokens receive `401`. Tool discovery and execution are filtered by the token's action and connection grants.
 
 The MCP gateway provides five discovery and execution meta-tools:
 - `list_apps`: list providers with display names, categories, and authentication requirements.
@@ -180,11 +180,11 @@ The MCP gateway provides five discovery and execution meta-tools:
 - `get_action_guide`: retrieve full Markdown parameter documentation and JSON Schema for an action.
 - `execute_action`: execute an authorized action with input arguments and target connection alias.
 
-Individual provider actions are also exposed as direct MCP tools (e.g. `github_get_current_user`), dynamically filtered by the caller's authorized action permissions.
+Individual provider actions are also exposed as direct MCP tools (e.g. `github_get_current_user`), dynamically filtered by the caller's authorized action permissions. An action call may include a `connectionName` argument; it defaults to `default`.
 
 ## REST API examples
 
-List providers:
+List providers (catalog browsing is public):
 
 ```bash
 curl http://localhost:8000/v1/providers
@@ -200,7 +200,7 @@ Execute an action with a runtime token:
 
 ```bash
 curl -X POST http://localhost:8000/v1/actions/github.get_current_user \
-  -H 'Authorization: Bearer ch_live_your_runtime_token_here' \
+  -H 'Authorization: Bearer <runtime-or-admin-token>' \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: example-request-001' \
   -d '{"input": {}, "connectionName": "default"}'
@@ -240,14 +240,32 @@ Provider actions are maintained in a unified catalog at `server/app/providers/ac
 
 ## Data and security notes
 
-- **Route Authentication & Authorization**:
-  - Management endpoints under `/api/*` require an Administrator Bearer token (`ADMIN_TOKEN`).
-  - Action execution routes (`POST /v1/actions/*`) and proxy routes (`POST /v1/proxy/*`) enforce granular runtime authentication with deny-by-default wildcard action matching (`allowedActions`, `blockedActions`) and connection restrictions (`allowedConnections`).
-  - Remote MCP HTTP endpoints (`POST /mcp` and `GET /mcp/tools`) fail closed by default, requiring a valid runtime or admin token for tool discovery and execution. Protocol handshakes (`initialize`, `ping`) are public for client negotiation. Local single-user desktop development can explicitly opt into loopback anonymous access via `CONNECTOR_ALLOW_ANONYMOUS_MCP=true`.
-- **Encrypted Credential Storage**: Connection credentials and OAuth access/refresh tokens are encrypted at rest with AES-256-GCM using `cryptography`. Secrets are never logged or returned unredacted in API responses.
+- The default database and generated local key are stored under `server/data/`; keep this directory out of source control and protect it in backups.
+- Connection credentials and OAuth tokens are encrypted at rest with AES-256-GCM. The database alone is not sufficient to recover them; the encryption key must also be preserved securely.
+- Outbound requests check resolved IP addresses and block private or internal destinations by default. The `CONNECTOR_ALLOW_PRIVATE_NETWORK` option relaxes some private-address blocking and should be used only in a controlled environment. Loopback, link-local, and metadata addresses remain blocked.
+- Run logs keep bounded summaries of action inputs and outputs with sensitive credentials automatically redacted.
+- **Authentication is enforced per route:**
+
+  | Routes | Credential |
+  | --- | --- |
+  | `/api/*` (connections, runtime tokens, runs, stats, OAuth config and authorize) | Admin token |
+  | `POST /v1/actions/{id}`, `POST /v1/proxy/{service}` | Runtime or admin token, plus action, connection, and proxy grants |
+  | `POST /mcp`, `GET /mcp/tools` | Runtime or admin token (fail closed) |
+  | `GET /v1/providers`, `GET /v1/actions`, `/health`, `/docs`, OAuth callback, `/api/auth/status` and `/api/auth/verify` | Public. These expose catalog metadata or the OAuth redirect, not credentials. |
+
 - **Outbound HTTP / SSRF Defense**: All outbound provider calls execute through `GuardedTransport`, which validates target IP addresses and pins TCP connections directly to the vetted IP, preventing DNS rebinding (TOCTOU) attacks while preserving TLS SNI and certificate validation. Private subnets, loopback, link-local, and cloud metadata (e.g. AWS/GCP `169.254.169.254`) are strictly blocked.
-- **Audit Logs & Redaction**: Action executions record execution duration, HTTP status, and bounded summaries with secret tokens automatically redacted.
+- **Behind a reverse proxy**, set `CONNECTOR_EXPOSE_LOCAL_TOKEN=false`, bind the API to loopback or a private network, terminate TLS at the proxy, and rate-limit `/api/auth/verify`. See `docker-compose.prod.yml` for a loopback-only overlay.
 - **Database Portability & Deployment**: Backed by SQLite async by default with auto-migration, with PostgreSQL supported via SQLAlchemy async and versioned Alembic migrations (`alembic upgrade head`). A single-instance deployment is recommended until distributed locking and replication coordination are configured across multiple instances.
+
+## Production deployment
+
+```bash
+# .env.prod: PUBLIC_ORIGIN=https://connector.example.com
+#            ADMIN_TOKEN=<long random value>  ENCRYPTION_KEY=<long random value>
+docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d --build
+```
+
+This publishes the API on `127.0.0.1:8100` and the console on `127.0.0.1:3100`. Put nginx or another TLS-terminating proxy in front: route `/api`, `/v1`, `/mcp`, `/health`, and `/docs` to the API and everything else to the console. Back up `.env.prod` and the `connector_data` volume together; without the encryption key, saved credentials cannot be decrypted. Run one instance only.
 
 ## Development
 
@@ -260,6 +278,13 @@ npm run build
 ```
 
 For API changes, run the backend locally with Uvicorn's reload option and use `/docs` to inspect the generated OpenAPI schema.
+
+Run the in-process MCP authentication regression tests from `server/`:
+
+```bash
+pip install pytest pytest-asyncio
+CONNECTOR_ADMIN_TOKEN=test-admin python -m pytest tests/test_mcp_auth_regression.py tests/test_mcp_security.py
+```
 
 ## Project status
 

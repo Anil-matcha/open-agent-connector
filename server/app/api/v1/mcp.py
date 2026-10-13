@@ -1,53 +1,39 @@
-from fastapi import APIRouter, Depends, Request, HTTPException, status
+from fastapi import APIRouter, Depends, Request, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Dict, Any, Optional
 
 from app.db.session import get_db
 from app.services.mcp_service import McpService
 from app.core.auth import resolve_principal, _extract_token, Principal
-from app.core.config import settings
 
 router = APIRouter(tags=["MCP"])
 
-def _is_loopback_request(request: Request) -> bool:
-    """Checks if incoming HTTP request originates from a local loopback client."""
-    client_host = request.client.host if request.client else ""
-    return client_host in ("127.0.0.1", "::1", "localhost", "testclient")
 
-async def _authenticate_mcp_request(request: Request, db: AsyncSession) -> Optional[Principal]:
-    """
-    Resolves principal from Authorization or dedicated token headers.
-    Enforces fail-closed authentication unless ALLOW_ANONYMOUS_MCP is explicitly enabled on loopback.
-    Raises HTTP 401 Unauthorized for missing, invalid, or revoked tokens.
-    """
+async def _require_mcp_principal(request: Request, db: AsyncSession) -> Principal:
+    """Fail closed: every remote MCP call needs a valid admin or runtime token."""
     token = _extract_token(request)
-    if not token:
-        if settings.ALLOW_ANONYMOUS_MCP and _is_loopback_request(request):
-            return None
+    principal = await resolve_principal(token, db) if token else None
+    if principal is None:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="MCP authentication required: missing bearer token",
-            headers={"WWW-Authenticate": "Bearer"}
-        )
-
-    principal = await resolve_principal(token, db)
-    if not principal:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="MCP authentication failed: invalid or revoked bearer token",
-            headers={"WWW-Authenticate": "Bearer"}
+            status_code=401,
+            detail="Authentication required: missing, invalid, or revoked token",
+            headers={"WWW-Authenticate": "Bearer"},
         )
     return principal
+
 
 @router.get("/mcp/tools")
 async def list_mcp_tools(request: Request, db: AsyncSession = Depends(get_db)):
     """List tool definitions for MCP clients, scoped to caller credentials."""
-    principal = await _authenticate_mcp_request(request, db)
+    principal = await _require_mcp_principal(request, db)
     return {"tools": McpService.get_tool_definitions(include_actions=True, principal=principal)}
+
 
 @router.post("/mcp")
 async def handle_mcp_jsonrpc(request: Request, db: AsyncSession = Depends(get_db)):
     """Full Model Context Protocol (MCP) JSON-RPC 2.0 endpoint for Claude Desktop, Cursor, Antigravity, and all MCP agents."""
+    principal = await _require_mcp_principal(request, db)
+
     try:
         rpc = await request.json()
     except Exception:
@@ -96,11 +82,8 @@ async def handle_mcp_jsonrpc(request: Request, db: AsyncSession = Depends(get_db
             "result": {}
         }
 
-    # All operational methods (tools/list, tools/call, etc.) require an authenticated principal
-    principal = await _authenticate_mcp_request(request, db)
-
     # 3. Discovery: 'tools/list'
-    if method == "tools/list":
+    elif method == "tools/list":
         tools = McpService.get_tool_definitions(include_actions=True, principal=principal)
         return {
             "jsonrpc": "2.0",

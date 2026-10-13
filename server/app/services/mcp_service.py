@@ -3,7 +3,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.providers.registry import registry
 from app.services.connection_service import ConnectionService
 from app.services.action_runner import ActionRunner
-from app.core.config import settings
 
 class McpService:
     @staticmethod
@@ -69,33 +68,29 @@ class McpService:
 
         # 2. Expose individual actions directly, filtered by caller's permissions
         if include_actions:
-            # If no principal is provided and anonymous MCP is disabled, fail closed: do not expose actions
-            if principal is None and not settings.ALLOW_ANONYMOUS_MCP:
-                pass
-            else:
-                for action in registry.list_actions():
-                    # If caller principal has scoped permissions, filter actions
-                    if principal and not principal.is_admin and not principal.can_access_action(action.id):
-                        continue
+            for action in registry.list_actions():
+                # If caller principal has scoped permissions, filter actions
+                if principal is None or not principal.can_access_action(action.id):
+                    continue
 
-                    provider = registry.get_action_provider(action.id)
-                    tool_name = action.id.replace(".", "_")
-                    
-                    clean_schema = dict(action.input_schema or {"type": "object", "properties": {}})
-                    clean_schema.setdefault("type", "object")
-                    clean_schema.setdefault("properties", {})
-                    
-                    if "connectionName" not in clean_schema["properties"]:
-                        clean_schema["properties"]["connectionName"] = {
-                            "type": "string",
-                            "description": "Optional connection alias (defaults to 'default')"
-                        }
+                provider = registry.get_action_provider(action.id)
+                tool_name = action.id.replace(".", "_")
+                
+                clean_schema = dict(action.input_schema or {"type": "object", "properties": {}})
+                clean_schema.setdefault("type", "object")
+                clean_schema.setdefault("properties", {})
+                
+                if "connectionName" not in clean_schema["properties"]:
+                    clean_schema["properties"]["connectionName"] = {
+                        "type": "string",
+                        "description": "Optional connection alias (defaults to 'default')"
+                    }
 
-                    tools.append({
-                        "name": tool_name,
-                        "description": f"[{provider.display_name if provider else 'Provider'}] {action.description}",
-                        "inputSchema": clean_schema
-                    })
+                tools.append({
+                    "name": tool_name,
+                    "description": f"[{provider.display_name if provider else 'Provider'}] {action.description}",
+                    "inputSchema": clean_schema
+                })
 
         return tools
 
@@ -106,9 +101,8 @@ class McpService:
         arguments: Dict[str, Any],
         principal: Optional[Any] = None
     ) -> Dict[str, Any]:
-        # Enforce authentication gate inside service layer
-        if principal is None and not settings.ALLOW_ANONYMOUS_MCP:
-            return {"error": "Authentication required: no authorized principal provided"}
+        if principal is None:
+            return {"error": "Authentication required: no principal supplied"}
 
         args = dict(arguments or {})
 
@@ -134,14 +128,13 @@ class McpService:
 
         elif name == "list_connections":
             conns = await ConnectionService.list_connections(session, args.get("service"))
-            # Filter results by caller connection grants
-            if principal and not principal.is_admin:
+            if not principal.is_admin:
                 conns = [c for c in conns if principal.can_access_connection(c["connectionName"])]
             return {"connections": conns}
 
         elif name == "search_actions":
             matched = registry.search_actions(args.get("query", ""), args.get("service"))
-            if principal and not principal.is_admin:
+            if not principal.is_admin:
                 matched = [a for a in matched if principal.can_access_action(a.id)]
             return {
                 "actions": [
@@ -164,7 +157,7 @@ class McpService:
             if not action:
                 return {"error": f"Unknown action: '{action_id}'"}
 
-            if principal and not principal.is_admin and not principal.can_access_action(action.id):
+            if not principal.can_access_action(action.id):
                 return {"error": f"Permission denied: action '{action.id}' is not authorized for this token"}
             
             provider = registry.get_action_provider(action.id)
@@ -201,11 +194,10 @@ class McpService:
             input_data = args.get("input", {})
             conn_name = args.get("connectionName", "default")
 
-            if principal and not principal.is_admin:
-                if not principal.can_access_action(action_id):
-                    return {"error": f"Permission denied: action '{action_id}' is not authorized for this token"}
-                if not principal.can_access_connection(conn_name):
-                    return {"error": f"Permission denied: connection '{conn_name}' is not authorized for this token"}
+            if not principal.can_access_action(action_id):
+                return {"error": f"Permission denied: action '{action_id}' is not authorized for this token"}
+            if not principal.can_access_connection(conn_name):
+                return {"error": f"Permission denied: connection '{conn_name}' is not authorized for this token"}
 
             return await ActionRunner.run(
                 session=session,
@@ -213,7 +205,7 @@ class McpService:
                 input_data=input_data,
                 connection_name=conn_name,
                 caller="mcp",
-                principal_id=principal.id if principal else None
+                principal_id=principal.id
             )
 
         # 2. Direct Action Execution (e.g. github_create_issue, github_get_current_user)
@@ -224,11 +216,10 @@ class McpService:
 
         if target_action:
             conn_name = args.pop("connectionName", "default")
-            if principal and not principal.is_admin:
-                if not principal.can_access_action(target_action.id):
-                    return {"error": f"Permission denied: action '{target_action.id}' is not authorized for this token"}
-                if not principal.can_access_connection(conn_name):
-                    return {"error": f"Permission denied: connection '{conn_name}' is not authorized for this token"}
+            if not principal.can_access_action(target_action.id):
+                return {"error": f"Permission denied: action '{target_action.id}' is not authorized for this token"}
+            if not principal.can_access_connection(conn_name):
+                return {"error": f"Permission denied: connection '{conn_name}' is not authorized for this token"}
 
             return await ActionRunner.run(
                 session=session,
@@ -236,7 +227,7 @@ class McpService:
                 input_data=args,
                 connection_name=conn_name,
                 caller="mcp",
-                principal_id=principal.id if principal else None
+                principal_id=principal.id
             )
 
         return {"error": f"Unknown MCP tool: '{name}'"}
