@@ -17,11 +17,18 @@ async def get_auth_status(request: Request):
     """
     client_host = request.client.host if request.client else ""
     is_loopback = client_host in ("127.0.0.1", "::1", "localhost", "testclient")
+    # A reverse proxy on the same host also appears as loopback, so any proxy
+    # header means the caller is not genuinely local.
+    proxied = any(
+        h in request.headers
+        for h in ("x-forwarded-for", "x-real-ip", "forwarded", "x-forwarded-host")
+    )
+    expose = settings.EXPOSE_LOCAL_TOKEN and is_loopback and not proxied
 
     return {
         "status": "ready",
-        "isLoopback": is_loopback,
-        "localToken": settings.ADMIN_TOKEN if is_loopback else None
+        "isLoopback": is_loopback and not proxied,
+        "localToken": settings.ADMIN_TOKEN if expose else None
     }
 
 @router.post("/verify")

@@ -8,16 +8,30 @@ from app.core.auth import resolve_principal, _extract_token, Principal
 
 router = APIRouter(tags=["MCP"])
 
+
+async def _require_mcp_principal(request: Request, db: AsyncSession) -> Principal:
+    """Fail closed: every remote MCP call needs a valid admin or runtime token."""
+    token = _extract_token(request)
+    principal = await resolve_principal(token, db) if token else None
+    if principal is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required: missing, invalid, or revoked token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return principal
+
 @router.get("/mcp/tools")
 async def list_mcp_tools(request: Request, db: AsyncSession = Depends(get_db)):
     """List tool definitions for MCP clients, scoped to caller credentials."""
-    token = _extract_token(request)
-    principal = await resolve_principal(token, db) if token else None
+    principal = await _require_mcp_principal(request, db)
     return {"tools": McpService.get_tool_definitions(include_actions=True, principal=principal)}
 
 @router.post("/mcp")
 async def handle_mcp_jsonrpc(request: Request, db: AsyncSession = Depends(get_db)):
     """Full Model Context Protocol (MCP) JSON-RPC 2.0 endpoint for Claude Desktop, Cursor, Antigravity, and all MCP agents."""
+    principal = await _require_mcp_principal(request, db)
+
     try:
         rpc = await request.json()
     except Exception:
@@ -30,12 +44,6 @@ async def handle_mcp_jsonrpc(request: Request, db: AsyncSession = Depends(get_db
     rpc_id = rpc.get("id")
     method = rpc.get("method")
     params = rpc.get("params") or {}
-
-    # Extract & resolve principal from HTTP request
-    token = _extract_token(request)
-    principal: Optional[Principal] = None
-    if token:
-        principal = await resolve_principal(token, db)
 
     # Handle notifications (requests without 'id')
     if rpc_id is None and method in ["notifications/initialized", "initialized"]:
