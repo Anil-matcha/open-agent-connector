@@ -16,6 +16,9 @@ from app.core.ssrf import assert_public_url, execute_guarded_request
 def _resolve_mailchimp_base(credential: Optional[Dict[str, Any]]) -> str:
     cred = credential or {}
     key = str(cred.get("apiKey") or cred.get("accessToken") or "")
+    if cred.get("apiEndpoint"):
+        endpoint = str(cred["apiEndpoint"]).rstrip("/")
+        return f"{endpoint}/3.0" if not endpoint.endswith("/3.0") else endpoint
     server = cred.get("serverPrefix") or cred.get("dc")
     if not server and "-" in key:
         server = key.split("-")[-1].strip()
@@ -26,8 +29,18 @@ def _mailchimp_headers(credential: Optional[Dict[str, Any]]) -> Dict[str, str]:
     cred = credential or {}
     key = str(cred.get("apiKey") or cred.get("accessToken") or "").strip()
     if not key:
-        raise ValueError("Mailchimp API key required. Please connect your Mailchimp account first.")
+        raise ValueError("Mailchimp API key or OAuth access token required.")
 
+    # OAuth access tokens use OAuth / Bearer header
+    if "-" not in key and (cred.get("authType") == "oauth2" or cred.get("accessToken")):
+        return {
+            "Authorization": f"OAuth {key}",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "User-Agent": "ConnectorHub/1.0"
+        }
+
+    # API keys (format: {hash}-{dc}) use HTTP Basic Auth
     auth_str = base64.b64encode(f"anystring:{key}".encode("utf-8")).decode("utf-8")
     return {
         "Authorization": f"Basic {auth_str}",
@@ -175,7 +188,59 @@ class MailchimpProvider(Provider):
             self.register_action(MailchimpDynamicAction(meta))
 
     async def validate_credentials(self, credential: Dict[str, Any], client: httpx.AsyncClient) -> Dict[str, Any]:
-        """Validate Mailchimp API credentials by querying GET /ping."""
+        """Validate Mailchimp API credentials or OAuth access token."""
+        cred = credential or {}
+        key = str(cred.get("apiKey") or cred.get("accessToken") or "").strip()
+        if not key:
+            raise ValueError("Mailchimp API key or OAuth access token required.")
+
+        # Check if OAuth token or API key
+        is_oauth = "-" not in key and (cred.get("authType") == "oauth2" or bool(cred.get("accessToken")))
+
+        if is_oauth:
+            # Discover user's datacenter and API endpoint via Mailchimp OAuth metadata endpoint
+            metadata_url = "https://login.mailchimp.com/oauth2/metadata"
+            assert_public_url(metadata_url)
+            headers = {
+                "Authorization": f"OAuth {key}",
+                "Accept": "application/json",
+                "User-Agent": "ConnectorHub/1.0"
+            }
+            try:
+                resp = await execute_guarded_request(client=client, method="GET", url=metadata_url, headers=headers)
+            except Exception as e:
+                raise ValueError(f"Unable to reach Mailchimp metadata API: {str(e)}")
+
+            if resp.status_code in (401, 403):
+                raise ValueError("Invalid Mailchimp OAuth token. Mailchimp returned Unauthorized.")
+            elif resp.status_code != 200:
+                raise ValueError(f"Mailchimp OAuth validation failed with status {resp.status_code}: {resp.text[:300]}")
+
+            meta = resp.json() if isinstance(resp.text, str) and resp.text.startswith("{") else {}
+            dc = meta.get("dc")
+            api_endpoint = meta.get("api_endpoint") or (f"https://{dc}.api.mailchimp.com" if dc else None)
+            account_id = str(meta.get("user_id") or meta.get("login", {}).get("email") or meta.get("accountname") or "mailchimp_user")
+            account_name = meta.get("accountname") or meta.get("login", {}).get("login_name") or "Mailchimp Account"
+
+            return {
+                "valid": True,
+                "account_id": account_id,
+                "accountId": account_id,
+                "display_name": f"{account_name} ({dc})" if dc else account_name,
+                "displayName": f"{account_name} ({dc})" if dc else account_name,
+                "granted_scopes": ["lists:read", "lists:write", "members:read", "members:write"],
+                "avatar_url": (meta.get("login") or {}).get("avatar") if isinstance(meta.get("login"), dict) else None,
+                "metadata": {
+                    "dc": dc,
+                    "serverPrefix": dc,
+                    "apiEndpoint": api_endpoint,
+                    "role": meta.get("role"),
+                    "accountname": account_name,
+                    "login": meta.get("login")
+                }
+            }
+
+        # Otherwise validate API key via /ping
         base_url = _resolve_mailchimp_base(credential)
         headers = _mailchimp_headers(credential)
         url = f"{base_url}/ping"
@@ -192,12 +257,49 @@ class MailchimpProvider(Provider):
             raise ValueError(f"Mailchimp credential validation failed with status {resp.status_code}: {resp.text[:300]}")
 
         body = resp.json() if isinstance(resp.text, str) and resp.text.startswith("{") else {}
+        server_prefix = credential.get("serverPrefix") or (key.split("-")[-1].strip() if "-" in key else "us1")
         return {
             "valid": True,
-            "accountId": "mailchimp_account",
-            "displayName": "Mailchimp Account",
+            "account_id": f"mailchimp_{server_prefix}",
+            "accountId": f"mailchimp_{server_prefix}",
+            "display_name": f"Mailchimp ({server_prefix})",
+            "displayName": f"Mailchimp ({server_prefix})",
+            "granted_scopes": ["lists:read", "lists:write", "members:read", "members:write"],
             "metadata": {
                 "validationEndpoint": "/ping",
-                "health": body.get("health_status") or "ok"
+                "health": body.get("health_status") or "ok",
+                "serverPrefix": server_prefix,
+                "dc": server_prefix
             }
         }
+
+    async def proxy(
+        self,
+        endpoint: str,
+        method: str,
+        credential: Optional[Dict[str, Any]],
+        body: Any,
+        headers: Dict[str, str],
+        client: httpx.AsyncClient
+    ) -> Dict[str, Any]:
+        base_url = _resolve_mailchimp_base(credential)
+        clean_ep = "/" + endpoint.lstrip("/")
+        url = f"{base_url}{clean_ep}"
+        assert_public_url(url)
+
+        auth_headers = _mailchimp_headers(credential)
+        fwd_headers = dict(headers or {})
+        fwd_headers.update(auth_headers)
+
+        resp = await execute_guarded_request(
+            client=client,
+            method=method,
+            url=url,
+            headers=fwd_headers,
+            json_body=body if method in ["POST", "PUT", "PATCH"] else None
+        )
+        try:
+            data = resp.json()
+        except Exception:
+            data = resp.text
+        return {"status": resp.status_code, "data": data}

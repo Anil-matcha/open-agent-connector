@@ -1034,7 +1034,16 @@ class OAuthService:
                 "scope": token_data.get("scope", ""),
                 "authMode": auth_mode
             }
+
+            # Merge provider-specific metadata (e.g. Mailchimp dc, serverPrefix, apiEndpoint)
+            if isinstance(profile.get("metadata"), dict):
+                for k, v in profile["metadata"].items():
+                    if k not in credential_dict and v is not None:
+                        credential_dict[k] = v
+
             encrypted_val = encrypt_secret(json.dumps(credential_dict))
+            account_id = profile.get("account_id") or profile.get("accountId")
+            display_name = profile.get("display_name") or profile.get("displayName")
             granted_scopes_json = json.dumps(profile.get("granted_scopes", []))
 
             # Upsert into connection model
@@ -1045,8 +1054,8 @@ class OAuthService:
             if existing_conn:
                 existing_conn.auth_type = "oauth2"
                 existing_conn.encrypted_value = encrypted_val
-                existing_conn.account_id = profile.get("account_id")
-                existing_conn.display_name = profile.get("display_name")
+                existing_conn.account_id = account_id
+                existing_conn.display_name = display_name
                 existing_conn.granted_scopes = granted_scopes_json
                 existing_conn.status = "active"
                 existing_conn.status_message = None
@@ -1060,8 +1069,8 @@ class OAuthService:
                     connection_name=connection_name,
                     auth_type="oauth2",
                     encrypted_value=encrypted_val,
-                    account_id=profile.get("account_id"),
-                    display_name=profile.get("display_name"),
+                    account_id=account_id,
+                    display_name=display_name,
                     granted_scopes=granted_scopes_json,
                     status="active",
                     status_message=None,
@@ -1079,8 +1088,8 @@ class OAuthService:
                 "service": service,
                 "connectionName": connection_name,
                 "authType": "oauth2",
-                "accountId": profile.get("account_id"),
-                "displayName": profile.get("display_name"),
+                "accountId": account_id,
+                "displayName": display_name,
                 "status": "active",
                 "lastValidatedAt": utcnow_str(),
                 "expiresAt": expires_at,
