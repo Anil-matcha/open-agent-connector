@@ -1,0 +1,26 @@
+# Production overlay: loopback-only ports behind nginx, secrets from .env.prod
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d --build
+services:
+  server:
+    ports: !override
+      - "127.0.0.1:8100:8000"
+    environment:
+      - PROJECT_NAME=ConnectorHub
+      - HOST=0.0.0.0
+      - PORT=8000
+      - CONNECTOR_PUBLIC_ORIGIN=${PUBLIC_ORIGIN}
+      - CONNECTOR_ADMIN_TOKEN=${ADMIN_TOKEN}
+      - CONNECTOR_ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - CONNECTOR_EXPOSE_LOCAL_TOKEN=false
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+  client:
+    build:
+      context: ./client
+      args:
+        NEXT_PUBLIC_API_URL: ${PUBLIC_ORIGIN}
+    ports: !override
+      - "127.0.0.1:3100:3000"

@@ -6,7 +6,7 @@ import { Header } from "@/components/layout/Header";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ProviderIcon } from "@/components/ui/ProviderIcon";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, API_BASE } from "@/lib/api";
 import {
   Layers,
   Zap,
@@ -67,7 +67,7 @@ export default function DashboardPage() {
     {
       mcpServers: {
         "connector-hub": {
-          url: "http://localhost:8000/mcp",
+          url: `${API_BASE}/mcp`,
           headers: {
             Authorization: "Bearer your-token-if-configured",
           },
