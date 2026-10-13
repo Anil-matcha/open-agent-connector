@@ -39,7 +39,7 @@ class Principal:
 
     def can_access_action(self, action_id: str) -> bool:
         """Deny-by-default action access evaluation."""
-        if self.is_admin:
+        if self.is_admin or self.kind == "public":
             return True
 
         # 1. Any matching blocked rule immediately denies
@@ -59,7 +59,7 @@ class Principal:
 
     def can_access_connection(self, connection_name: str) -> bool:
         """Connection access evaluation."""
-        if self.is_admin:
+        if self.is_admin or self.kind == "public":
             return True
         if not self.allowed_connections:
             # If not explicitly restricted, default connection access is allowed
@@ -68,7 +68,7 @@ class Principal:
 
     def can_access_proxy(self, service: str) -> bool:
         """Deny-by-default proxy access evaluation."""
-        if self.is_admin:
+        if self.is_admin or self.kind == "public":
             return True
         if not self.allowed_proxies:
             return False
@@ -161,7 +161,42 @@ async def require_admin(
     auth_creds: Optional[HTTPAuthorizationCredentials] = Depends(security_scheme),
     db: AsyncSession = Depends(get_db)
 ) -> Principal:
-    """Enforces that the caller is an authenticated administrator."""
+    """Enforces that the caller is an authenticated administrator or permits public console access if enabled."""
+    token = _extract_token(request, auth_creds)
+    if token:
+        principal = await resolve_principal(token, db)
+        if principal and principal.is_admin:
+            return principal
+        if not settings.ALLOW_PUBLIC_ACCESS:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or unauthorized admin token",
+                headers={"WWW-Authenticate": "Bearer"}
+            )
+
+    if settings.ALLOW_PUBLIC_ACCESS:
+        return Principal(
+            kind="public",
+            id="public-operator",
+            name="Public Operator",
+            allowed_actions=["*"],
+            allowed_connections=["*"],
+            allowed_proxies=["*"]
+        )
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Admin authorization required: missing bearer token",
+        headers={"WWW-Authenticate": "Bearer"}
+    )
+
+
+async def require_strict_admin(
+    request: Request,
+    auth_creds: Optional[HTTPAuthorizationCredentials] = Depends(security_scheme),
+    db: AsyncSession = Depends(get_db)
+) -> Principal:
+    """Strictly enforces master admin token, even when public access is enabled."""
     token = _extract_token(request, auth_creds)
     if not token:
         raise HTTPException(
@@ -169,7 +204,6 @@ async def require_admin(
             detail="Admin authorization required: missing bearer token",
             headers={"WWW-Authenticate": "Bearer"}
         )
-
     principal = await resolve_principal(token, db)
     if not principal or not principal.is_admin:
         raise HTTPException(
@@ -177,7 +211,6 @@ async def require_admin(
             detail="Invalid or unauthorized admin token",
             headers={"WWW-Authenticate": "Bearer"}
         )
-
     return principal
 
 
@@ -186,24 +219,34 @@ async def require_runtime_or_admin(
     auth_creds: Optional[HTTPAuthorizationCredentials] = Depends(security_scheme),
     db: AsyncSession = Depends(get_db)
 ) -> Principal:
-    """Enforces that the caller has either a valid runtime token or admin token."""
+    """Enforces that the caller has either a valid runtime token, admin token, or public access if enabled."""
     token = _extract_token(request, auth_creds)
-    if not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required: missing bearer token",
-            headers={"WWW-Authenticate": "Bearer"}
+    if token:
+        principal = await resolve_principal(token, db)
+        if principal:
+            return principal
+        if not settings.ALLOW_PUBLIC_ACCESS:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or revoked bearer token",
+                headers={"WWW-Authenticate": "Bearer"}
+            )
+
+    if settings.ALLOW_PUBLIC_ACCESS:
+        return Principal(
+            kind="public",
+            id="public-operator",
+            name="Public Operator",
+            allowed_actions=["*"],
+            allowed_connections=["*"],
+            allowed_proxies=["*"]
         )
 
-    principal = await resolve_principal(token, db)
-    if not principal:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or revoked bearer token",
-            headers={"WWW-Authenticate": "Bearer"}
-        )
-
-    return principal
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Authentication required: missing bearer token",
+        headers={"WWW-Authenticate": "Bearer"}
+    )
 
 
 def check_action_permission(principal: Principal, action_id: str, connection_name: str = "default"):

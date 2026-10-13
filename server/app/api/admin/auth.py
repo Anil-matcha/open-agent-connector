@@ -28,6 +28,7 @@ async def get_auth_status(request: Request):
     return {
         "status": "ready",
         "isLoopback": is_loopback and not proxied,
+        "allowPublicAccess": settings.ALLOW_PUBLIC_ACCESS,
         "localToken": settings.ADMIN_TOKEN if expose else None
     }
 

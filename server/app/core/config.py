@@ -75,6 +75,12 @@ class Settings(BaseSettings):
     # SSRF Protection
     ALLOW_PRIVATE_NETWORK: bool = False
 
+    # Public Access Gate for Open Web Console
+    ALLOW_PUBLIC_ACCESS: bool = Field(
+        default=os.environ.get("CONNECTOR_ALLOW_PUBLIC_ACCESS", os.environ.get("ALLOW_PUBLIC_ACCESS", "true")).lower() in ("true", "1", "yes"),
+        description="Allow public access to connect providers, manage tokens, and execute actions without an admin token."
+    )
+
     # MCP Authentication Gate (Fail-Closed by default)
     ALLOW_ANONYMOUS_MCP: bool = Field(
         default=False,

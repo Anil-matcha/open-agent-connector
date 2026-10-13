@@ -72,6 +72,11 @@ async def set_oauth_config(
         raise HTTPException(status_code=400, detail=f"OAuth is not supported for service '{service}'.")
     
     target_mode = mode or payload.mode or "custom"
+    if target_mode == "hosted" and not admin.is_admin:
+        raise HTTPException(
+            status_code=403,
+            detail="Configuring server-wide hosted OAuth credentials requires master admin privileges."
+        )
     await OAuthService.set_client_config(
         session=db,
         service=service,
