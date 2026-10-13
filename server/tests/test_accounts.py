@@ -473,3 +473,80 @@ def test_resend_verification_only_mails_unverified_accounts_and_never_says_which
 def test_resend_verification_is_unavailable_without_email(client, monkeypatch):
     monkeypatch.setattr(settings, "ACCOUNTS_EMAIL_BACKEND", "none")
     assert client.post("/api/accounts/resend-verification", headers=H, json={"email": new_email()}).status_code == 503
+
+
+# --- Amazon SES backend -----------------------------------------------------------
+
+class _FakeSES:
+    def __init__(self, sink):
+        self.sink = sink
+
+    def send_email(self, **kwargs):
+        self.sink["sent"].append(kwargs)
+
+
+def _fake_boto3(monkeypatch, sink):
+    import sys
+    import types
+
+    def client(service, **kwargs):
+        sink["service"], sink["client_kwargs"] = service, kwargs
+        return _FakeSES(sink)
+
+    monkeypatch.setitem(sys.modules, "boto3", types.SimpleNamespace(client=client))
+
+
+def test_ses_backend_sends_through_the_ses_api_with_the_configured_sender(client, monkeypatch):
+    sink = {"sent": []}
+    _fake_boto3(monkeypatch, sink)
+    monkeypatch.setattr(settings, "ACCOUNTS_EMAIL_BACKEND", "ses")
+    monkeypatch.setattr(settings, "ACCOUNTS_EMAIL_FROM", "ConnectorHub <support@acme-corp.dev>")
+    monkeypatch.setattr(settings, "ACCOUNTS_SES_REGION", "ap-south-1")
+    monkeypatch.setattr(settings, "ACCOUNTS_SES_ACCESS_KEY", "AKIAEXAMPLE")
+    monkeypatch.setattr(settings, "ACCOUNTS_SES_SECRET_KEY", "example-secret")
+    email, r = register(client)
+    assert r.status_code == 202
+    assert sink["service"] == "ses"
+    assert sink["client_kwargs"] == {"region_name": "ap-south-1", "aws_access_key_id": "AKIAEXAMPLE",
+                                     "aws_secret_access_key": "example-secret"}
+    [msg] = sink["sent"]
+    assert msg["Source"] == "ConnectorHub <support@acme-corp.dev>"
+    assert msg["Destination"] == {"ToAddresses": [email]}
+    assert re.search(r"\b\d{6}\b", msg["Message"]["Body"]["Text"]["Data"])
+    assert "verification code" in msg["Message"]["Subject"]["Data"]
+
+
+def test_ses_backend_falls_back_to_the_machines_aws_credentials(client, monkeypatch):
+    sink = {"sent": []}
+    _fake_boto3(monkeypatch, sink)
+    monkeypatch.setattr(settings, "ACCOUNTS_EMAIL_BACKEND", "ses")
+    monkeypatch.setattr(settings, "ACCOUNTS_EMAIL_FROM", "support@acme-corp.dev")
+    monkeypatch.setattr(settings, "ACCOUNTS_SES_ACCESS_KEY", "")
+    monkeypatch.setattr(settings, "ACCOUNTS_SES_SECRET_KEY", "")
+    register(client)
+    assert "aws_access_key_id" not in sink["client_kwargs"]  # default credential chain (e.g. an IAM role)
+
+
+def test_ses_outage_never_breaks_signup_or_leaks_into_the_response(client, monkeypatch):
+    import sys
+    import types
+
+    def boom(service, **kwargs):
+        raise RuntimeError("SES is down: secret-detail")
+
+    monkeypatch.setitem(sys.modules, "boto3", types.SimpleNamespace(client=boom))
+    monkeypatch.setattr(settings, "ACCOUNTS_EMAIL_BACKEND", "ses")
+    monkeypatch.setattr(settings, "ACCOUNTS_EMAIL_FROM", "support@acme-corp.dev")
+    email, r = register(client)
+    assert r.status_code == 202 and "secret-detail" not in r.text
+
+
+def test_ses_without_a_sender_sends_nothing(client, monkeypatch):
+    sink = {"sent": []}
+    _fake_boto3(monkeypatch, sink)
+    monkeypatch.setattr(settings, "ACCOUNTS_EMAIL_BACKEND", "ses")
+    monkeypatch.setattr(settings, "ACCOUNTS_EMAIL_FROM", "")
+    monkeypatch.setattr(settings, "ACCOUNTS_SMTP_FROM", "")
+    monkeypatch.setattr(settings, "ACCOUNTS_SMTP_USER", "")
+    assert register(client)[1].status_code == 202
+    assert sink["sent"] == []

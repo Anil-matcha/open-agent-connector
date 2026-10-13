@@ -17,12 +17,16 @@ class EmailUnavailable(Exception):
 
 
 def email_enabled() -> bool:
-    return settings.ACCOUNTS_EMAIL_BACKEND in ("console", "smtp")
+    return settings.ACCOUNTS_EMAIL_BACKEND in ("console", "smtp", "ses")
+
+
+def _from_address() -> str:
+    return settings.ACCOUNTS_EMAIL_FROM or settings.ACCOUNTS_SMTP_FROM or settings.ACCOUNTS_SMTP_USER
 
 
 def _send_smtp(to: str, subject: str, body: str) -> None:
     msg = EmailMessage()
-    msg["From"] = settings.ACCOUNTS_SMTP_FROM or settings.ACCOUNTS_SMTP_USER
+    msg["From"] = _from_address()
     msg["To"] = to
     msg["Subject"] = subject
     msg.set_content(body)
@@ -34,6 +38,26 @@ def _send_smtp(to: str, subject: str, body: str) -> None:
         smtp.send_message(msg)
 
 
+def _send_ses(to: str, subject: str, body: str) -> None:
+    import boto3  # imported lazily so installs that never use SES do not need it
+
+    kwargs = {"region_name": settings.ACCOUNTS_SES_REGION}
+    if settings.ACCOUNTS_SES_ACCESS_KEY and settings.ACCOUNTS_SES_SECRET_KEY:
+        kwargs["aws_access_key_id"] = settings.ACCOUNTS_SES_ACCESS_KEY
+        kwargs["aws_secret_access_key"] = settings.ACCOUNTS_SES_SECRET_KEY
+    source = _from_address()
+    if not source:
+        raise RuntimeError("ACCOUNTS_EMAIL_FROM is not set")
+    boto3.client("ses", **kwargs).send_email(
+        Source=source,
+        Destination={"ToAddresses": [to]},
+        Message={
+            "Subject": {"Data": subject, "Charset": "UTF-8"},
+            "Body": {"Text": {"Data": body, "Charset": "UTF-8"}},
+        },
+    )
+
+
 async def send_email(to: str, subject: str, body: str) -> None:
     backend = settings.ACCOUNTS_EMAIL_BACKEND
     if backend == "console":
@@ -42,9 +66,10 @@ async def send_email(to: str, subject: str, body: str) -> None:
         OUTBOX.append((to, subject, body))
         del OUTBOX[:-200]
         return
-    if backend == "smtp":
+    if backend in ("smtp", "ses"):
+        sender = _send_smtp if backend == "smtp" else _send_ses
         try:
-            await asyncio.to_thread(_send_smtp, to, subject, body)
+            await asyncio.to_thread(sender, to, subject, body)
         except Exception:  # never let a mail outage break or leak through the request
             logger.exception("Failed to send email to %s", to)
         return

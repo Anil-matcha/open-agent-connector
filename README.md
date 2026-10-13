@@ -141,7 +141,9 @@ Backend settings use the `CONNECTOR_` environment prefix. A `.env` file in the `
 | `CONNECTOR_ALLOWED_RETURN_ORIGINS` | Comma-separated origins, besides `CONNECTOR_PUBLIC_ORIGIN`, that a `redirectUri` may point to after OAuth. Anything else is rejected, and the callback only ever redirects to the URL stored when the flow started. | `http://localhost:3000,http://127.0.0.1:3000` |
 | `CONNECTOR_ACCOUNTS_SIGNUP_MODE` | `disabled`, `invite` (needs `..._INVITE_CODES`) or `open` (needs an email backend). Unsafe combinations fall back to `disabled`. | `disabled` |
 | `CONNECTOR_ACCOUNTS_INVITE_CODES` | Comma-separated invite codes for `invite` mode | unset |
-| `CONNECTOR_ACCOUNTS_EMAIL_BACKEND` | `none`, `smtp`, or `console` (logs codes, development only) | `none` |
+| `CONNECTOR_ACCOUNTS_EMAIL_BACKEND` | `none`, `ses` (Amazon SES API), `smtp`, or `console` (logs codes, development only) | `none` |
+| `CONNECTOR_ACCOUNTS_EMAIL_FROM` | Sender, e.g. `ConnectorHub <support@example.com>`. Must be a verified SES identity or an address your SMTP server accepts. | unset |
+| `CONNECTOR_ACCOUNTS_SES_REGION` / `_ACCESS_KEY` / `_SECRET_KEY` | SES settings. Leave the keys empty to use the machine's IAM role or default AWS credentials. The key only needs `ses:SendEmail`. | `us-east-1` |
 | `CONNECTOR_ACCOUNTS_SMTP_HOST` / `_PORT` / `_USER` / `_PASSWORD` / `_FROM` | SMTP settings for the `smtp` backend (STARTTLS on port 587) | unset |
 | `CONNECTOR_ACCOUNTS_BLOCKED_EMAIL_DOMAINS` | Comma-separated domains refused at signup, on top of reserved test domains | unset |
 | `CONNECTOR_ACCOUNTS_SESSION_DAYS` | Lifetime of a "remember me" session | `30` |

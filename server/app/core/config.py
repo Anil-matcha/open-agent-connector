@@ -89,7 +89,12 @@ class Settings(BaseSettings):
     # disabled | invite (needs ACCOUNTS_INVITE_CODES) | open (needs an email backend)
     ACCOUNTS_SIGNUP_MODE: str = "disabled"
     ACCOUNTS_INVITE_CODES: str = ""            # comma-separated one-line invite codes
-    ACCOUNTS_EMAIL_BACKEND: str = "none"       # none | smtp | console (console logs codes: development only)
+    ACCOUNTS_EMAIL_BACKEND: str = "none"       # none | ses | smtp | console (console logs codes: development only)
+    ACCOUNTS_EMAIL_FROM: str = ""              # e.g. "ConnectorHub <support@example.com>"; must be a verified sender
+    # Amazon SES API. Leave the keys empty to use the machine's IAM role / default AWS credentials.
+    ACCOUNTS_SES_REGION: str = "us-east-1"
+    ACCOUNTS_SES_ACCESS_KEY: str = ""
+    ACCOUNTS_SES_SECRET_KEY: str = ""
     ACCOUNTS_BLOCKED_EMAIL_DOMAINS: str = ""   # comma-separated, in addition to reserved test domains
     ACCOUNTS_SESSION_DAYS: int = 30
     ACCOUNTS_COOKIE_SECURE: Optional[bool] = None  # default: true when PUBLIC_ORIGIN is https
