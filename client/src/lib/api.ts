@@ -15,6 +15,14 @@ export function setAdminToken(token: string): void {
   cachedToken = token;
 }
 
+export function clearAdminToken(): void {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("connector_admin_token");
+  }
+  cachedToken = null;
+  syncingTokenPromise = null;
+}
+
 async function ensureLocalToken(): Promise<string | null> {
   if (typeof window === "undefined") return null;
   const existing = localStorage.getItem("connector_admin_token");
