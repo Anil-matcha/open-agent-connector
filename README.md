@@ -138,6 +138,7 @@ Backend settings use the `CONNECTOR_` environment prefix. A `.env` file in the `
 | `CONNECTOR_ADMIN_TOKEN` | Bearer token for the admin API and management routes | Generated into `server/data/.admin_token` if unset |
 | `CONNECTOR_RUNTIME_TOKEN` | Optional static runtime token for `/v1` and `/mcp` | Unset (persistent DB tokens preferred) |
 | `CONNECTOR_EXPOSE_LOCAL_TOKEN` | Let `/api/auth/status` return the admin token to genuine loopback callers (never when proxy headers are present). Set `false` on any network-facing deployment. | `true` |
+| `CONNECTOR_ALLOWED_RETURN_ORIGINS` | Comma-separated origins, besides `CONNECTOR_PUBLIC_ORIGIN`, that a `redirectUri` may point to after OAuth. Anything else is rejected, and the callback only ever redirects to the URL stored when the flow started. | `http://localhost:3000,http://127.0.0.1:3000` |
 | `CONNECTOR_ALLOW_PRIVATE_NETWORK` | Allow private network destinations for outbound requests | `false` |
 | `NEXT_PUBLIC_API_URL` | API base URL used by the browser frontend | `http://localhost:8000` |
 

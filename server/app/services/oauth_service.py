@@ -15,6 +15,7 @@ from app.core.security import encrypt_secret, decrypt_secret, safe_error_message
 from app.core.ssrf import create_guarded_client, execute_guarded_request
 from app.core.config import settings
 from app.core.tenancy import DEFAULT_TENANT_ID, custom_oauth_config_key
+from app.core.redirects import validate_return_uri
 from app.providers.registry import registry
 
 # Built-in OAuth provider endpoints and default scopes
@@ -869,6 +870,8 @@ class OAuthService:
         if not provider_meta:
             raise ValueError(f"OAuth is not supported for service '{service}'.")
 
+        redirect_uri = validate_return_uri(redirect_uri)  # raises ValueError for disallowed origins
+
         config = await OAuthService.get_client_config(session, tenant_id, service, mode=mode)
         if not config or not config.get("client_id"):
             if mode == "hosted":
@@ -927,6 +930,19 @@ class OAuthService:
             "connectionName": connection_name,
             "expiresAt": expires_at
         }
+
+    @staticmethod
+    async def peek_return_uri(session: AsyncSession, service: str, state: str) -> Optional[str]:
+        """Return URL stored with an OAuth state (revalidated), without consuming the state."""
+        res = (await session.execute(
+            select(OAuthState).where(and_(OAuthState.state == state, OAuthState.service == service))
+        )).scalar_one_or_none()
+        if not res or not res.return_uri:
+            return None
+        try:
+            return validate_return_uri(res.return_uri)
+        except ValueError:
+            return None
 
     @staticmethod
     async def exchange_code(

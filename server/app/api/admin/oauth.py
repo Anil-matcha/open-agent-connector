@@ -121,10 +121,22 @@ async def handle_oauth_callback(
     service: str,
     code: str = Query(...),
     state: str = Query(...),
-    returnUri: Optional[str] = None,
     db: AsyncSession = Depends(get_db)
 ):
-    """Handle OAuth redirect callback, atomically consume state, exchange code, and persist connection."""
+    """Handle OAuth redirect callback, atomically consume state, exchange code, and persist connection.
+
+    The only redirect destination is the return URL stored (and origin-checked) when the flow
+    started. Nothing in the callback request can choose where the browser is sent next.
+    """
+    from urllib.parse import quote
+
+    dest = await OAuthService.peek_return_uri(db, service, state)
+
+    def back(**params):
+        sep = "&" if "?" in dest else "?"
+        query = "&".join(f"{k}={quote(str(v), safe='')}" for k, v in params.items())
+        return RedirectResponse(url=f"{dest}{sep}{query}")
+
     try:
         conn = await OAuthService.exchange_code(
             session=db,
@@ -132,20 +144,14 @@ async def handle_oauth_callback(
             code=code,
             state=state
         )
-        dest = returnUri or conn.get("returnUri")
         if dest:
-            sep = "&" if "?" in dest else "?"
-            return RedirectResponse(url=f"{dest}{sep}status=connected&service={service}&connectionName={conn.get('connectionName')}")
+            return back(status="connected", service=service, connectionName=conn.get("connectionName"))
         return {"success": True, "data": conn}
     except ValueError as e:
-        if returnUri:
-            sep = "&" if "?" in returnUri else "?"
-            from urllib.parse import quote
-            return RedirectResponse(url=f"{returnUri}{sep}status=error&error={quote(str(e))}")
+        if dest:
+            return back(status="error", error=str(e))
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        if returnUri:
-            sep = "&" if "?" in returnUri else "?"
-            from urllib.parse import quote
-            return RedirectResponse(url=f"{returnUri}{sep}status=error&error={quote('OAuth token exchange failed')}")
+        if dest:
+            return back(status="error", error="OAuth token exchange failed")
         raise HTTPException(status_code=500, detail=f"OAuth callback exchange failed: {str(e)}")

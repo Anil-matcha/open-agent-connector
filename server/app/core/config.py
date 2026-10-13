@@ -81,6 +81,9 @@ class Settings(BaseSettings):
         description="Allow public access to connect providers, manage tokens, and execute actions without an admin token."
     )
 
+    # Origins (besides PUBLIC_ORIGIN) allowed as post-OAuth return URLs, comma separated.
+    ALLOWED_RETURN_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
+
     # MCP Authentication Gate (Fail-Closed by default)
     ALLOW_ANONYMOUS_MCP: bool = Field(
         default=False,
