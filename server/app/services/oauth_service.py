@@ -291,6 +291,7 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "display_name": "Bitbucket",
         "authorize_url": "https://bitbucket.org/site/oauth2/authorize",
         "token_url": "https://bitbucket.org/site/oauth2/access_token",
+        "token_auth_method": "basic",
         "default_scopes": ["account", "repository", "pullrequest", "pipeline"],
     },
     "supabase": {
