@@ -46,6 +46,7 @@ class OAuthState(Base):
     connection_name = Column(String(64), nullable=False, default="default")
     code_verifier = Column(String(128), nullable=True)
     return_uri = Column(String(512), nullable=True)
+    auth_mode = Column(String(32), nullable=True, default="hosted")  # "hosted" or "custom"
     created_at = Column(String(32), default=utcnow_str)
     expires_at = Column(String(32), nullable=False)
 

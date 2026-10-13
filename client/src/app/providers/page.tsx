@@ -65,7 +65,7 @@ export default function ProvidersPage() {
       return "Manage";
     }
     if (hasOAuth(provider)) {
-      return "Configure OAuth Client";
+      return "1-Click Connect";
     }
     return "Connect";
   }
@@ -81,7 +81,7 @@ export default function ProvidersPage() {
     { id: "all", label: "All", count: counts.all },
     { id: "connected", label: "Connected", count: counts.connected },
     { id: "not_connected", label: "Not connected", count: counts.notConnected },
-    { id: "oauth_needs_config", label: "OAuth needs config", count: counts.oauthNeedsConfig },
+    { id: "oauth_needs_config", label: "OAuth 2.0", count: counts.oauthNeedsConfig },
   ];
 
   const filteredProviders = providers.filter((p) => {

@@ -593,126 +593,165 @@ class OAuthService:
         return code_verifier, code_challenge
 
     @staticmethod
-    async def get_client_config(session: AsyncSession, service: str) -> Optional[Dict[str, str]]:
-        """Retrieve stored encrypted OAuth client credentials, falling back to environment settings."""
+    def _get_candidates(service: str) -> list:
+        candidates = [service.upper()]
+        s_lower = service.lower()
+        if s_lower in ("twitter", "x"):
+            candidates.extend(["TWITTER", "X"])
+        elif s_lower in ("whatsapp",):
+            candidates.extend(["WHATSAPP", "META", "FACEBOOK"])
+        elif s_lower.startswith("google") or s_lower in ("gmail", "youtube"):
+            candidates.extend(["GOOGLE", "GOOGLE_WORKSPACE"])
+        elif s_lower in ("outlook", "outlook_calendar", "one_drive", "onedrive", "microsoft_teams", "microsoft_todo", "excel") or "microsoft" in s_lower:
+            candidates.extend(["MICROSOFT", "AZURE", "MS", "MICROSOFT_GRAPH"])
+        elif s_lower == "jira":
+            candidates.extend(["JIRA", "ATLASSIAN"])
+        elif s_lower in ("cloudflare_worker", "cloudflare_r2"):
+            candidates.extend(["CLOUDFLARE", "CF"])
+        elif s_lower == "digital_ocean":
+            candidates.extend(["DIGITALOCEAN", "DO"])
+        elif s_lower == "docker_hub":
+            candidates.extend(["DOCKER", "DOCKERHUB"])
+        elif s_lower == "aws_s3":
+            candidates.extend(["AWS", "S3"])
+        elif s_lower == "openai":
+            candidates.extend(["OPENAI"])
+        elif s_lower == "anthropic":
+            candidates.extend(["ANTHROPIC", "CLAUDE"])
+        elif s_lower == "perplexity":
+            candidates.extend(["PERPLEXITY", "PPLX"])
+        elif s_lower == "groqcloud":
+            candidates.extend(["GROQCLOUD", "GROQ"])
+        elif s_lower == "cohere":
+            candidates.extend(["COHERE"])
+        elif s_lower == "elevenlabs":
+            candidates.extend(["ELEVENLABS", "XI"])
+        elif s_lower == "firecrawl":
+            candidates.extend(["FIRECRAWL"])
+        elif s_lower == "hubspot":
+            candidates.extend(["HUBSPOT"])
+        elif s_lower == "pipedrive":
+            candidates.extend(["PIPEDRIVE"])
+        elif s_lower == "zendesk":
+            candidates.extend(["ZENDESK"])
+        elif s_lower == "intercom":
+            candidates.extend(["INTERCOM"])
+        elif s_lower == "mailchimp":
+            candidates.extend(["MAILCHIMP"])
+        elif s_lower == "brevo":
+            candidates.extend(["BREVO", "SENDINBLUE"])
+        elif s_lower == "customerio":
+            candidates.extend(["CUSTOMERIO", "CUSTOMER_IO"])
+        elif s_lower == "stripe":
+            candidates.extend(["STRIPE"])
+        elif s_lower == "paypal":
+            candidates.extend(["PAYPAL"])
+        elif s_lower == "shopify":
+            candidates.extend(["SHOPIFY"])
+        elif s_lower == "lemon_squeezy":
+            candidates.extend(["LEMON_SQUEEZY", "LEMONSQUEEZY"])
+        elif s_lower == "square":
+            candidates.extend(["SQUARE"])
+        elif s_lower == "coda":
+            candidates.extend(["CODA"])
+        elif s_lower == "discord":
+            candidates.extend(["DISCORD"])
+        elif s_lower == "linkedin":
+            candidates.extend(["LINKEDIN"])
+        elif s_lower == "spotify":
+            candidates.extend(["SPOTIFY"])
+        elif s_lower == "reddit":
+            candidates.extend(["REDDIT"])
+        elif s_lower == "dropbox":
+            candidates.extend(["DROPBOX"])
+        elif s_lower == "box":
+            candidates.extend(["BOX"])
+        elif s_lower in ("survey_monkey", "surveymonkey"):
+            candidates.extend(["SURVEY_MONKEY", "SURVEYMONKEY"])
+        elif s_lower == "pandadoc":
+            candidates.extend(["PANDADOC", "PANDA_DOC"])
+        elif s_lower == "smartsheet":
+            candidates.extend(["SMARTSHEET", "SMART_SHEET"])
+        elif s_lower == "salesloft":
+            candidates.extend(["SALESLOFT", "SALES_LOFT"])
+        elif s_lower == "cal":
+            candidates.extend(["CAL", "CAL_COM", "CALCOM"])
+        elif s_lower == "todoist":
+            candidates.extend(["TODOIST"])
+        elif s_lower == "typeform":
+            candidates.extend(["TYPEFORM"])
+        elif s_lower == "workday":
+            candidates.extend(["WORKDAY"])
+        elif s_lower == "wrike":
+            candidates.extend(["WRIKE"])
+        elif s_lower == "calendly":
+            candidates.extend(["CALENDLY"])
+        elif s_lower == "figma":
+            candidates.extend(["FIGMA"])
+        elif s_lower in ("wordpress", "wp"):
+            candidates.extend(["WORDPRESS", "WP"])
+        elif s_lower == "webflow":
+            candidates.extend(["WEBFLOW"])
+        elif s_lower in ("helpscout", "help_scout"):
+            candidates.extend(["HELPSCOUT", "HELP_SCOUT"])
+        elif s_lower in ("launch_darkly", "launchdarkly"):
+            candidates.extend(["LAUNCH_DARKLY", "LAUNCHDARKLY"])
+        elif s_lower in ("upstash_redis", "upstash"):
+            candidates.extend(["UPSTASH_REDIS", "UPSTASH"])
+        elif s_lower in ("activecampaign", "active_campaign"):
+            candidates.extend(["ACTIVECAMPAIGN", "ACTIVE_CAMPAIGN"])
+        return candidates
+
+    @staticmethod
+    async def get_hosted_client_config(session: AsyncSession, service: str) -> Optional[Dict[str, str]]:
+        """Retrieve stored hosted OAuth client credentials, falling back to hosted environment settings."""
+        hosted_key = f"hosted:{service}"
+        stmt = select(OAuthClientConfig).where(OAuthClientConfig.service == hosted_key)
+        res = (await session.execute(stmt)).scalar_one_or_none()
+        if res and res.encrypted_value:
+            try:
+                decrypted = decrypt_secret(res.encrypted_value)
+                cfg = json.loads(decrypted)
+                cfg["mode"] = "hosted"
+                return cfg
+            except Exception:
+                pass
+
+        candidates = OAuthService._get_candidates(service)
+        for cand in candidates:
+            cid = (
+                getattr(settings, f"HOSTED_{cand}_CLIENT_ID", None)
+                or os.environ.get(f"CONNECTOR_HOSTED_{cand}_CLIENT_ID")
+                or os.environ.get(f"HOSTED_{cand}_CLIENT_ID")
+            )
+            csec = (
+                getattr(settings, f"HOSTED_{cand}_CLIENT_SECRET", None)
+                or os.environ.get(f"CONNECTOR_HOSTED_{cand}_CLIENT_SECRET")
+                or os.environ.get(f"HOSTED_{cand}_CLIENT_SECRET")
+            )
+            if cid and csec:
+                return {
+                    "client_id": cid,
+                    "client_secret": csec,
+                    "mode": "hosted"
+                }
+        return None
+
+    @staticmethod
+    async def get_custom_client_config(session: AsyncSession, service: str) -> Optional[Dict[str, str]]:
+        """Retrieve custom user/tenant provided OAuth client credentials."""
         stmt = select(OAuthClientConfig).where(OAuthClientConfig.service == service)
         res = (await session.execute(stmt)).scalar_one_or_none()
         if res and res.encrypted_value:
             try:
                 decrypted = decrypt_secret(res.encrypted_value)
-                return json.loads(decrypted)
+                cfg = json.loads(decrypted)
+                cfg["mode"] = "custom"
+                return cfg
             except Exception:
                 pass
-        
-        # Fallback to environment variables if defined
-        candidates = [service.upper()]
-        if service.lower() in ("twitter", "x"):
-            candidates.extend(["TWITTER", "X"])
-        elif service.lower() in ("whatsapp",):
-            candidates.extend(["WHATSAPP", "META", "FACEBOOK"])
-        elif service.lower().startswith("google") or service.lower() in ("gmail", "youtube"):
-            candidates.extend(["GOOGLE", "GOOGLE_WORKSPACE"])
-        elif service.lower() in ("outlook", "outlook_calendar", "one_drive", "onedrive", "microsoft_teams", "microsoft_todo", "excel") or "microsoft" in service.lower():
-            candidates.extend(["MICROSOFT", "AZURE", "MS", "MICROSOFT_GRAPH"])
-        elif service.lower() == "jira":
-            candidates.extend(["JIRA", "ATLASSIAN"])
-        elif service.lower() in ("cloudflare_worker", "cloudflare_r2"):
-            candidates.extend(["CLOUDFLARE", "CF"])
-        elif service.lower() == "digital_ocean":
-            candidates.extend(["DIGITALOCEAN", "DO"])
-        elif service.lower() == "docker_hub":
-            candidates.extend(["DOCKER", "DOCKERHUB"])
-        elif service.lower() == "aws_s3":
-            candidates.extend(["AWS", "S3"])
-        elif service.lower() == "openai":
-            candidates.extend(["OPENAI"])
-        elif service.lower() == "anthropic":
-            candidates.extend(["ANTHROPIC", "CLAUDE"])
-        elif service.lower() == "perplexity":
-            candidates.extend(["PERPLEXITY", "PPLX"])
-        elif service.lower() == "groqcloud":
-            candidates.extend(["GROQCLOUD", "GROQ"])
-        elif service.lower() == "cohere":
-            candidates.extend(["COHERE"])
-        elif service.lower() == "elevenlabs":
-            candidates.extend(["ELEVENLABS", "XI"])
-        elif service.lower() == "firecrawl":
-            candidates.extend(["FIRECRAWL"])
-        elif service.lower() == "hubspot":
-            candidates.extend(["HUBSPOT"])
-        elif service.lower() == "pipedrive":
-            candidates.extend(["PIPEDRIVE"])
-        elif service.lower() == "zendesk":
-            candidates.extend(["ZENDESK"])
-        elif service.lower() == "intercom":
-            candidates.extend(["INTERCOM"])
-        elif service.lower() == "mailchimp":
-            candidates.extend(["MAILCHIMP"])
-        elif service.lower() == "brevo":
-            candidates.extend(["BREVO", "SENDINBLUE"])
-        elif service.lower() == "customerio":
-            candidates.extend(["CUSTOMERIO", "CUSTOMER_IO"])
-        elif service.lower() == "stripe":
-            candidates.extend(["STRIPE"])
-        elif service.lower() == "paypal":
-            candidates.extend(["PAYPAL"])
-        elif service.lower() == "shopify":
-            candidates.extend(["SHOPIFY"])
-        elif service.lower() == "lemon_squeezy":
-            candidates.extend(["LEMON_SQUEEZY", "LEMONSQUEEZY"])
-        elif service.lower() == "square":
-            candidates.extend(["SQUARE"])
-        elif service.lower() == "coda":
-            candidates.extend(["CODA"])
-        elif service.lower() == "discord":
-            candidates.extend(["DISCORD"])
-        elif service.lower() == "linkedin":
-            candidates.extend(["LINKEDIN"])
-        elif service.lower() == "spotify":
-            candidates.extend(["SPOTIFY"])
-        elif service.lower() == "reddit":
-            candidates.extend(["REDDIT"])
-        elif service.lower() == "dropbox":
-            candidates.extend(["DROPBOX"])
-        elif service.lower() == "box":
-            candidates.extend(["BOX"])
-        elif service.lower() in ("survey_monkey", "surveymonkey"):
-            candidates.extend(["SURVEY_MONKEY", "SURVEYMONKEY"])
-        elif service.lower() == "pandadoc":
-            candidates.extend(["PANDADOC", "PANDA_DOC"])
-        elif service.lower() == "smartsheet":
-            candidates.extend(["SMARTSHEET", "SMART_SHEET"])
-        elif service.lower() == "salesloft":
-            candidates.extend(["SALESLOFT", "SALES_LOFT"])
-        elif service.lower() == "cal":
-            candidates.extend(["CAL", "CAL_COM", "CALCOM"])
-        elif service.lower() == "todoist":
-            candidates.extend(["TODOIST"])
-        elif service.lower() == "typeform":
-            candidates.extend(["TYPEFORM"])
-        elif service.lower() == "workday":
-            candidates.extend(["WORKDAY"])
-        elif service.lower() == "wrike":
-            candidates.extend(["WRIKE"])
-        elif service.lower() == "calendly":
-            candidates.extend(["CALENDLY"])
-        elif service.lower() == "figma":
-            candidates.extend(["FIGMA"])
-        elif service.lower() in ("wordpress", "wp"):
-            candidates.extend(["WORDPRESS", "WP"])
-        elif service.lower() == "webflow":
-            candidates.extend(["WEBFLOW"])
-        elif service.lower() in ("helpscout", "help_scout"):
-            candidates.extend(["HELPSCOUT", "HELP_SCOUT"])
-        elif service.lower() in ("launch_darkly", "launchdarkly"):
-            candidates.extend(["LAUNCH_DARKLY", "LAUNCHDARKLY"])
-        elif service.lower() in ("upstash_redis", "upstash"):
-            candidates.extend(["UPSTASH_REDIS", "UPSTASH"])
-        elif service.lower() in ("activecampaign", "active_campaign"):
-            candidates.extend(["ACTIVECAMPAIGN", "ACTIVE_CAMPAIGN"])
 
-        env_client_id = None
-        env_client_secret = None
+        candidates = OAuthService._get_candidates(service)
         for cand in candidates:
             cid = (
                 getattr(settings, f"{cand}_CLIENT_ID", None)
@@ -725,31 +764,80 @@ class OAuthService:
                 or os.environ.get(f"{cand}_CLIENT_SECRET")
             )
             if cid and csec:
-                env_client_id = cid
-                env_client_secret = csec
-                break
-
-        if env_client_id and env_client_secret:
-            return {
-                "client_id": env_client_id,
-                "client_secret": env_client_secret
-            }
+                return {
+                    "client_id": cid,
+                    "client_secret": csec,
+                    "mode": "custom"
+                }
         return None
 
     @staticmethod
-    async def set_client_config(session: AsyncSession, service: str, client_id: str, client_secret: str) -> None:
-        """Store OAuth client credentials encrypted with AES-256-GCM."""
+    async def get_client_config(
+        session: AsyncSession,
+        service: str,
+        mode: Optional[str] = None
+    ) -> Optional[Dict[str, str]]:
+        """Retrieve OAuth client credentials for requested mode ('hosted' or 'custom').
+        If mode is omitted, checks custom first (user override), then hosted.
+        """
+        if mode == "hosted":
+            return await OAuthService.get_hosted_client_config(session, service)
+        elif mode == "custom":
+            return await OAuthService.get_custom_client_config(session, service)
+
+        # Fallback resolution: custom override if present, else hosted
+        custom = await OAuthService.get_custom_client_config(session, service)
+        if custom:
+            return custom
+        return await OAuthService.get_hosted_client_config(session, service)
+
+    @staticmethod
+    async def get_oauth_status(session: AsyncSession, service: str) -> Dict[str, Any]:
+        """Inspect dual-mode OAuth availability for service."""
+        hosted = await OAuthService.get_hosted_client_config(session, service)
+        custom = await OAuthService.get_custom_client_config(session, service)
+        meta = OAUTH_PROVIDERS.get(service, {})
+        callback_url = OAuthService.callback_url(service)
+
+        configured = bool(hosted or custom)
+        active_mode = "custom" if custom else ("hosted" if hosted else None)
+
+        return {
+            "service": service,
+            "displayName": meta.get("display_name", service.title()),
+            "configured": configured,
+            "hostedAvailable": bool(hosted),
+            "customConfigured": bool(custom),
+            "activeMode": active_mode,
+            "callbackUrl": callback_url,
+            "hostedDomain": getattr(settings, "HOSTED_DOMAIN", "connector.suparagent.ai"),
+            "publicOrigin": settings.PUBLIC_ORIGIN.rstrip("/"),
+            "defaultScopes": meta.get("default_scopes", [])
+        }
+
+    @staticmethod
+    async def set_client_config(
+        session: AsyncSession,
+        service: str,
+        client_id: str,
+        client_secret: str,
+        mode: str = "custom"
+    ) -> None:
+        """Store OAuth client credentials encrypted with AES-256-GCM.
+        Mode can be 'hosted' or 'custom'.
+        """
         payload = json.dumps({"client_id": client_id, "client_secret": client_secret})
         encrypted_val = encrypt_secret(payload)
         
-        stmt = select(OAuthClientConfig).where(OAuthClientConfig.service == service)
+        target_service = f"hosted:{service}" if mode == "hosted" else service
+        stmt = select(OAuthClientConfig).where(OAuthClientConfig.service == target_service)
         existing = (await session.execute(stmt)).scalar_one_or_none()
         if existing:
             existing.encrypted_value = encrypted_val
             existing.updated_at = utcnow_str()
         else:
             new_conf = OAuthClientConfig(
-                service=service,
+                service=target_service,
                 encrypted_value=encrypted_val
             )
             session.add(new_conf)
@@ -761,17 +849,24 @@ class OAuthService:
         service: str,
         connection_name: str = "default",
         redirect_uri: Optional[str] = None,
-        custom_scopes: Optional[list] = None
+        custom_scopes: Optional[list] = None,
+        mode: Optional[str] = None
     ) -> Dict[str, Any]:
         """Generate PKCE state, record expiring transaction state, and build authorization URL."""
         provider_meta = OAUTH_PROVIDERS.get(service)
         if not provider_meta:
             raise ValueError(f"OAuth is not supported for service '{service}'.")
 
-        config = await OAuthService.get_client_config(session, service)
+        config = await OAuthService.get_client_config(session, service, mode=mode)
         if not config or not config.get("client_id"):
+            if mode == "hosted":
+                raise ValueError(
+                    f"Hosted OAuth app for '{service}' is not yet configured on {settings.PUBLIC_ORIGIN}. "
+                    f"Please configure custom credentials or set up hosted app."
+                )
             raise ValueError(f"OAuth client credentials have not been configured for '{service}'.")
 
+        auth_mode = config.get("mode") or mode or "custom"
         client_id = config["client_id"]
         code_verifier, code_challenge = OAuthService.create_pkce_pair()
         state = secrets.token_urlsafe(32)
@@ -784,6 +879,7 @@ class OAuthService:
             connection_name=connection_name,
             code_verifier=code_verifier,
             return_uri=redirect_uri,
+            auth_mode=auth_mode,
             created_at=utcnow_str(),
             expires_at=expires_at
         )
@@ -841,6 +937,7 @@ class OAuthService:
             await session.commit()
             raise ValueError("OAuth transaction state has expired. Please restart the authorization flow.")
 
+        auth_mode = getattr(res, "auth_mode", None) or "hosted"
         connection_name = res.connection_name
         code_verifier = res.code_verifier
         redirect_uri = res.return_uri
@@ -849,8 +946,10 @@ class OAuthService:
         await session.delete(res)
         await session.commit()
 
-        # Retrieve client config
-        config = await OAuthService.get_client_config(session, service)
+        # Retrieve client config for the active mode, falling back to any valid config
+        config = await OAuthService.get_client_config(session, service, mode=auth_mode)
+        if not config:
+            config = await OAuthService.get_client_config(session, service)
         if not config:
             raise ValueError(f"OAuth configuration missing for service '{service}'.")
 
@@ -919,7 +1018,8 @@ class OAuthService:
                 "accessToken": access_token,
                 "refreshToken": refresh_token,
                 "tokenType": token_data.get("token_type", "Bearer"),
-                "scope": token_data.get("scope", "")
+                "scope": token_data.get("scope", ""),
+                "authMode": auth_mode
             }
             encrypted_val = encrypt_secret(json.dumps(credential_dict))
             granted_scopes_json = json.dumps(profile.get("granted_scopes", []))
@@ -1023,7 +1123,10 @@ class OAuthService:
             except Exception:
                 pass
 
-            config = await OAuthService.get_client_config(session, connection.service)
+            auth_mode = re_creds.get("authMode") if 're_creds' in locals() and isinstance(re_creds, dict) else None
+            config = await OAuthService.get_client_config(session, connection.service, mode=auth_mode)
+            if not config:
+                config = await OAuthService.get_client_config(session, connection.service)
             provider_meta = OAUTH_PROVIDERS.get(connection.service)
             if not config or not provider_meta:
                 connection.status = "expired"

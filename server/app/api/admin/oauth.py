@@ -13,6 +13,7 @@ router = APIRouter(prefix="/oauth", tags=["Admin OAuth"])
 class OAuthConfigInput(BaseModel):
     clientId: str
     clientSecret: str
+    mode: Optional[str] = "custom"
 
 @router.get("/providers")
 async def list_oauth_providers(
@@ -22,11 +23,15 @@ async def list_oauth_providers(
     """List providers supporting OAuth2 and indicate if client credentials are configured."""
     results = []
     for service, meta in OAUTH_PROVIDERS.items():
-        config = await OAuthService.get_client_config(db, service)
+        status = await OAuthService.get_oauth_status(db, service)
         results.append({
             "service": service,
             "displayName": meta["display_name"],
-            "configured": config is not None and bool(config.get("client_id")),
+            "configured": status["configured"],
+            "hostedAvailable": status["hostedAvailable"],
+            "customConfigured": status["customConfigured"],
+            "activeMode": status["activeMode"],
+            "callbackUrl": status["callbackUrl"],
             "defaultScopes": meta["default_scopes"]
         })
     return {"success": True, "data": results}
@@ -37,20 +42,28 @@ async def get_oauth_config(
     admin: Principal = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):
-    """Check if OAuth is configured for a service. Never exposes client_secret."""
+    """Check if OAuth is configured for a service. Exposes hosted and custom status."""
+    status = await OAuthService.get_oauth_status(db, service)
     config = await OAuthService.get_client_config(db, service)
-    if not config:
-        return {"success": True, "configured": False, "clientId": None}
     return {
         "success": True,
-        "configured": True,
-        "clientId": config.get("client_id")
+        "service": service,
+        "configured": status["configured"],
+        "hostedAvailable": status["hostedAvailable"],
+        "customConfigured": status["customConfigured"],
+        "activeMode": status["activeMode"],
+        "clientId": config.get("client_id") if config else None,
+        "callbackUrl": status["callbackUrl"],
+        "hostedDomain": status["hostedDomain"],
+        "publicOrigin": status["publicOrigin"],
+        "defaultScopes": status["defaultScopes"]
     }
 
 @router.post("/{service}/config")
 async def set_oauth_config(
     service: str,
     payload: OAuthConfigInput,
+    mode: Optional[str] = Query(None, description="'hosted' or 'custom'"),
     admin: Principal = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):
@@ -58,19 +71,26 @@ async def set_oauth_config(
     if service not in OAUTH_PROVIDERS:
         raise HTTPException(status_code=400, detail=f"OAuth is not supported for service '{service}'.")
     
+    target_mode = mode or payload.mode or "custom"
     await OAuthService.set_client_config(
         session=db,
         service=service,
         client_id=payload.clientId.strip(),
-        client_secret=payload.clientSecret.strip()
+        client_secret=payload.clientSecret.strip(),
+        mode=target_mode
     )
-    return {"success": True, "message": f"OAuth client configuration saved securely for {service}."}
+    return {
+        "success": True,
+        "mode": target_mode,
+        "message": f"OAuth client configuration ({target_mode}) saved securely for {service}."
+    }
 
 @router.get("/{service}/authorize")
 async def initiate_oauth(
     service: str,
     connectionName: Optional[str] = "default",
     redirectUri: Optional[str] = None,
+    mode: Optional[str] = Query(None, description="'hosted' or 'custom' (defaults to active mode)"),
     admin: Principal = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):
@@ -80,7 +100,8 @@ async def initiate_oauth(
             session=db,
             service=service,
             connection_name=connectionName or "default",
-            redirect_uri=redirectUri
+            redirect_uri=redirectUri,
+            mode=mode
         )
         return {"success": True, "data": res}
     except ValueError as e:

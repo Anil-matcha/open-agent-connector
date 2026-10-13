@@ -44,7 +44,12 @@ class Settings(BaseSettings):
     # Server host & port
     HOST: str = "127.0.0.1"
     PORT: int = 8000
-    PUBLIC_ORIGIN: str = "http://localhost:8000"
+    PUBLIC_ORIGIN: str = Field(
+        default=os.environ.get("CONNECTOR_PUBLIC_ORIGIN") or os.environ.get("PUBLIC_ORIGIN") or "https://connector.suparagent.ai",
+        description="Public origin used for OAuth callbacks and reverse proxy"
+    )
+    HOSTED_ORIGIN: str = "https://connector.suparagent.ai"
+    HOSTED_DOMAIN: str = "connector.suparagent.ai"
     
     # SQLite Database
     DATABASE_URL: str = f"sqlite+aiosqlite:///{BASE_DIR / 'data' / 'connector.db'}"
