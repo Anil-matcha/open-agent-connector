@@ -288,6 +288,24 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.
 
 This publishes the API on `127.0.0.1:8100` and the console on `127.0.0.1:3100`. Put nginx or another TLS-terminating proxy in front: route `/api`, `/v1`, `/mcp`, `/health`, and `/docs` to the API and everything else to the console. Back up `.env.prod` and the `connector_data` volume together; without the encryption key, saved credentials cannot be decrypted. Run one instance only.
 
+## Backups
+
+`deploy/backup/connector-backup.sh` takes a consistent snapshot of the SQLite database while the service is
+running (SQLite's online backup API), verifies it, keeps 14 days of history, and saves the env file (which holds
+`ENCRYPTION_KEY`) whenever it changes. Run it daily from root's cron:
+
+```bash
+15 3 * * * COMPOSE_DIR=/home/ubuntu/open-agent-connector /home/ubuntu/open-agent-connector/deploy/backup/connector-backup.sh >> /var/log/connector-backup.log 2>&1
+```
+
+Snapshots land in `/var/backups/connector` (override with `BACKUP_DIR`). They protect against corruption and bad
+migrations but not against losing the machine, so copy that directory off the host as well. The database holds
+credentials encrypted with the key, so **store the key backup separately from the database backup** when you copy
+them off the host.
+
+To restore: stop the server, replace the database file in the data volume with a snapshot
+(`gunzip -k connector-<time>.db.gz`), and start the server again. Check with `PRAGMA integrity_check` first.
+
 ## Development
 
 Backend dependencies are listed in `server/requirements.txt`. Frontend scripts are defined in `client/package.json`:
