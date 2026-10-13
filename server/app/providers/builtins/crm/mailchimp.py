@@ -5,6 +5,7 @@ Email marketing and audience management: Lists, Audiences, Members, Tags, and Me
 """
 import base64
 import hashlib
+import re
 import urllib.parse
 from typing import Dict, Any, Optional
 import httpx
@@ -13,16 +14,32 @@ from app.providers.base import Provider, Action
 from app.providers.catalog import get_provider_actions
 from app.core.ssrf import assert_public_url, execute_guarded_request
 
+_MAILCHIMP_DC_RE = re.compile(r"^[a-z0-9-]{1,32}$")
+
+
 def _resolve_mailchimp_base(credential: Optional[Dict[str, Any]]) -> str:
+    """Return the Mailchimp API base URL, never pointing credentials at a non-Mailchimp host."""
     cred = credential or {}
     key = str(cred.get("apiKey") or cred.get("accessToken") or "")
     if cred.get("apiEndpoint"):
-        endpoint = str(cred["apiEndpoint"]).rstrip("/")
-        return f"{endpoint}/3.0" if not endpoint.endswith("/3.0") else endpoint
-    server = cred.get("serverPrefix") or cred.get("dc")
+        endpoint = str(cred["apiEndpoint"]).strip().rstrip("/")
+        parsed = urllib.parse.urlparse(endpoint)
+        host = (parsed.hostname or "").lower()
+        if (
+            parsed.scheme != "https"
+            or parsed.username
+            or parsed.password
+            or parsed.port not in (None, 443)
+            or not host.endswith(".api.mailchimp.com")
+        ):
+            raise ValueError("Invalid Mailchimp API endpoint: must be https://<dc>.api.mailchimp.com")
+        return endpoint if endpoint.endswith("/3.0") else f"{endpoint}/3.0"
+    server = str(cred.get("serverPrefix") or cred.get("dc") or "").strip().lower()
     if not server and "-" in key:
-        server = key.split("-")[-1].strip()
+        server = key.split("-")[-1].strip().lower()
     server = server or "us1"
+    if not _MAILCHIMP_DC_RE.match(server):
+        raise ValueError("Invalid Mailchimp datacenter prefix")
     return f"https://{server}.api.mailchimp.com/3.0"
 
 def _mailchimp_headers(credential: Optional[Dict[str, Any]]) -> Dict[str, str]:
