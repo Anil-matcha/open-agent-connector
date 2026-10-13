@@ -20,8 +20,14 @@ async def list_runs(
     admin: Principal = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):
-    total_stmt = select(func.count(RunLog.id))
-    stmt = select(RunLog).order_by(desc(RunLog.started_at)).offset(offset).limit(limit)
+    total_stmt = select(func.count(RunLog.id)).where(RunLog.tenant_id == admin.tenant_id)
+    stmt = (
+        select(RunLog)
+        .where(RunLog.tenant_id == admin.tenant_id)
+        .order_by(desc(RunLog.started_at))
+        .offset(offset)
+        .limit(limit)
+    )
     if service:
         total_stmt = total_stmt.where(RunLog.service == service)
         stmt = stmt.where(RunLog.service == service)
@@ -66,7 +72,7 @@ async def get_run(
     admin: Principal = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):
-    stmt = select(RunLog).where(RunLog.id == run_id)
+    stmt = select(RunLog).where(RunLog.id == run_id, RunLog.tenant_id == admin.tenant_id)
     run = (await db.execute(stmt)).scalar_one_or_none()
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
@@ -93,9 +99,16 @@ async def get_overview_stats(
     admin: Principal = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):
-    total_runs = (await db.execute(select(func.count(RunLog.id)))).scalar_one() or 0
-    successful_runs = (await db.execute(select(func.count(RunLog.id)).where(RunLog.ok == True))).scalar_one() or 0
-    total_connections = (await db.execute(select(func.count(Connection.id)))).scalar_one() or 0
+    tid = admin.tenant_id
+    total_runs = (await db.execute(
+        select(func.count(RunLog.id)).where(RunLog.tenant_id == tid)
+    )).scalar_one() or 0
+    successful_runs = (await db.execute(
+        select(func.count(RunLog.id)).where(RunLog.tenant_id == tid, RunLog.ok == True)
+    )).scalar_one() or 0
+    total_connections = (await db.execute(
+        select(func.count(Connection.id)).where(Connection.tenant_id == tid)
+    )).scalar_one() or 0
     total_providers = len(registry.list_providers())
     total_actions = len(registry.list_actions())
 

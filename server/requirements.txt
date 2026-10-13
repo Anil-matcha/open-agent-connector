@@ -10,3 +10,4 @@ cryptography>=43.0.1
 python-multipart>=0.0.12
 jsonschema>=4.20.0
 mcp>=1.2.0
+alembic>=1.13.0

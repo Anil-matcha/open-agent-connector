@@ -1,5 +1,6 @@
 from sqlalchemy import Column, String, Integer, Float, Boolean, Text, Index
 from app.db.session import Base
+from app.core.tenancy import DEFAULT_TENANT_ID
 from datetime import datetime
 import uuid
 
@@ -9,10 +10,21 @@ def generate_uuid() -> str:
 def utcnow_str() -> str:
     return datetime.utcnow().isoformat() + "Z"
 
+def tenant_column() -> Column:
+    """Owning tenant. Defaults to the single self-hosted tenant."""
+    return Column(
+        String(64),
+        nullable=False,
+        default=DEFAULT_TENANT_ID,
+        server_default=DEFAULT_TENANT_ID,
+        index=True,
+    )
+
 class Connection(Base):
     __tablename__ = "connections"
     
     id = Column(String(36), primary_key=True, default=generate_uuid)
+    tenant_id = tenant_column()
     service = Column(String(64), nullable=False, index=True)
     connection_name = Column(String(64), nullable=False, default="default")
     auth_type = Column(String(32), nullable=False)
@@ -28,7 +40,7 @@ class Connection(Base):
     updated_at = Column(String(32), default=utcnow_str, onupdate=utcnow_str)
 
     __table_args__ = (
-        Index("idx_service_connection", "service", "connection_name", unique=True),
+        Index("idx_tenant_service_connection", "tenant_id", "service", "connection_name", unique=True),
     )
 
 class OAuthClientConfig(Base):
@@ -42,6 +54,7 @@ class OAuthState(Base):
     __tablename__ = "oauth_states"
     
     state = Column(String(64), primary_key=True)
+    tenant_id = tenant_column()
     service = Column(String(64), nullable=False)
     connection_name = Column(String(64), nullable=False, default="default")
     code_verifier = Column(String(128), nullable=True)
@@ -54,6 +67,7 @@ class RuntimeToken(Base):
     __tablename__ = "runtime_tokens"
     
     id = Column(String(36), primary_key=True, default=generate_uuid)
+    tenant_id = tenant_column()
     name = Column(String(64), nullable=False)
     token_hash = Column(String(64), unique=True, nullable=False, index=True)
     allowed_actions = Column(Text, nullable=False, default="[]")       # JSON array of wildcard patterns
@@ -69,6 +83,7 @@ class RunLog(Base):
     __tablename__ = "runs"
     
     id = Column(String(36), primary_key=True, default=generate_uuid)
+    tenant_id = tenant_column()
     action_id = Column(String(128), nullable=False, index=True)
     service = Column(String(64), nullable=False, index=True)
     caller = Column(String(16), nullable=False, default="http") # "http", "mcp", "web"
@@ -85,7 +100,8 @@ class RunLog(Base):
 class IdempotencyRecord(Base):
     __tablename__ = "action_idempotency"
     
-    key_hash = Column(String(64), primary_key=True) # Hash of idempotency_key + principal + action + connection
+    key_hash = Column(String(64), primary_key=True) # Hash of idempotency_key + tenant + principal + action + connection
+    tenant_id = tenant_column()
     payload_hash = Column(String(64), nullable=True) # Hash of normalized input data for conflict detection
     action_id = Column(String(128), nullable=False)
     status = Column(String(32), nullable=False) # "in_progress", "completed", "failed"

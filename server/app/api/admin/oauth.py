@@ -23,7 +23,7 @@ async def list_oauth_providers(
     """List providers supporting OAuth2 and indicate if client credentials are configured."""
     results = []
     for service, meta in OAUTH_PROVIDERS.items():
-        status = await OAuthService.get_oauth_status(db, service)
+        status = await OAuthService.get_oauth_status(db, admin.tenant_id, service)
         results.append({
             "service": service,
             "displayName": meta["display_name"],
@@ -43,8 +43,8 @@ async def get_oauth_config(
     db: AsyncSession = Depends(get_db)
 ):
     """Check if OAuth is configured for a service. Exposes hosted and custom status."""
-    status = await OAuthService.get_oauth_status(db, service)
-    config = await OAuthService.get_client_config(db, service)
+    status = await OAuthService.get_oauth_status(db, admin.tenant_id, service)
+    config = await OAuthService.get_client_config(db, admin.tenant_id, service)
     return {
         "success": True,
         "service": service,
@@ -79,6 +79,7 @@ async def set_oauth_config(
         )
     await OAuthService.set_client_config(
         session=db,
+        tenant_id=admin.tenant_id,
         service=service,
         client_id=payload.clientId.strip(),
         client_secret=payload.clientSecret.strip(),
@@ -103,6 +104,7 @@ async def initiate_oauth(
     try:
         res = await OAuthService.create_authorization_url(
             session=db,
+            tenant_id=admin.tenant_id,
             service=service,
             connection_name=connectionName or "default",
             redirect_uri=redirectUri,

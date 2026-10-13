@@ -18,15 +18,16 @@ def compute_payload_hash(input_data: Dict[str, Any]) -> str:
 
 def compute_idempotency_scope_key(
     idempotency_key: str,
+    tenant_id: str,
     principal_id: Optional[str],
     action_id: str,
     connection_name: Optional[str]
 ) -> str:
     """
-    Computes the unique scope key binding the idempotency key, principal,
+    Computes the unique scope key binding the idempotency key, tenant, principal,
     target action, and connection name together.
     """
-    raw = f"{idempotency_key.strip()}:{principal_id or 'anon'}:{action_id}:{connection_name or 'default'}"
+    raw = f"{tenant_id}:{idempotency_key.strip()}:{principal_id or 'anon'}:{action_id}:{connection_name or 'default'}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 def compute_request_hash(action_id: str, connection_id: Optional[str], input_data: Dict[str, Any]) -> str:

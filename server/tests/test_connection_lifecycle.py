@@ -84,7 +84,7 @@ def run_lifecycle_tests():
 
     async def get_raw_key():
         async with AsyncSessionLocal() as session:
-            conn_obj = await ConnectionService.get_connection_by_id(session, conn_id)
+            conn_obj = await ConnectionService.get_connection_by_id(session, "default", conn_id)
             from app.core.security import decrypt_secret
             creds = json.loads(decrypt_secret(conn_obj.encrypted_value))
             return creds.get("apiKey") or creds.get("accessToken")

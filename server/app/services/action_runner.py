@@ -18,6 +18,7 @@ class ActionRunner:
     @staticmethod
     async def run(
         session: AsyncSession,
+        tenant_id: str,
         action_id: str,
         input_data: Dict[str, Any],
         connection_name: str = "default",
@@ -65,6 +66,7 @@ class ActionRunner:
         if idempotency_key and idempotency_key.strip():
             scope_key = compute_idempotency_scope_key(
                 idempotency_key=idempotency_key,
+                tenant_id=tenant_id,
                 principal_id=principal_id,
                 action_id=action_id,
                 connection_name=connection_name
@@ -112,6 +114,7 @@ class ActionRunner:
             # Register in-progress claim record
             in_progress = IdempotencyRecord(
                 key_hash=scope_key,
+                tenant_id=tenant_id,
                 payload_hash=payload_hash,
                 action_id=action_id,
                 status="in_progress",
@@ -121,7 +124,7 @@ class ActionRunner:
             await session.commit()
 
         # 3. Resolve credentials
-        credential = await ConnectionService.resolve_credentials(session, provider.service, connection_name)
+        credential = await ConnectionService.resolve_credentials(session, tenant_id, provider.service, connection_name)
         if credential is None and "no_auth" not in provider.auth_types:
             raise ValueError(
                 f"No configured connection found for service '{provider.service}' (alias: '{connection_name}'). Please connect your credentials first."
@@ -159,6 +162,7 @@ class ActionRunner:
 
         run_log = RunLog(
             id=execution_id,
+            tenant_id=tenant_id,
             action_id=action_id,
             service=provider.service,
             caller=caller,

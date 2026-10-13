@@ -9,6 +9,7 @@ from sqlalchemy import select
 from app.core.config import settings
 from app.core.security import hash_token
 from app.core.policy import match_pattern
+from app.core.tenancy import DEFAULT_TENANT_ID, PUBLIC_TENANT_ID, get_principal_resolvers
 from app.db.session import get_db
 from app.db.models import RuntimeToken, utcnow_str
 
@@ -24,8 +25,10 @@ class Principal:
         blocked_actions: Optional[List[str]] = None,
         allowed_connections: Optional[List[str]] = None,
         allowed_proxies: Optional[List[str]] = None,
+        tenant_id: str = DEFAULT_TENANT_ID,
     ):
         self.kind = kind
+        self.tenant_id = tenant_id
         self.id = id
         self.name = name
         self.allowed_actions = allowed_actions or []
@@ -35,11 +38,17 @@ class Principal:
 
     @property
     def is_admin(self) -> bool:
+        """Platform operator (static admin token). Not true for tenant admins."""
         return self.kind == "admin"
+
+    @property
+    def is_tenant_owner(self) -> bool:
+        """Full control inside its own tenant: operator, tenant admin, or public sandbox visitor."""
+        return self.kind in ("admin", "tenant_admin", "public")
 
     def can_access_action(self, action_id: str) -> bool:
         """Deny-by-default action access evaluation."""
-        if self.is_admin or self.kind == "public":
+        if self.is_tenant_owner:
             return True
 
         # 1. Any matching blocked rule immediately denies
@@ -59,7 +68,7 @@ class Principal:
 
     def can_access_connection(self, connection_name: str) -> bool:
         """Connection access evaluation."""
-        if self.is_admin or self.kind == "public":
+        if self.is_tenant_owner:
             return True
         if not self.allowed_connections:
             # If not explicitly restricted, default connection access is allowed
@@ -68,7 +77,7 @@ class Principal:
 
     def can_access_proxy(self, service: str) -> bool:
         """Deny-by-default proxy access evaluation."""
-        if self.is_admin or self.kind == "public":
+        if self.is_tenant_owner:
             return True
         if not self.allowed_proxies:
             return False
@@ -138,7 +147,8 @@ async def resolve_principal(raw_token: str, db: AsyncSession) -> Optional[Princi
             allowed_actions=json.loads(token_row.allowed_actions or "[]"),
             blocked_actions=json.loads(token_row.blocked_actions or "[]"),
             allowed_connections=json.loads(token_row.allowed_connections or "[]"),
-            allowed_proxies=json.loads(token_row.allowed_proxies or "[]")
+            allowed_proxies=json.loads(token_row.allowed_proxies or "[]"),
+            tenant_id=token_row.tenant_id or DEFAULT_TENANT_ID
         )
 
     # 3. Check optional static RUNTIME_TOKEN setting
@@ -153,6 +163,12 @@ async def resolve_principal(raw_token: str, db: AsyncSession) -> Optional[Princi
             allowed_proxies=["*"]
         )
 
+    # 4. Credentials understood by a hosted/multi-tenant layer (API keys, sessions)
+    for resolver in get_principal_resolvers():
+        principal = await resolver(raw_token, db)
+        if principal is not None:
+            return principal
+
     return None
 
 
@@ -165,7 +181,7 @@ async def require_admin(
     token = _extract_token(request, auth_creds)
     if token:
         principal = await resolve_principal(token, db)
-        if principal and principal.is_admin:
+        if principal and (principal.is_admin or principal.kind == "tenant_admin"):
             return principal
         if not settings.ALLOW_PUBLIC_ACCESS:
             raise HTTPException(
@@ -181,7 +197,8 @@ async def require_admin(
             name="Public Operator",
             allowed_actions=["*"],
             allowed_connections=["*"],
-            allowed_proxies=["*"]
+            allowed_proxies=["*"],
+            tenant_id=PUBLIC_TENANT_ID
         )
 
     raise HTTPException(
@@ -239,7 +256,8 @@ async def require_runtime_or_admin(
             name="Public Operator",
             allowed_actions=["*"],
             allowed_connections=["*"],
-            allowed_proxies=["*"]
+            allowed_proxies=["*"],
+            tenant_id=PUBLIC_TENANT_ID
         )
 
     raise HTTPException(

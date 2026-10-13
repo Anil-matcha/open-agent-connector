@@ -24,7 +24,7 @@ async def list_connections(
     admin: Principal = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):
-    conns = await ConnectionService.list_connections(db, service)
+    conns = await ConnectionService.list_connections(db, admin.tenant_id, service)
     return {"success": True, "data": conns}
 
 @router.get("/{id_or_service}")
@@ -34,7 +34,7 @@ async def get_connection(
     admin: Principal = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):
-    conn = await ConnectionService.resolve_connection(db, id_or_service, connectionName)
+    conn = await ConnectionService.resolve_connection(db, admin.tenant_id, id_or_service, connectionName)
     if not conn:
         raise HTTPException(status_code=404, detail="Connection not found")
     
@@ -74,6 +74,7 @@ async def upsert_connection(
     try:
         conn = await ConnectionService.upsert_connection(
             session=db,
+            tenant_id=admin.tenant_id,
             service=service,
             auth_type=payload.authType,
             values=payload.values,
@@ -94,7 +95,7 @@ async def test_connection(
 ):
     """Test stored credentials in real-time against the upstream provider."""
     try:
-        res = await ConnectionService.test_connection(db, id_or_service, connectionName)
+        res = await ConnectionService.test_connection(db, admin.tenant_id, id_or_service, connectionName)
         return res
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -110,7 +111,7 @@ async def disconnect_connection(
 ):
     """Revoke a connection without permanently deleting the record."""
     try:
-        res = await ConnectionService.disconnect_connection(db, id_or_service, connectionName)
+        res = await ConnectionService.disconnect_connection(db, admin.tenant_id, id_or_service, connectionName)
         return {"success": True, "data": res}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -128,6 +129,7 @@ async def reconnect_connection(
     try:
         res = await ConnectionService.reconnect_connection(
             session=db,
+            tenant_id=admin.tenant_id,
             id_or_service=id_or_service,
             values=payload.values,
             connection_name=payload.connectionName
@@ -145,7 +147,7 @@ async def delete_connection(
     admin: Principal = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):
-    removed = await ConnectionService.delete_connection(db, id_or_service, connectionName)
+    removed = await ConnectionService.delete_connection(db, admin.tenant_id, id_or_service, connectionName)
     if not removed:
         raise HTTPException(status_code=404, detail="Connection not found")
     return {"success": True, "message": "Connection deleted successfully"}

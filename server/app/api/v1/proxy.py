@@ -44,7 +44,7 @@ async def proxy_request(
             detail=f"Permission denied: connection '{conn_name}' is not authorized for this token"
         )
 
-    credential = await ConnectionService.resolve_credentials(db, service, conn_name)
+    credential = await ConnectionService.resolve_credentials(db, principal.tenant_id, service, conn_name)
     if credential is None and "no_auth" not in provider.auth_types:
         raise HTTPException(status_code=400, detail=f"No configured connection for service '{service}' (alias: '{conn_name}')")
 

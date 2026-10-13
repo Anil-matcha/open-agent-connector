@@ -99,6 +99,7 @@ async def execute_action(
     try:
         result = await ActionRunner.run(
             session=db,
+            tenant_id=principal.tenant_id,
             action_id=action_id,
             input_data=payload.input,
             connection_name=conn_name,

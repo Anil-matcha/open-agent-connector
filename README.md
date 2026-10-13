@@ -257,6 +257,26 @@ Provider actions are maintained in a unified catalog at `server/app/providers/ac
 - **Behind a reverse proxy**, set `CONNECTOR_EXPOSE_LOCAL_TOKEN=false`, bind the API to loopback or a private network, terminate TLS at the proxy, and rate-limit `/api/auth/verify`. See `docker-compose.prod.yml` for a loopback-only overlay.
 - **Database Portability & Deployment**: Backed by SQLite async by default with auto-migration, with PostgreSQL supported via SQLAlchemy async and versioned Alembic migrations (`alembic upgrade head`). A single-instance deployment is recommended until distributed locking and replication coordination are configured across multiple instances.
 
+## Tenancy
+
+Every tenant-owned row (connections, OAuth state, runtime tokens, run logs, idempotency records) carries a
+`tenant_id`. A self-hosted install uses a single `default` tenant, so nothing changes for you. The core
+enforces the boundary on every query: services take `tenant_id` as a required argument, and a tenant id
+only ever comes from the authenticated principal or from server-side state created for it (for example the
+OAuth state record), never from request input.
+
+- Connection names are unique per tenant, so two tenants can each have a `github` / `default` connection.
+- OAuth client credentials a tenant supplies are stored per tenant. Credentials from the server
+  environment belong to the operator and are used only by the `default` tenant.
+- Unauthenticated visitors (when `CONNECTOR_ALLOW_PUBLIC_ACCESS` is on) live in a separate `public` tenant
+  and never see the operator's data.
+- A hosted layer plugs in with `app.core.tenancy.register_principal_resolver(...)`, mapping its own API keys
+  or sessions to a `Principal` with a `tenant_id` (kind `tenant_admin` for the management API,
+  `runtime` for agents). Platform-wide hosted OAuth credentials remain operator-only.
+
+`server/tests/test_tenant_isolation.py` is the contract: two tenants, the operator, and anonymous visitors
+try to reach each other's data through every route.
+
 ## Production deployment
 
 ```bash

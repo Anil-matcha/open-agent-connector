@@ -4,11 +4,17 @@ from fastapi.testclient import TestClient
 from main import app
 from app.core.config import settings
 
-client = TestClient(app)
+
+@pytest.fixture(scope="module")
+def client():
+    with TestClient(app) as c:  # runs startup so the schema exists and is migrated
+        yield c
+
+
 admin_headers = {"Authorization": f"Bearer {settings.ADMIN_TOKEN}"}
 
 
-def test_public_access_to_connections_and_providers():
+def test_public_access_to_connections_and_providers(client):
     """Verify unauthenticated public visitors can list connections and oauth configs."""
     # 1. GET /api/connections without any token
     res = client.get("/api/connections")
@@ -26,7 +32,7 @@ def test_public_access_to_connections_and_providers():
     assert res_gh.json()["service"] == "github"
 
 
-def test_public_access_to_tokens():
+def test_public_access_to_tokens(client):
     """Verify unauthenticated public visitors can list and create runtime tokens."""
     # List tokens
     res = client.get("/api/runtime-tokens")
@@ -48,7 +54,7 @@ def test_public_access_to_tokens():
     assert res_del.status_code == 200
 
 
-def test_hosted_oauth_config_requires_master_admin():
+def test_hosted_oauth_config_requires_master_admin(client):
     """Verify public users cannot overwrite server-wide hosted oauth credentials, but admin can."""
     # 1. Unauthenticated / public attempt to set hosted OAuth config -> 403 Forbidden
     payload = {
@@ -66,7 +72,7 @@ def test_hosted_oauth_config_requires_master_admin():
     assert res_admin.json()["mode"] == "hosted"
 
 
-def test_mcp_still_requires_authentication():
+def test_mcp_still_requires_authentication(client):
     """Ensure MCP protocol fails closed for unauthenticated requests even with public web access."""
     res = client.get("/mcp/tools")
     assert res.status_code == 401

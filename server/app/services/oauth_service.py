@@ -14,6 +14,7 @@ from app.db.models import OAuthState, OAuthClientConfig, Connection, utcnow_str
 from app.core.security import encrypt_secret, decrypt_secret, safe_error_message
 from app.core.ssrf import create_guarded_client, execute_guarded_request
 from app.core.config import settings
+from app.core.tenancy import DEFAULT_TENANT_ID, custom_oauth_config_key
 from app.providers.registry import registry
 
 # Built-in OAuth provider endpoints and default scopes
@@ -740,9 +741,11 @@ class OAuthService:
         return None
 
     @staticmethod
-    async def get_custom_client_config(session: AsyncSession, service: str) -> Optional[Dict[str, str]]:
-        """Retrieve custom user/tenant provided OAuth client credentials."""
-        stmt = select(OAuthClientConfig).where(OAuthClientConfig.service == service)
+    async def get_custom_client_config(session: AsyncSession, tenant_id: str, service: str) -> Optional[Dict[str, str]]:
+        """Retrieve OAuth client credentials the tenant supplied for itself."""
+        stmt = select(OAuthClientConfig).where(
+            OAuthClientConfig.service == custom_oauth_config_key(tenant_id, service)
+        )
         res = (await session.execute(stmt)).scalar_one_or_none()
         if res and res.encrypted_value:
             try:
@@ -752,6 +755,10 @@ class OAuthService:
                 return cfg
             except Exception:
                 pass
+
+        # Environment credentials belong to the operator, so only the default tenant may use them.
+        if tenant_id != DEFAULT_TENANT_ID:
+            return None
 
         candidates = OAuthService._get_candidates(service)
         for cand in candidates:
@@ -776,6 +783,7 @@ class OAuthService:
     @staticmethod
     async def get_client_config(
         session: AsyncSession,
+        tenant_id: str,
         service: str,
         mode: Optional[str] = None
     ) -> Optional[Dict[str, str]]:
@@ -785,19 +793,19 @@ class OAuthService:
         if mode == "hosted":
             return await OAuthService.get_hosted_client_config(session, service)
         elif mode == "custom":
-            return await OAuthService.get_custom_client_config(session, service)
+            return await OAuthService.get_custom_client_config(session, tenant_id, service)
 
         # Fallback resolution: custom override if present, else hosted
-        custom = await OAuthService.get_custom_client_config(session, service)
+        custom = await OAuthService.get_custom_client_config(session, tenant_id, service)
         if custom:
             return custom
         return await OAuthService.get_hosted_client_config(session, service)
 
     @staticmethod
-    async def get_oauth_status(session: AsyncSession, service: str) -> Dict[str, Any]:
+    async def get_oauth_status(session: AsyncSession, tenant_id: str, service: str) -> Dict[str, Any]:
         """Inspect dual-mode OAuth availability for service."""
         hosted = await OAuthService.get_hosted_client_config(session, service)
-        custom = await OAuthService.get_custom_client_config(session, service)
+        custom = await OAuthService.get_custom_client_config(session, tenant_id, service)
         meta = OAUTH_PROVIDERS.get(service, {})
         callback_url = OAuthService.callback_url(service)
 
@@ -820,6 +828,7 @@ class OAuthService:
     @staticmethod
     async def set_client_config(
         session: AsyncSession,
+        tenant_id: str,
         service: str,
         client_id: str,
         client_secret: str,
@@ -831,7 +840,7 @@ class OAuthService:
         payload = json.dumps({"client_id": client_id, "client_secret": client_secret})
         encrypted_val = encrypt_secret(payload)
         
-        target_service = f"hosted:{service}" if mode == "hosted" else service
+        target_service = f"hosted:{service}" if mode == "hosted" else custom_oauth_config_key(tenant_id, service)
         stmt = select(OAuthClientConfig).where(OAuthClientConfig.service == target_service)
         existing = (await session.execute(stmt)).scalar_one_or_none()
         if existing:
@@ -848,6 +857,7 @@ class OAuthService:
     @staticmethod
     async def create_authorization_url(
         session: AsyncSession,
+        tenant_id: str,
         service: str,
         connection_name: str = "default",
         redirect_uri: Optional[str] = None,
@@ -859,7 +869,7 @@ class OAuthService:
         if not provider_meta:
             raise ValueError(f"OAuth is not supported for service '{service}'.")
 
-        config = await OAuthService.get_client_config(session, service, mode=mode)
+        config = await OAuthService.get_client_config(session, tenant_id, service, mode=mode)
         if not config or not config.get("client_id"):
             if mode == "hosted":
                 raise ValueError(
@@ -877,6 +887,7 @@ class OAuthService:
         # Record expiring transaction state
         oauth_state = OAuthState(
             state=state,
+            tenant_id=tenant_id,
             service=service,
             connection_name=connection_name,
             code_verifier=code_verifier,
@@ -940,6 +951,7 @@ class OAuthService:
             raise ValueError("OAuth transaction state has expired. Please restart the authorization flow.")
 
         auth_mode = getattr(res, "auth_mode", None) or "hosted"
+        tenant_id = res.tenant_id or DEFAULT_TENANT_ID  # bound when the flow started, never from the callback request
         connection_name = res.connection_name
         code_verifier = res.code_verifier
         redirect_uri = res.return_uri
@@ -949,9 +961,9 @@ class OAuthService:
         await session.commit()
 
         # Retrieve client config for the active mode, falling back to any valid config
-        config = await OAuthService.get_client_config(session, service, mode=auth_mode)
+        config = await OAuthService.get_client_config(session, tenant_id, service, mode=auth_mode)
         if not config:
-            config = await OAuthService.get_client_config(session, service)
+            config = await OAuthService.get_client_config(session, tenant_id, service)
         if not config:
             raise ValueError(f"OAuth configuration missing for service '{service}'.")
 
@@ -1048,7 +1060,11 @@ class OAuthService:
 
             # Upsert into connection model
             conn_stmt = select(Connection).where(
-                and_(Connection.service == service, Connection.connection_name == connection_name)
+                and_(
+                    Connection.tenant_id == tenant_id,
+                    Connection.service == service,
+                    Connection.connection_name == connection_name,
+                )
             )
             existing_conn = (await session.execute(conn_stmt)).scalar_one_or_none()
             if existing_conn:
@@ -1065,6 +1081,7 @@ class OAuthService:
                 conn_id = existing_conn.id
             else:
                 new_conn = Connection(
+                    tenant_id=tenant_id,
                     service=service,
                     connection_name=connection_name,
                     auth_type="oauth2",
@@ -1146,9 +1163,9 @@ class OAuthService:
                 pass
 
             auth_mode = re_creds.get("authMode") if 're_creds' in locals() and isinstance(re_creds, dict) else None
-            config = await OAuthService.get_client_config(session, connection.service, mode=auth_mode)
+            config = await OAuthService.get_client_config(session, connection.tenant_id, connection.service, mode=auth_mode)
             if not config:
-                config = await OAuthService.get_client_config(session, connection.service)
+                config = await OAuthService.get_client_config(session, connection.tenant_id, connection.service)
             provider_meta = OAUTH_PROVIDERS.get(connection.service)
             if not config or not provider_meta:
                 connection.status = "expired"

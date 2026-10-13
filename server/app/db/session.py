@@ -74,4 +74,24 @@ async def init_db():
             if "auth_mode" not in existing_oauth_cols:
                 await conn.execute(text("ALTER TABLE oauth_states ADD COLUMN auth_mode VARCHAR(32) DEFAULT 'hosted'"))
 
+        # Tenant ownership columns (single-tenant installs keep the "default" tenant)
+        for table in ("connections", "oauth_states", "runtime_tokens", "runs", "action_idempotency"):
+            res_t = await conn.execute(text(f"PRAGMA table_info({table})"))
+            cols_t = {row[1] for row in res_t.fetchall()}
+            if cols_t and "tenant_id" not in cols_t:
+                await conn.execute(text(
+                    f"ALTER TABLE {table} ADD COLUMN tenant_id VARCHAR(64) NOT NULL DEFAULT 'default'"
+                ))
+            if cols_t:
+                await conn.execute(text(
+                    f"CREATE INDEX IF NOT EXISTS ix_{table}_tenant_id ON {table} (tenant_id)"
+                ))
 
+        # Connection names are unique per tenant, not globally
+        res_c = await conn.execute(text("PRAGMA table_info(connections)"))
+        if {row[1] for row in res_c.fetchall()}:
+            await conn.execute(text("DROP INDEX IF EXISTS idx_service_connection"))
+            await conn.execute(text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_tenant_service_connection "
+                "ON connections (tenant_id, service, connection_name)"
+            ))

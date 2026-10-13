@@ -127,7 +127,7 @@ class McpService:
             }
 
         elif name == "list_connections":
-            conns = await ConnectionService.list_connections(session, args.get("service"))
+            conns = await ConnectionService.list_connections(session, principal.tenant_id, args.get("service"))
             if not principal.is_admin:
                 conns = [c for c in conns if principal.can_access_connection(c["connectionName"])]
             return {"connections": conns}
@@ -201,6 +201,7 @@ class McpService:
 
             return await ActionRunner.run(
                 session=session,
+                tenant_id=principal.tenant_id,
                 action_id=action_id,
                 input_data=input_data,
                 connection_name=conn_name,
@@ -223,6 +224,7 @@ class McpService:
 
             return await ActionRunner.run(
                 session=session,
+                tenant_id=principal.tenant_id,
                 action_id=target_action.id,
                 input_data=args,
                 connection_name=conn_name,

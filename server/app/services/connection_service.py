@@ -12,20 +12,28 @@ class ConnectionService:
     @staticmethod
     async def get_connection_by_id(
         session: AsyncSession,
+        tenant_id: str,
         connection_id: str
     ) -> Optional[Connection]:
-        stmt = select(Connection).where(Connection.id == connection_id)
+        stmt = select(Connection).where(
+            and_(Connection.id == connection_id, Connection.tenant_id == tenant_id)
+        )
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
 
     @staticmethod
     async def get_connection(
         session: AsyncSession,
+        tenant_id: str,
         service: str,
         connection_name: str = "default"
     ) -> Optional[Connection]:
         stmt = select(Connection).where(
-            and_(Connection.service == service, Connection.connection_name == connection_name)
+            and_(
+                Connection.tenant_id == tenant_id,
+                Connection.service == service,
+                Connection.connection_name == connection_name,
+            )
         )
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
@@ -33,6 +41,7 @@ class ConnectionService:
     @staticmethod
     async def resolve_connection(
         session: AsyncSession,
+        tenant_id: str,
         id_or_service: str,
         connection_name: Optional[str] = None
     ) -> Optional[Connection]:
@@ -40,7 +49,7 @@ class ConnectionService:
         # Try primary key UUID lookup first
         try:
             uuid_obj = uuid.UUID(id_or_service)
-            conn = await ConnectionService.get_connection_by_id(session, str(uuid_obj))
+            conn = await ConnectionService.get_connection_by_id(session, tenant_id, str(uuid_obj))
             if conn:
                 return conn
         except (ValueError, AttributeError):
@@ -49,6 +58,7 @@ class ConnectionService:
         # Fallback to (service, connection_name)
         return await ConnectionService.get_connection(
             session=session,
+            tenant_id=tenant_id,
             service=id_or_service,
             connection_name=connection_name or "default"
         )
@@ -56,9 +66,10 @@ class ConnectionService:
     @staticmethod
     async def list_connections(
         session: AsyncSession,
+        tenant_id: str,
         service: Optional[str] = None
     ) -> List[Dict[str, Any]]:
-        stmt = select(Connection)
+        stmt = select(Connection).where(Connection.tenant_id == tenant_id)
         if service:
             stmt = stmt.where(Connection.service == service)
         result = await session.execute(stmt)
@@ -91,6 +102,7 @@ class ConnectionService:
     @staticmethod
     async def upsert_connection(
         session: AsyncSession,
+        tenant_id: str,
         service: str,
         auth_type: str,
         values: Dict[str, Any],
@@ -113,7 +125,7 @@ class ConnectionService:
         encrypted_val = encrypt_secret(json.dumps(values))
         granted_scopes_json = json.dumps(profile.get("granted_scopes", []))
 
-        existing = await ConnectionService.get_connection(session, service, connection_name)
+        existing = await ConnectionService.get_connection(session, tenant_id, service, connection_name)
         now_ts = utcnow_str()
         if existing:
             existing.auth_type = auth_type
@@ -128,6 +140,7 @@ class ConnectionService:
             target_id = existing.id
         else:
             conn = Connection(
+                tenant_id=tenant_id,
                 service=service,
                 connection_name=connection_name,
                 auth_type=auth_type,
@@ -158,11 +171,12 @@ class ConnectionService:
     @staticmethod
     async def test_connection(
         session: AsyncSession,
+        tenant_id: str,
         id_or_service: str,
         connection_name: Optional[str] = None
     ) -> Dict[str, Any]:
         """Test stored credentials against provider in real-time and update connection status."""
-        conn = await ConnectionService.resolve_connection(session, id_or_service, connection_name)
+        conn = await ConnectionService.resolve_connection(session, tenant_id, id_or_service, connection_name)
         if not conn:
             raise ValueError(f"Connection '{id_or_service}' not found.")
 
@@ -225,11 +239,12 @@ class ConnectionService:
     @staticmethod
     async def disconnect_connection(
         session: AsyncSession,
+        tenant_id: str,
         id_or_service: str,
         connection_name: Optional[str] = None
     ) -> Dict[str, Any]:
         """Revoke a connection without permanently deleting the record."""
-        conn = await ConnectionService.resolve_connection(session, id_or_service, connection_name)
+        conn = await ConnectionService.resolve_connection(session, tenant_id, id_or_service, connection_name)
         if not conn:
             raise ValueError(f"Connection '{id_or_service}' not found.")
 
@@ -248,12 +263,13 @@ class ConnectionService:
     @staticmethod
     async def reconnect_connection(
         session: AsyncSession,
+        tenant_id: str,
         id_or_service: str,
         values: Dict[str, Any],
         connection_name: Optional[str] = None
     ) -> Dict[str, Any]:
         """Update/rotate credentials on an existing connection, re-validating live."""
-        conn = await ConnectionService.resolve_connection(session, id_or_service, connection_name)
+        conn = await ConnectionService.resolve_connection(session, tenant_id, id_or_service, connection_name)
         if not conn:
             raise ValueError(f"Connection '{id_or_service}' not found.")
 
@@ -294,11 +310,12 @@ class ConnectionService:
     @staticmethod
     async def delete_connection(
         session: AsyncSession,
+        tenant_id: str,
         id_or_service: str,
         connection_name: Optional[str] = None
     ) -> bool:
         """Permanently delete a connection from the database."""
-        conn = await ConnectionService.resolve_connection(session, id_or_service, connection_name)
+        conn = await ConnectionService.resolve_connection(session, tenant_id, id_or_service, connection_name)
         if not conn:
             return False
         await session.delete(conn)
@@ -308,6 +325,7 @@ class ConnectionService:
     @staticmethod
     async def resolve_credentials(
         session: AsyncSession,
+        tenant_id: str,
         service: str,
         connection_name: str = "default"
     ) -> Optional[Dict[str, Any]]:
@@ -318,7 +336,7 @@ class ConnectionService:
         if "no_auth" in provider.auth_types:
             return {} # virtual connection
 
-        conn = await ConnectionService.get_connection(session, service, connection_name)
+        conn = await ConnectionService.get_connection(session, tenant_id, service, connection_name)
         if not conn:
             return None
 

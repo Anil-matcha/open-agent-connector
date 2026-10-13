@@ -25,7 +25,7 @@ async def list_tokens(
     admin: Principal = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):
-    stmt = select(RuntimeToken)
+    stmt = select(RuntimeToken).where(RuntimeToken.tenant_id == admin.tenant_id)
     result = await db.execute(stmt)
     tokens = result.scalars().all()
     return {
@@ -57,6 +57,7 @@ async def create_token(
     token_hashed = hash_token(raw_token)
     
     token = RuntimeToken(
+        tenant_id=admin.tenant_id,
         name=payload.name,
         token_hash=token_hashed,
         allowed_actions=json.dumps(payload.allowedActions or []),
@@ -87,7 +88,9 @@ async def revoke_token(
     admin: Principal = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):
-    stmt = select(RuntimeToken).where(RuntimeToken.id == token_id)
+    stmt = select(RuntimeToken).where(
+        RuntimeToken.id == token_id, RuntimeToken.tenant_id == admin.tenant_id
+    )
     token = (await db.execute(stmt)).scalar_one_or_none()
     if not token:
         raise HTTPException(status_code=404, detail="Token not found")
