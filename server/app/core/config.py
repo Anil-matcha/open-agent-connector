@@ -3,6 +3,7 @@ from pydantic import Field
 import os
 from pathlib import Path
 import secrets
+from typing import Optional
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -83,6 +84,21 @@ class Settings(BaseSettings):
 
     # Origins (besides PUBLIC_ORIGIN) allowed as post-OAuth return URLs, comma separated.
     ALLOWED_RETURN_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
+
+    # --- Optional user accounts (email + password, cookie sessions) ---
+    # disabled | invite (needs ACCOUNTS_INVITE_CODES) | open (needs an email backend)
+    ACCOUNTS_SIGNUP_MODE: str = "disabled"
+    ACCOUNTS_INVITE_CODES: str = ""            # comma-separated one-line invite codes
+    ACCOUNTS_EMAIL_BACKEND: str = "none"       # none | smtp | console (console logs codes: development only)
+    ACCOUNTS_BLOCKED_EMAIL_DOMAINS: str = ""   # comma-separated, in addition to reserved test domains
+    ACCOUNTS_SESSION_DAYS: int = 30
+    ACCOUNTS_COOKIE_SECURE: Optional[bool] = None  # default: true when PUBLIC_ORIGIN is https
+    ACCOUNTS_SMTP_HOST: str = ""
+    ACCOUNTS_SMTP_PORT: int = 587
+    ACCOUNTS_SMTP_USER: str = ""
+    ACCOUNTS_SMTP_PASSWORD: str = ""
+    ACCOUNTS_SMTP_FROM: str = ""
+    ACCOUNTS_SMTP_STARTTLS: bool = True
 
     # MCP Authentication Gate (Fail-Closed by default)
     ALLOW_ANONYMOUS_MCP: bool = Field(

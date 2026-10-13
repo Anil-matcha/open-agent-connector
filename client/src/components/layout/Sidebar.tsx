@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { API_BASE } from "@/lib/api";
-import { OperatorAccess } from "@/components/layout/OperatorAccess";
+import { AccessControl } from "@/components/layout/AccessControl";
 import {
   LayoutDashboard,
   Layers,
@@ -97,7 +97,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      <OperatorAccess />
+      <AccessControl />
 
       {/* Footer Info */}
       <div className="p-3 border-t border-zinc-100 text-[11px] text-zinc-400 flex flex-col gap-1">

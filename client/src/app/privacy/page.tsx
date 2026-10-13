@@ -33,6 +33,12 @@ export default function PrivacyPage() {
               OAuth access and refresh tokens, or API keys you provide, for that account.
             </>,
             <>
+              <strong>Account details.</strong> If you create an account: your email address, a one-way
+              hash of your password (we never store the password itself), and your sign-in sessions,
+              including the IP address and browser type they were created from. Verification and
+              password-reset codes are stored only as keyed hashes and expire after 10 minutes.
+            </>,
+            <>
               <strong>Connection metadata.</strong> The provider name, a connection name you
               choose, basic account identity information returned by the provider (such as a
               username or email address) and connection status.
@@ -106,7 +112,9 @@ export default function PrivacyPage() {
       <Section heading="6. Retention and deletion">
         <p>
           Connection credentials are kept while a connection is active. You can disconnect or
-          delete a connection at any time, which removes its stored credentials. You can also
+          delete a connection at any time, which removes its stored credentials. You can delete your
+          whole account from the Account page in the console, which permanently removes your account,
+          connections, tokens, run history and saved OAuth app settings. You can also
           revoke our access from the third-party provider&apos;s own account settings. To request
           deletion of other data we hold about you, email{" "}
           <a className="underline" href={`mailto:${CONTACT_EMAIL}`}>

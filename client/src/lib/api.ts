@@ -64,6 +64,8 @@ export async function fetchApi<T = any>(
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    // Required on state-changing requests made with the session cookie (CSRF defence)
+    "X-Connector-CSRF": "1",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...((options.headers as Record<string, string>) || {}),
   };
@@ -71,12 +73,14 @@ export async function fetchApi<T = any>(
   const response = await fetch(url, {
     ...options,
     headers,
+    credentials: "include",
   });
 
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
     const errorMsg =
+      data?.detail?.error?.message ||
       data?.detail?.message ||
       data?.detail ||
       data?.error?.message ||

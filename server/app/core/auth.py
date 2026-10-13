@@ -9,6 +9,7 @@ from sqlalchemy import select
 from app.core.config import settings
 from app.core.security import hash_token
 from app.core.policy import match_pattern
+from app.accounts.cookies import csrf_ok, read_session_cookie
 from app.core.tenancy import DEFAULT_TENANT_ID, PUBLIC_TENANT_ID, get_principal_resolvers
 from app.db.session import get_db
 from app.db.models import RuntimeToken, utcnow_str
@@ -105,6 +106,12 @@ def _extract_token(request: Request, auth_creds: Optional[HTTPAuthorizationCrede
     if runtime_header and runtime_header.strip():
         return runtime_header.strip()
 
+    # 3. Session cookie from the console. State-changing requests must also carry the CSRF header;
+    #    without it the cookie is ignored, so a forged cross-site request is treated as anonymous.
+    cookie = read_session_cookie(request)
+    if cookie and csrf_ok(request):
+        return cookie
+
     return None
 
 
@@ -183,6 +190,12 @@ async def require_admin(
         principal = await resolve_principal(token, db)
         if principal and (principal.is_admin or principal.kind == "tenant_admin"):
             return principal
+        if token.startswith("cs_"):  # expired or revoked session: never fall back to the public sandbox
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Session expired. Please sign in again.",
+                headers={"WWW-Authenticate": "Bearer"}
+            )
         if not settings.ALLOW_PUBLIC_ACCESS:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -242,6 +255,12 @@ async def require_runtime_or_admin(
         principal = await resolve_principal(token, db)
         if principal:
             return principal
+        if token.startswith("cs_"):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Session expired. Please sign in again.",
+                headers={"WWW-Authenticate": "Bearer"}
+            )
         if not settings.ALLOW_PUBLIC_ACCESS:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
