@@ -1,8 +1,9 @@
 import socket
 import ipaddress
 from urllib.parse import urlparse, urljoin
-from typing import Optional, Set, Dict, Any
+from typing import Optional, Set, Dict, Any, Iterable
 import httpx
+import httpcore
 from app.core.config import settings
 
 # Explicit safe headers that can survive a cross-origin redirect
@@ -87,9 +88,84 @@ def assert_public_url(url: str, allow_private: bool = False) -> None:
                 f"Security guard blocked outbound target {hostname} ({ip_addr}). Private/internal endpoints are denied."
             )
 
+class GuardedAnyIOBackend(httpcore.AnyIOBackend):
+    """
+    Hardened network backend that resolves destination hostnames, validates
+    every returned IP against blocked/private/cloud-metadata networks, and
+    pins TCP connection directly to the vetted IP to eliminate DNS-rebinding (TOCTOU).
+    Preserves TLS SNI and server certificate validation against destination hostname.
+    """
+    def __init__(self, allow_private: bool = False):
+        super().__init__()
+        self.allow_private = allow_private
+
+    async def connect_tcp(
+        self,
+        host: str,
+        port: int,
+        timeout: Optional[float] = None,
+        local_address: Optional[str] = None,
+        socket_options: Optional[Iterable[Any]] = None,
+    ) -> httpcore.AsyncNetworkStream:
+        # Check standard port compliance
+        if not (self.allow_private or settings.ALLOW_PRIVATE_NETWORK) and port not in ALLOWED_PORTS:
+            raise SSRFViolationError(f"Port {port} is not permitted for outbound requests. Only standard web ports (80, 443) are allowed.")
+
+        # Check if host is already an IP address
+        try:
+            addr_obj = ipaddress.ip_address(host)
+            ip_str = str(addr_obj)
+            if is_ip_blocked(ip_str, allow_private=self.allow_private or settings.ALLOW_PRIVATE_NETWORK):
+                raise SSRFViolationError(f"Security guard blocked outbound target IP {ip_str}. Private/internal endpoints are denied.")
+            vetted_ip = ip_str
+        except ValueError:
+            # Resolve hostname
+            try:
+                addr_info = socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)
+            except socket.gaierror as e:
+                raise SSRFViolationError(f"Failed to resolve target hostname '{host}': {str(e)}")
+
+            vetted_ips = []
+            for item in addr_info:
+                ip_cand = item[4][0]
+                if is_ip_blocked(ip_cand, allow_private=self.allow_private or settings.ALLOW_PRIVATE_NETWORK):
+                    raise SSRFViolationError(
+                        f"Security guard blocked outbound target {host} ({ip_cand}). Private/internal endpoints are denied."
+                    )
+                vetted_ips.append(ip_cand)
+
+            if not vetted_ips:
+                raise SSRFViolationError(f"No valid IP addresses resolved for '{host}'.")
+
+            # Pin to the first validated IP address to prevent DNS rebinding TOCTOU drift
+            vetted_ip = vetted_ips[0]
+
+        return await super().connect_tcp(
+            host=vetted_ip,
+            port=port,
+            timeout=timeout,
+            local_address=local_address,
+            socket_options=socket_options
+        )
+
+class GuardedTransport(httpx.AsyncHTTPTransport):
+    """
+    Custom HTTPX AsyncTransport configured with GuardedAnyIOBackend to ensure
+    address pinning and DNS rebinding prevention at socket connection time.
+    """
+    def __init__(self, allow_private: bool = False, **kwargs):
+        super().__init__(**kwargs)
+        self._pool = httpcore.AsyncConnectionPool(
+            ssl_context=self._pool._ssl_context,
+            network_backend=GuardedAnyIOBackend(allow_private=allow_private),
+            http1=True,
+            http2=False,
+        )
+
 async def create_guarded_client(allow_private: bool = False, timeout_seconds: float = 30.0) -> httpx.AsyncClient:
-    """Creates an async HTTP client configured for secure outbound provider execution (no blind redirects)."""
+    """Creates an async HTTP client configured with DNS-pinning transport and manual redirect security."""
     return httpx.AsyncClient(
+        transport=GuardedTransport(allow_private=allow_private),
         timeout=httpx.Timeout(timeout_seconds),
         follow_redirects=False, # Never blindly follow redirects without re-checking destination
     )

@@ -2,11 +2,14 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from sqlalchemy.orm import declarative_base
 from app.core.config import settings
 
+is_sqlite = settings.DATABASE_URL.startswith("sqlite")
+connect_args = {"check_same_thread": False} if is_sqlite else {}
+
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=False,
     future=True,
-    connect_args={"check_same_thread": False}
+    connect_args=connect_args
 )
 
 AsyncSessionLocal = async_sessionmaker(
@@ -31,14 +34,17 @@ from sqlalchemy import text
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        # Verify and migrate runtime_tokens columns
-        res = await conn.execute(text("PRAGMA table_info(runtime_tokens)"))
-        existing_cols = {row[1] for row in res.fetchall()}
-        if existing_cols:
-            if "is_active" not in existing_cols:
-                await conn.execute(text("ALTER TABLE runtime_tokens ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT 1"))
-            if "revoked_at" not in existing_cols:
-                await conn.execute(text("ALTER TABLE runtime_tokens ADD COLUMN revoked_at TEXT"))
+        
+        # Lightweight column additions for existing SQLite database files
+        if conn.dialect.name == "sqlite":
+            # Verify and migrate runtime_tokens columns
+            res = await conn.execute(text("PRAGMA table_info(runtime_tokens)"))
+            existing_cols = {row[1] for row in res.fetchall()}
+            if existing_cols:
+                if "is_active" not in existing_cols:
+                    await conn.execute(text("ALTER TABLE runtime_tokens ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT 1"))
+                if "revoked_at" not in existing_cols:
+                    await conn.execute(text("ALTER TABLE runtime_tokens ADD COLUMN revoked_at TEXT"))
 
         # Verify and migrate action_idempotency columns
         res_idemp = await conn.execute(text("PRAGMA table_info(action_idempotency)"))

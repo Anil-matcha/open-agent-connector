@@ -1,174 +1,163 @@
-# Open Agent Connector
+# Open Agent Connector: Code Comparison and Gap Report
 
-## Research and implementation plan
+**Review date:** 13 October 2026  
+**Repositories reviewed:** `Anil-matcha/open-agent-connector` and `oomol-lab/open-connector`  
+**Review type:** static source and documentation review; tests were not run
 
-**Engineering memo · 9 October 2026**  
-**Review basis:** current source and public primary sources
+## Executive summary
 
-## Recommendation
+The current Anil-matcha repository is substantially more advanced than its README and the previous research memo describe. At reviewed commit `036e09e`, it registers **236 providers** and its action catalog contains **8,024 actions**. It already implements admin/runtime tokens, action and proxy policy data, OAuth authorization and refresh, input schema validation, scoped idempotency, redacted run summaries, and outbound HTTP protections.
 
-Finish the secure **connect → authorize → discover → execute → audit → revoke** flow before expanding the provider catalog. The current code has useful building blocks and a working local happy path, but identity, policy enforcement, credential lifecycle, and execution guarantees do not yet form a dependable product boundary.
+The most important confirmed security gap is that the MCP HTTP endpoints do not require authentication. They resolve a token only when one is supplied, and `McpService` executes actions without a principal. Therefore an unauthenticated caller reaching `/mcp` can discover and execute actions using saved connections. This contradicts both the existing memo and README in different ways: the memo says route auth is generally absent, while the code protects several admin, REST execution, and proxy routes; the README says auth is missing everywhere, while its most serious omission is the unprotected MCP route.
 
-Recommended first release: a **single-operator, self-hosted connector runtime**. Treat admin access and agent/runtime access as distinct principals; enforce narrow grants on every REST, proxy, and MCP execution path. Keep multi-user hosting and broad provider coverage out of the first core milestone.
+Compared with OOMOL OpenConnector, the remaining broad gaps are: smaller catalog, no first-party SDK or CLI, less mature deployment/storage options, and a hand-maintained MCP implementation. OOMOL documents 1,000+ providers and 10,000+ Actions, SDK/CLI/MCP/HTTP/OpenAPI clients, PostgreSQL, Helm and multiple deployment targets. Those catalog figures are vendor-published and do not have identical counting rules to the Anil-matcha registry.
 
-This review is based on the current SamurAIGPT/open-agent-connector source at commit `4accb3ae871ac529ae03308dadbe1cbb7555499f` and the public reference implementation at commit `7da88e987e33089b298c224d745799f7d715fd7c`. Findings below are direct code observations unless marked as a product recommendation or inference. Connector inventory was not used as a success measure.
+## Repository snapshot and verified inventory
 
-## Executive findings
-
-| Priority | Gap | Why it blocks a reliable flow |
+| Project | Reviewed commit | Provider/action evidence |
 |---|---|---|
-| **P0** | Authentication and policy are declared but not enforced | Routes can be called without validating `ADMIN_TOKEN` or `RUNTIME_TOKEN`; scope records and policy helpers do not protect execution. |
-| **P0** | Custom HTTP can send credentials to user-selected destinations | URL/header control plus redirect and DNS re-resolution behavior creates an SSRF and credential exposure path. |
-| **P1** | Connections lack identity and lifecycle | Global service/name uniqueness has no owner/workspace boundary; OAuth refresh, expiry, and revoke lifecycle are not wired. |
-| **P1** | Execution and audit semantics are weak | Input schema is not enforced; the idempotency key is ignored in the hash; errors/logs can expose raw values. |
-| **P1** | MCP server is hand-built against an older contract | Current advertised version is `2024-11-05`; protocol and auth changed materially in the July 2026 final revision. |
-| **P2** | Release and persistence baseline is incomplete | SQLite `create_all`, no migration path, CI/test packaging, deployment baseline, or operational readiness checks. |
+| Anil-matcha Open Agent Connector | `036e09e7f19854a33e89292622757376f66753e5` (12 Oct 2026) | `ProviderRegistry` has 236 registrations; `actions_catalog.json` has 236 service keys and 8,024 actions. |
+| OOMOL OpenConnector | `231b9ea77ca381971711e879e077d4b8d1c1fcc2` (12 Oct 2026) | README claims 1,000+ providers and 10,000+ Actions. The repository has extensive per-provider source and runtime code; its published counts are not directly comparable to Anil-matcha's direct registry/catalog count. |
 
-## 1. Current flow and where it stops
+The Anil-matcha README still says four built-in providers and 147 GitHub actions. That description is materially stale and should be corrected. The README also says authentication is not enforced on any API, admin, or MCP route; source shows enforcement on admin routes, action execution over REST, and proxy execution, but not on MCP execution. These statements should be reconciled with the implementation.
 
-The existing product path is recognizable: launch the FastAPI service and web UI, add a connection by entering credentials, browse actions, execute a REST or MCP call, then inspect a run log. The API/provider registry and UI already provide a base for a vertical slice. The missing behavior appears when the caller is untrusted, a credential expires, a request is retried, or an operation fails.
+## Capability comparison
 
-| Flow step | Current implementation evidence | Missing product contract |
-|---|---|---|
-| Boot and configure | `server/main.py` mounts `/api`, `/v1`, and `/mcp`; config defines `ADMIN_TOKEN` and `RUNTIME_TOKEN`. | No middleware consumes those token settings. Health is basic liveness; deployment defaults and key handling need definition. |
-| Connect account | Connection service encrypts credential data; modal supports manual token entry. | No complete OAuth authorization/callback/refresh path. Connection is globally keyed by service and name. |
-| Discover and authorize | Action registry and MCP `tools/list` expose actions. Policy helpers exist. | No caller grant check on discovery or execution; runtime token allow/deny scopes are stored but unused. |
-| Execute and retry | `ActionRunner` calls provider action; idempotency table is present. | No schema validation; idempotency hash omits the supplied key; stale in-progress claims can remain. |
-| Audit and recover | `RunLog` records input, output, and exception text. | No systematic redaction, bounded summaries, retention, safe public error envelope, or lifecycle recovery. |
+| Capability | Anil-matcha Open Agent Connector | OOMOL OpenConnector | Gap / implication |
+|---|---|---|---|
+| Catalog | 236 registered providers; 8,024 catalog actions | README claims 1,000+ providers and 10,000+ Actions | Anil-matcha is much smaller by published inventory. Prioritize useful, reliable vertical integrations over raw count. |
+| Gateway authentication | Admin and runtime principals, hashed persistent runtime tokens, static runtime token option | Runtime tokens and local auth are documented | Anil-matcha has the core primitives, but MCP bypasses mandatory authentication. |
+| Authorization | Action allow/block patterns, connection restrictions, proxy allowlists | Runtime scopes and action allow/block policy | Similar policy building blocks; Anil-matcha must apply them consistently to MCP discovery and execution. |
+| OAuth | Authorization URL, state/code exchange, encrypted credentials, refresh logic exist in `oauth_service.py` | OAuth2 flows, token refresh, hosted OAuth documented | Core self-hosted OAuth exists in Anil-matcha. OOMOL has more complete product paths, including hosted authorization; verify provider-specific lifecycle coverage before claiming parity. |
+| Agent interfaces | REST, HTTP MCP, plus an STDIO MCP entry point; FastAPI exposes OpenAPI | TypeScript SDK, `oo` CLI, MCP, HTTP/OpenAPI | No first-party SDK or CLI in Anil-matcha; its MCP server is custom protocol code rather than an adopted SDK implementation. |
+| Execution safety | JSON Schema validation, scoped idempotency, safe error handling, bounded/redacted run summaries | Stable action contracts, runtime policy, redacted logs, file transit | Anil-matcha already has useful execution safeguards. OOMOL has broader runtime and file-transit capabilities; verify detailed behavior per release. |
+| Outbound HTTP | DNS/address checks, standard-port policy, manual redirect handling, cross-origin credential stripping, response size cap | Provider-specific executor/runtime model and additional controls documented | Anil-matcha's protections are substantially beyond the old memo's description. A remaining concern is that DNS is checked separately from the HTTP client's resolution, leaving a possible DNS-rebinding gap unless the network layer pins the checked address. |
+| Persistence and deployment | SQLite-oriented schema initialization and Docker Compose; default local DB | SQLite/PostgreSQL, Docker/Node, Helm/Kubernetes, Cloudflare and other deployment guides | Anil-matcha lacks a robust cross-database migration path and documented multi-instance production baseline. `init_db()` uses SQLite `PRAGMA` statements. |
+| Product operations | Local Next.js console, token management, connections, run history | Console, generated API docs, hosted service, deployment/usage options | OOMOL offers more turnkey deployment and operator workflows. Hosted OOMOL runtime is outside a self-host-only comparison but is a user-facing option. |
+| Event triggers | No equivalent trigger/subscription subsystem found in reviewed Anil-matcha tree | OOMOL includes provider-trigger and subscription code/docs | Gap if the target use case includes event-driven agents rather than request/response actions. |
 
-**Security interpretation:** this is acceptable only as an isolated local prototype. A loopback default reduces network exposure but does not substitute for route authorization once a user deploys it on a host or container network. Do not expose it externally until the P0 gates are complete.
+## Highest-priority findings
 
-## 2. Research and design implications
+### P0 — Protect MCP execution and connection discovery
 
-### Authentication is two separate trust relationships
+`server/app/api/v1/mcp.py` resolves a principal only if a caller provides a token. `tools/list` also returns action tools for an absent/invalid principal. In `server/app/services/mcp_service.py`, permission checks are conditional on `if principal`; the `execute_action` and direct-action paths call `ActionRunner.run()` when no principal is present. This creates an anonymous route to all actions and saved provider credentials for any caller who can reach the service.
 
-Provider credentials authorize the connector to act against a third-party service. Gateway credentials authorize an agent or operator to call this connector. The code must never confuse these. An admin principal manages connections and policy; a runtime principal receives explicitly scoped, revocable grants. Every request must resolve a principal and enforce a decision at the point of use.
+**Recommendation:** fail closed on all remote MCP calls: require a valid runtime or admin principal, filter tools by grants, and enforce action, connection, and proxy grants at execution. If anonymous MCP is desired for local use, make it an explicit opt-in bound to loopback and ensure container/proxy deployments cannot accidentally expose that mode. Add regression tests for absent, invalid, under-scoped, and revoked tokens on both MCP discovery and execution.
 
-The reference implementation is useful as a design benchmark for admin/runtime middleware, token hashing and usage tracking, policy gates, typed execution errors, OAuth transaction state, migrations, and tests. These are patterns to adapt to this project’s shape, not a mandate to copy unrelated platform features.
+### P1 — Correct stale project documentation
 
-### MCP changed enough to avoid hand-maintaining the wire contract
+The current README's four-provider/147-action description does not match the checked source (236 registrations/8,024 actions). Its security section incorrectly says no authentication is enforced anywhere. Update the inventory and explain the actual route-level behavior, including the MCP exception, before presenting the service as network-ready.
 
-The official MCP project’s 28 July 2026 revision is marked final in the protocol tracking matrix. It retires the initialize/initialized handshake and session ID model and changes request metadata and authorization expectations. The current server advertises `2024-11-05` and manually implements JSON-RPC methods. Adopt the official SDK, pin and test supported versions, and provide compatibility only where real client requirements justify it.
+### P1 — Close the outbound DNS resolution gap
 
-### OAuth must follow the correct flow for the principal
+`core/ssrf.py` resolves and checks the hostname with `socket.getaddrinfo`, then passes the hostname to HTTPX, which performs its own connection resolution. Redirect destinations are rechecked and credentials are stripped cross-origin, which is good; however, the separate DNS lookups can allow an attacker-controlled hostname to change its answer between validation and connect. Consider pinning the vetted address while preserving TLS host/SNI, or using a trusted egress proxy that enforces destination policy.
 
-Provider-account OAuth and remote MCP server authorization solve different problems. For provider connections, implement Authorization Code with PKCE, transaction-bound state, exact callback matching, expiry and refresh handling, and clear reconnect/revoke states. For a remotely served MCP endpoint, implement the MCP OAuth resource-server behavior appropriate to the supported SDK and clients. A runtime token is not a substitute for provider authorization.
+### P1 — Replace SQLite-only schema evolution before scaling
 
-### Outbound HTTP needs destination controls at the network boundary
+The database initializer uses `create_all()` plus SQLite `PRAGMA table_info` and SQLite `ALTER TABLE`. The runtime configuration exposes a database URL, but this initialization path does not provide a portable PostgreSQL migration story. Add versioned migrations and test fresh install/upgrade. Document a single-instance deployment constraint until concurrent execution, idempotency claims, and storage behavior are verified across replicas.
 
-The custom HTTP provider accepts a connection URL and headers and may inject a stored API key as Bearer authorization. Its SSRF helper resolves a hostname before the HTTP client independently resolves it, while redirects are followed. Enforce safe schemes/ports and address policy at connection time and every hop; prevent DNS rebinding through connection pinning or a trusted egress component. Never forward stored credentials to a redirect destination.
+### P2 — Reduce MCP protocol maintenance risk
 
-## 3. Product decisions for the first release
+The MCP endpoint is implemented directly as JSON-RPC handling in `api/v1/mcp.py`; it advertises protocol versions `2025-11-25` and `2024-11-05`. OOMOL provides the same MCP surface but also ships SDK, CLI, and OpenAPI entry points. Adopt and pin the official Python MCP SDK for supported transport behavior, or clearly scope and test the custom implementation against the protocol versions and target clients the project intends to support.
 
-| Decision | Recommendation | Reason |
-|---|---|---|
-| Deployment audience | Single-operator self-hosted runtime | Fits current UI and local SQLite assumptions; avoids pretending workspace isolation exists. |
-| Identity model | Separate admin principal from runtime principal | Gives a clean boundary for connection management vs agent execution. |
-| Runtime grants | Allowlist actions and named connections; deny by default | Least privilege that can be enforced identically through REST and MCP. |
-| Connection ownership | Stable connection ID and operator scope in v1 | Prevents accidental global-name ambiguity; retains a path to workspace ownership later. |
-| Credential UX | Make API-key/manual token reliable first; add reusable OAuth lifecycle next | Keeps the initial slice testable while designing OAuth state and refresh correctly. |
-| MCP support | Current SDK protocol plus only validated compatibility versions | Avoids a local protocol fork and narrows client support commitments. |
-| Storage | SQLite for single instance with versioned migrations | Supports local setup while keeping schema evolution and backup explicit. |
-| Provider breadth | Pause catalog expansion through the core milestone | A small catalog can validate platform contracts; connector quantity cannot compensate for missing authorization. |
+### P2 — Add SDK/CLI and event-driven options where users need them
 
-## 4. Sequenced implementation plan
+OOMOL packages a TypeScript connector SDK and `oo` CLI relay. Anil-matcha currently exposes REST/MCP/OpenAPI but no equivalent first-party SDK or CLI. OOMOL also has trigger/subscription infrastructure; no comparable subsystem appeared in the reviewed Anil-matcha source tree. These are meaningful workflow gaps, but should follow the MCP security fix and deployment baseline.
 
-### Phase 0 — Lock the contracts
+## Strengths already present in Anil-matcha
 
-- Write a one-page v1 boundary: one operator, one instance, local or private network deployment; explicitly defer shared-hosted multi-tenancy.
-- Define principals, named connections, token grants, run-log fields, connection states, public error envelope, and supported MCP versions.
-- Define one canonical action identity and one authorization function used by REST, proxy, MCP discovery, and MCP execution.
+- Separate admin and runtime principals; persistent runtime token hashes; revocation and last-used tracking.
+- Deny-by-default action grants for runtime principals and independent connection/proxy policy fields.
+- Admin dependencies on management APIs and required runtime/admin auth for REST action execution and proxy calls.
+- OAuth state/code exchange and token-refresh service, plus encrypted provider credentials.
+- JSON Schema validation before provider execution.
+- Idempotency keyed by caller, action, connection, and request payload; payload mismatch and in-progress states are handled.
+- Run summaries are bounded and redacted; errors pass through a safe-message helper.
+- Outbound URL validation, redirect-by-redirect checks, cross-origin secret-header stripping, timeouts, and response-size limits.
+- Docker Compose and a local web console are already present.
 
-**Exit criteria:** reviewed API/data contract and a threat model naming credential stores, inbound callers, outbound destinations, and admin actions.
+These findings are from static code inspection; they do not establish that every provider action, OAuth provider, or security edge case works correctly in deployment.
 
-### Phase 1 — Close the security boundary (P0)
+## Recommended sequence
 
-- Implement authentication middleware/dependencies for admin and runtime APIs. Hash stored runtime token secrets; compare safely; track last use; support revocation and rotation.
-- Enforce scopes at every action, connection, proxy, and MCP tool path. Filter discovery to authorized actions; recheck at execution. Admin-only endpoints must fail closed.
-- Apply deny-by-default policy and remove misleading token settings until enforcement is live. Return consistent `401` vs `403` responses without leaking secrets.
-- Harden custom HTTP: block unsafe schemes, loopback/private/link-local/metadata destinations by default; handle DNS rebinding; disable redirects or validate each hop; set timeouts and response-size limits; never replay credentials cross-origin.
+1. **Close the MCP auth bypass.** Require and authorize principals in MCP discovery and every execution path; prevent connection listing and metadata access from leaking beyond intended scope.
+2. **Add focused security regression coverage.** Test every transport for anonymous access, invalid tokens, scoped grants, connection restrictions, revocation, and direct MCP action invocation. Test SSRF rebinding and redirects at the network boundary.
+3. **Fix the README and this plan's linked inventory.** Publish verified counts from code and explain which endpoints require what credentials. Avoid the stale four-provider claim.
+4. **Add portable database migrations and deployment guidance.** Define SQLite limits, backup/restore and key rotation, readiness, reverse-proxy/TLS assumptions, and safe network exposure.
+5. **Adopt the official MCP SDK or publish a tested compatibility contract.** Keep version negotiation, error semantics, transport behavior, and auth explicit.
+6. **Then build ecosystem features.** Consider a typed SDK/CLI, event triggers, file transit, and selected provider expansion based on user demand.
 
-**Exit criteria:** unauthenticated and under-scoped requests fail through every transport; security tests cover revoked tokens, hidden tools, redirects, DNS changes, and private addresses.
+## Backlog: hosted OAuth apps and SaaS user connections
 
-### Phase 2 — Make connection lifecycle dependable
+**Objective:** let users connect supported third-party accounts through Open Agent Connector’s hosted service without creating or configuring their own provider OAuth apps. Keep the self-hosted runtime available for operators who supply their own provider app credentials.
 
-- Give each connection a stable ID, status, timestamps, and explicit create/test/reconnect/rotate/disconnect/delete operations. Keep secrets encrypted and never return them in API responses.
-- Build a reliable API-key connection path first, including provider test, credential update, and clear failure states.
-- Add OAuth Authorization Code + PKCE as a reusable service: expiring one-time state, exact redirect URI, provider/issuer binding where applicable, encrypted access and refresh tokens, expiry tracking, refresh locking, revocation, and reauthorization UX.
+This is a separate product capability from adding provider actions. Each provider requires an OAuth app registered and operated by us, and providers may require verification, review, approved scopes, or other distribution requirements. OOMOL documents both a hosted personal/team Connector and a SaaS project model in which a customer backend starts authorization and executes actions for that customer’s end users. Use that separation as a product reference, not as an assumption that the provider approval work is automatic.
 
-**Exit criteria:** a user can connect, validate, recover from expiry, rotate, and revoke credentials without manual database edits; concurrent refresh cannot corrupt a connection.
+### Backlog milestones
 
-### Phase 3 — Specify and harden action execution
+1. **Provider and product feasibility (discovery).** Select an initial set of providers based on demand and OAuth readiness. For each, record app registration requirements, production verification/review steps, scope policy, token-refresh behavior, rate limits, data-use terms, branding requirements, and support escalation path. Decide whether the first launch is personal/team hosted connections, SaaS customer projects, or both.
+2. **Hosted identity and tenancy (design/build).** Define customer projects, project API keys, end users, connected-account IDs/aliases, and ownership rules. Ensure every authorization request, connection lookup, action execution, and run record is scoped to the owning project/user. Keep personal/team accounts separate from SaaS end-user accounts.
+3. **Managed OAuth lifecycle (build).** Operate provider OAuth client IDs/secrets centrally; implement authorization start, callback validation, state/PKCE where supported, least-privilege scopes, encrypted token storage, refresh and refresh locking, reconnect, revocation, deletion, and provider-specific consent/error handling. Do not expose provider tokens to the customer backend or agent.
+4. **Customer API and SDK (build).** Provide server-side APIs and a typed SDK for creating authorization URLs, receiving or polling connection status, listing a user’s connected accounts, selecting an account, and executing actions. Keep project keys server-side and make account selection explicit to avoid running against the wrong user’s connection.
+5. **Hosted operations and controls (launch gate).** Add tenant-aware audit logs, quotas/rate limits, abuse detection, encryption-key and secret rotation, backups/restore, monitoring, incident response, privacy/data-retention controls, customer support tooling, and provider outage handling. Document how customer and provider data is stored and deleted.
+6. **Private beta and provider expansion.** Launch with a small provider set, validate authorization and refresh against real accounts, test cross-tenant isolation and revocation, then add providers only as their app approvals and operational support are ready.
 
-- Validate input against the action’s published JSON Schema before calling a provider; use the same schema for UI forms and MCP `inputSchema`.
-- Define stable public error codes and safe retry hints. Keep upstream diagnostics internal and redact credentials, headers, URLs with secrets, and sensitive payload fields.
-- Correct idempotency semantics: scope by actual key + principal + action + connection; bind it to canonical request hash; same key with a different payload returns conflict; atomically claim, store terminal result, expire and clean up records, and recover abandoned claims.
-- Carry request/correlation IDs across API, provider calls, and log rows. Add bounded upstream timeouts and explicit retry policy only for safe/repeatable operations.
+### Suggested provider onboarding order
 
-**Exit criteria:** contract tests prove schema rejection before side effects, duplicate retries return the same result, key misuse conflicts, and user-visible errors contain no secrets.
+Treat these as hosted OAuth rollouts for integrations already present in the Anil-matcha catalog where OAuth is supported—not as a commitment to add all provider code from scratch. OOMOL highlights Gmail, GitHub, Notion, and Slack as representative hosted Connector apps. The order below balances early usefulness with the fact that provider app reviews and scope approvals can take time; start review-heavy applications in parallel with the first launch.
 
-### Phase 4 — Move MCP onto the supported SDK
+| Order | Provider group | Why this order | Rollout notes |
+|---|---|---|---|
+| 0 — start approval work immediately | Google Workspace: Gmail, Calendar, Drive | High user value and several related integrations can share a Google OAuth app/project, but sensitive scopes can make verification a long pole. | Begin verification and scope review early. Launch with the narrowest useful scopes; add Gmail send/write later than read/search if the product supports staged grants. |
+| 0 — start approval work immediately | Microsoft 365: Outlook, Calendar, OneDrive, Teams | High-value work suite with a related set of connectors; tenant/admin consent can affect onboarding. | Register the app and validate personal and organization account flows early. Request only the Graph permissions needed for the initial actions. |
+| 1 — first hosted beta | GitHub | Clear agent use cases, already has OAuth and PAT paths in the repo, and works well for developer-focused early adopters. | Start with read-only repository/issue discovery; gate write actions through explicit action grants and scopes. |
+| 1 — first hosted beta | Slack | Common team workflow and already implemented OAuth support. | Validate workspace installation, bot/user token semantics, scope upgrades, and workspace removal. Start with a narrow set such as channel/message workflows. |
+| 1 — first hosted beta | Notion | Common knowledge/workspace integration, already in the catalog with OAuth support, and a focused first consent flow. | Ensure users understand workspace/page access and how to reconnect after access changes. |
+| 1 — first hosted beta | Linear | Focused product/developer workflow, already has OAuth support, and pairs well with GitHub. | Start with issues/projects read and create/update only if users request write access. |
+| 2 — next customer cohort | Atlassian Jira, HubSpot, Airtable | Strong demand for project tracking, CRM, and lightweight databases; expands beyond developer tools. | Verify account/tenant selection, per-tenant access and provider rate limits. Prioritize one based on beta customer demand rather than launching all together. |
+| 3 — demand-led expansion | Shopify, Zoom, Asana, Monday, Trello, Dropbox and other catalog providers | Broad long-tail coverage is useful after hosted onboarding, support, and revocation are proven. Some providers have more complex review, admin consent, or data-handling expectations. | Select from customer requests and support capacity. Confirm each provider's current OAuth support before promising a managed connection. |
+| Future connector addition | Salesforce | Salesforce was not present in the reviewed Anil-matcha action catalog, so it requires provider implementation as well as hosted OAuth onboarding. | Add only if customer demand justifies the connector work, provider review, and ongoing support. |
 
-- Use the official Python SDK; pin a supported release and implement the current 2026-07-28 protocol. Verify transport and authorization behavior against actual target clients.
-- If clients require an older revision, isolate it in a compatibility adapter with explicit tests and a removal/support policy. Do not advertise versions the server cannot honor.
-- Keep tool discovery useful at scale: expose only grants available to the caller and consider a small search/list/call surface if publishing every action overwhelms agent context.
-- Cover local STDIO and remote HTTP separately. Protect the remote endpoint with the appropriate bearer-token/resource metadata model; do not assume local transport is a security boundary.
+**Suggested execution order:** create Google and Microsoft OAuth apps and begin any verification first; launch GitHub, Slack, Notion, and Linear as the first hosted beta if their app approvals and testing are ready; then add Jira/Atlassian, HubSpot, and Airtable based on beta demand. Provider approval readiness can change this order. Do not treat listed app names as shipped hosted integrations until app registration, production approval, and end-to-end tests are complete.
 
-**Exit criteria:** official SDK client tests pass for the supported version behavior, listing, calls, errors, authorization denial, cancellation, and notifications.
+**Prioritization rule:** score each candidate on user demand, reuse across the existing action catalog, OAuth approval/verification effort, scope sensitivity, token-refresh reliability, provider API limits, and support burden. A provider with many actions but difficult onboarding may follow a narrower integration users can successfully connect.
 
-### Phase 5 — Make logs and operations safe to run
+### Exit criteria
 
-- Store bounded summaries, redact known secret fields and sensitive headers, paginate logs, define retention, and keep raw provider responses opt-in only where justified.
-- Introduce versioned SQLite migrations; test fresh install and upgrade from the current schema. Document data directory and encryption-key backup/restore expectations.
-- Add deployment packaging for a single instance, configurable CORS/origins, database readiness checks, structured logs, graceful shutdown, and a security-focused CI pipeline.
-- Create deterministic tests for auth, policy, OAuth state, action contracts, idempotency, SSRF, and log redaction. Add lint/type checks and dependency scanning in CI.
+- A user can authorize a supported account without creating a provider OAuth app.
+- A customer project can connect multiple end users and multiple accounts per user without cross-user access.
+- Actions run only under the explicitly selected connected account and granted scopes.
+- Provider access/refresh tokens and provider app secrets never appear in agent context, customer API responses, or ordinary logs.
+- Disconnect, provider-side revocation, token expiry, refresh failure, customer deletion, and project-key rotation have defined and tested outcomes.
+- Provider review/verification and ongoing terms are tracked per provider; the service has an operational owner and incident path.
 
-**Exit criteria:** documented fresh install/upgrade/backup procedure, reliable readiness, and CI enforcing core security and behavior tests.
+**Scope note:** this backlog is intentionally later than the MCP authorization and single-tenant deployment gates. A hosted multi-tenant service should not be built on top of the current optional-auth MCP route or without a tenant-aware connection and run-log model.
 
-### Phase 6 — Expand carefully
+## Source references
 
-Once the same contract is exercised end to end, add connectors as vertical slices: auth setup, connection lifecycle, typed actions, schemas, policy scopes, safe errors, and tests. Consider multiple operators or hosted deployment only after introducing and testing workspace ownership for connections, grants, and logs, plus tenant-aware encryption and isolation.
+### Anil-matcha Open Agent Connector
 
-## 5. End-to-end acceptance scenario
+- [Reviewed commit `036e09e`](https://github.com/Anil-matcha/open-agent-connector/tree/036e09e7f19854a33e89292622757376f66753e5)
+- `server/app/providers/registry.py` — 236 provider registrations.
+- `server/app/providers/actions_catalog.json` — 236 service keys / 8,024 action definitions.
+- `server/app/core/auth.py` — principal resolution and policy helpers.
+- `server/app/api/v1/mcp.py` and `server/app/services/mcp_service.py` — optional principal resolution and conditional MCP permission checks.
+- `server/app/api/v1/actions.py`, `server/app/api/v1/proxy.py`, and `server/app/api/admin/` — REST execution and admin route dependencies.
+- `server/app/services/oauth_service.py` — OAuth state, code exchange, and refresh lifecycle.
+- `server/app/services/action_runner.py` — input validation, idempotency, error handling, and run logs.
+- `server/app/core/ssrf.py` — destination checks, redirects, credential stripping, timeout and response-size controls.
+- `server/app/db/session.py` — SQLite-specific startup schema checks.
+- `README.md` — currently stale inventory and auth summary.
 
-Use this scenario as the release gate. It tests the complete product loop rather than counting providers.
+### OOMOL OpenConnector
 
-1. Boot a clean install with generated encryption material and create an admin identity/token. Verify no management route is anonymously accessible.
-2. Connect one provider account, validate it, and confirm secrets never appear in API responses or logs.
-3. Create a runtime token scoped to one named connection and one action. Discover actions over REST and MCP; only the allowed action appears.
-4. Call the allowed action with valid input through REST and MCP and verify identical authorization, validation, correlation ID, and result semantics.
-5. Retry with the same idempotency key and payload; receive the stored result without a second side effect. Reuse the key with different input; receive conflict.
-6. Inspect the run log and verify bounded/redacted input, output, and error summaries.
-7. Revoke the runtime token and disconnect the connection. Verify subsequent calls are denied and the credential is removed or made unusable.
+- [Reviewed commit `231b9ea`](https://github.com/oomol-lab/open-connector/tree/231b9ea77ca381971711e879e077d4b8d1c1fcc2)
+- [README](https://github.com/oomol-lab/open-connector/blob/231b9ea77ca381971711e879e077d4b8d1c1fcc2/README.md) — catalog claims, SDK/CLI/MCP/HTTP/OpenAPI, deployment options.
+- [OOMOL Connector overview](https://oomol.com/docs/connector/) and [Connector for SaaS guide](https://oomol.com/docs/connector-saas/) — hosted personal/team and per-end-user SaaS connection models.
+- [OOMOL SDK reference](https://oomol.com/docs/connector-sdk) — `Connector`, `ProjectConnector`, and `OpenConnector` client split.
+- `src/server/api/auth.ts` — local auth middleware and route scoping.
+- `src/oauth/`, `src/connection-service.ts` — OAuth and connection lifecycle.
+- `src/triggers/` — provider trigger/subscription runtime.
+- `docs/configuration.md` and `deploy/helm/open-connector/` — database/deployment options.
 
-## 6. Risks, dependencies, and release gates
-
-| Risk / dependency | Mitigation or gate |
-|---|---|
-| Open unauthenticated routes if bound beyond loopback | P0: auth and scope tests must pass before any external or private-network exposure. |
-| Custom URL feature exfiltrates credentials or reaches internal services | P0: strict egress policy, redirect controls, DNS rebinding defenses, and secret-forwarding tests. |
-| Global connection identity becomes a multi-user data leak | V1: explicitly single operator; before shared use, add owner/workspace foreign keys and isolation tests. |
-| New MCP revision changes client behavior | Pin SDK, test target clients, support only explicit protocol versions, monitor official migration guidance. |
-| SQLite used with multiple server replicas | Document single-instance constraint; do not run replicated deployment until storage and locking support are designed. |
-| OAuth provider differences increase implementation complexity | Model provider-specific scopes/callback behavior behind a shared flow service; test one representative OAuth provider before broad rollout. |
-| Sensitive execution logs persist longer than intended | Redact by default, bound payloads, define retention and deletion, and document encryption and backup guidance. |
-
-## First milestone
-
-Deliver the Phase 0 contract and Phase 1 security gate, plus a working API-key connection through the execution path. Do not call the system ready for network deployment until authorization and custom HTTP egress checks pass. Then complete the **connect, discover, execute, audit, revoke** acceptance scenario across REST and MCP.
-
-## Sources and review basis
-
-Repository observations were checked against these revisions on 9 October 2026. The source comparison is implementation research, not a claim of feature parity or a recommendation to copy another product’s full scope.
-
-- [Current project repository, reviewed commit `4accb3a`](https://github.com/SamurAIGPT/open-agent-connector/tree/4accb3ae871ac529ae03308dadbe1cbb7555499f)
-- [Reference implementation README and source, reviewed commit `7da88e9`](https://github.com/oomol-lab/open-connector/tree/7da88e987e33089b298c224d745799f7d715fd7c)
-- [MCP: 28 July 2026 protocol revision announcement](https://blog.modelcontextprotocol.io/posts/2026-07-28/)
-- [MCP protocol support matrix](https://plan.modelcontextprotocol.io/matrix)
-- [MCP SDK migration guide for 2026-07-28](https://ts.sdk.modelcontextprotocol.io/v2/migration/support-2026-07-28)
-- [MCP SDK authorization guide](https://ts.sdk.modelcontextprotocol.io/v2/serving/authorization)
-- [RFC 9700: OAuth 2.0 Security Best Current Practice](https://www.rfc-editor.org/rfc/rfc9700.html)
-- [OWASP Server Side Request Forgery Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html)
-- [OWASP Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html)
-
-Implementation evidence is drawn from `server/main.py`; `server/app/core/config.py`, `policy.py`, `ssrf.py`, and `idempotency.py`; `server/app/api/admin` and `server/app/api/v1`; `server/app/db/models.py`; `server/app/services/action_runner.py`, `connection_service.py`, and `mcp_service.py`; `server/app/providers/builtins/custom_http.py`; and the client connection/action/log/token views. Recommendations about release scope and sequencing are product judgments based on those findings and the cited primary sources.
+**Caveat:** the OOMOL catalog count is taken from its project README, whereas Anil-matcha's count was computed directly from its checked-in registry and JSON catalog. Provider/action counting conventions may differ. No tests or live service calls were run as part of this report.

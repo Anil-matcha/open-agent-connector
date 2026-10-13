@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 import os
 from pathlib import Path
@@ -35,6 +35,8 @@ def _resolve_admin_token() -> str:
     return new_token
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="CONNECTOR_", env_file=".env", extra="ignore")
+
     PROJECT_NAME: str = "ConnectorHub"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/v1"
@@ -64,11 +66,12 @@ class Settings(BaseSettings):
     
     # SSRF Protection
     ALLOW_PRIVATE_NETWORK: bool = False
-    
-    class Config:
-        env_prefix = "CONNECTOR_"
-        env_file = ".env"
-        extra = "ignore"
+
+    # MCP Authentication Gate (Fail-Closed by default)
+    ALLOW_ANONYMOUS_MCP: bool = Field(
+        default=False,
+        description="Explicit opt-in to allow unauthenticated MCP access (restricted to loopback)"
+    )
 
 settings = Settings()
 settings.DATA_DIR.mkdir(parents=True, exist_ok=True)
