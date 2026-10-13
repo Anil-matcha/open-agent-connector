@@ -18,11 +18,6 @@ from app.api.admin.runs import router as admin_runs_router
 from app.api.admin.auth import router as admin_auth_router
 from app.api.admin.oauth import router as admin_oauth_router
 
-# Accounts (optional email + password sign-in)
-from app.accounts.router import router as accounts_router
-from app.accounts.service import session_principal_resolver
-from app.core.tenancy import register_principal_resolver
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Initialize SQLite database schema
@@ -65,8 +60,6 @@ app.include_router(admin_tokens_router, prefix="/api")
 app.include_router(admin_runs_router, prefix="/api")
 app.include_router(admin_auth_router, prefix="/api")
 app.include_router(admin_oauth_router, prefix="/api")
-app.include_router(accounts_router, prefix="/api")
-register_principal_resolver(session_principal_resolver)
 
 @app.get("/health")
 async def health():

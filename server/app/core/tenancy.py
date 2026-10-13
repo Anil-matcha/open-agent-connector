@@ -6,7 +6,9 @@ idempotency records) carries a ``tenant_id``. A self-hosted install uses the
 single ``DEFAULT_TENANT_ID`` everywhere, so behaviour is unchanged. A hosted
 deployment registers a principal resolver (see ``register_principal_resolver``)
 that maps its own credentials (API keys, sessions) to a ``Principal`` bound to a
-tenant; the core then enforces the boundary on every query.
+tenant; the core then enforces the boundary on every query. A resolver may raise an
+``HTTPException`` (for example 401) to reject a credential it recognises but finds invalid,
+so such a request never falls back to anonymous access.
 
 Rules:
 - Services take ``tenant_id`` as a required argument. Never default it.
@@ -17,6 +19,7 @@ Rules:
 from typing import Awaitable, Callable, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
+    from fastapi import Request
     from sqlalchemy.ext.asyncio import AsyncSession
     from app.core.auth import Principal
 
@@ -28,8 +31,12 @@ PUBLIC_TENANT_ID = "public"
 
 # resolver(raw_token, db) -> Principal | None
 PrincipalResolver = Callable[[str, "AsyncSession"], Awaitable[Optional["Principal"]]]
+# extractor(request) -> credential string | None. Lets a hosted layer read credentials the core does not
+# know about (for example a session cookie). Extractors run after the Authorization / x-*-token headers.
+TokenExtractor = Callable[["Request"], Optional[str]]
 
 _principal_resolvers: List[PrincipalResolver] = []
+_token_extractors: List[TokenExtractor] = []
 
 
 def register_principal_resolver(resolver: PrincipalResolver) -> None:
@@ -41,6 +48,20 @@ def register_principal_resolver(resolver: PrincipalResolver) -> None:
 def unregister_principal_resolver(resolver: PrincipalResolver) -> None:
     if resolver in _principal_resolvers:
         _principal_resolvers.remove(resolver)
+
+
+def register_token_extractor(extractor: TokenExtractor) -> None:
+    if extractor not in _token_extractors:
+        _token_extractors.append(extractor)
+
+
+def unregister_token_extractor(extractor: TokenExtractor) -> None:
+    if extractor in _token_extractors:
+        _token_extractors.remove(extractor)
+
+
+def get_token_extractors() -> List[TokenExtractor]:
+    return list(_token_extractors)
 
 
 def clear_principal_resolvers() -> None:

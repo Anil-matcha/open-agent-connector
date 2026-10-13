@@ -347,3 +347,40 @@ def test_tenant_never_uses_another_tenants_oauth_app(client):
 def test_idempotency_keys_do_not_collide_across_tenants():
     args = dict(idempotency_key="same-key", principal_id="p", action_id="github.x", connection_name="default")
     assert compute_idempotency_scope_key(tenant_id=TENANT_A, **args) != compute_idempotency_scope_key(tenant_id=TENANT_B, **args)
+
+
+# --- token extractors (how a hosted layer supplies credentials the core does not know) ---------------
+
+def test_registered_token_extractor_supplies_a_credential(client, seeded):
+    from app.core.tenancy import register_token_extractor, unregister_token_extractor
+
+    def from_custom_header(request):
+        return request.headers.get("x-custom-credential")
+
+    headers = {"x-custom-credential": f"admin-a-{RUN}"}
+    register_token_extractor(from_custom_header)
+    try:
+        # The extracted credential goes through the normal resolvers and lands in tenant A.
+        assert seeded["conn_a"] in _ids(client.get("/api/connections", headers=headers))
+    finally:
+        unregister_token_extractor(from_custom_header)
+    # Once unregistered the header means nothing, so the request is just another public visitor.
+    assert seeded["conn_a"] not in _ids(client.get("/api/connections", headers=headers))
+
+
+def test_resolver_can_reject_a_recognised_but_invalid_credential(client):
+    from fastapi import HTTPException
+    from app.core.tenancy import register_principal_resolver, unregister_principal_resolver
+
+    async def strict(raw_token, db):
+        if raw_token.startswith("dead_"):
+            raise HTTPException(status_code=401, detail="expired")
+        return None
+
+    register_principal_resolver(strict)
+    try:
+        # With public access on, an unknown token falls back to the sandbox, but a rejected one must not.
+        res = client.get("/api/connections", headers={"Authorization": "Bearer dead_token"})
+        assert res.status_code == 401
+    finally:
+        unregister_principal_resolver(strict)

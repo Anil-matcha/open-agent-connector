@@ -139,14 +139,6 @@ Backend settings use the `CONNECTOR_` environment prefix. A `.env` file in the `
 | `CONNECTOR_RUNTIME_TOKEN` | Optional static runtime token for `/v1` and `/mcp` | Unset (persistent DB tokens preferred) |
 | `CONNECTOR_EXPOSE_LOCAL_TOKEN` | Let `/api/auth/status` return the admin token to genuine loopback callers (never when proxy headers are present). Set `false` on any network-facing deployment. | `true` |
 | `CONNECTOR_ALLOWED_RETURN_ORIGINS` | Comma-separated origins, besides `CONNECTOR_PUBLIC_ORIGIN`, that a `redirectUri` may point to after OAuth. Anything else is rejected, and the callback only ever redirects to the URL stored when the flow started. | `http://localhost:3000,http://127.0.0.1:3000` |
-| `CONNECTOR_ACCOUNTS_SIGNUP_MODE` | `disabled`, `invite` (needs `..._INVITE_CODES`) or `open` (needs an email backend). Unsafe combinations fall back to `disabled`. | `disabled` |
-| `CONNECTOR_ACCOUNTS_INVITE_CODES` | Comma-separated invite codes for `invite` mode | unset |
-| `CONNECTOR_ACCOUNTS_EMAIL_BACKEND` | `none`, `ses` (Amazon SES API), `smtp`, or `console` (logs codes, development only) | `none` |
-| `CONNECTOR_ACCOUNTS_EMAIL_FROM` | Sender, e.g. `ConnectorHub <support@example.com>`. Must be a verified SES identity or an address your SMTP server accepts. | unset |
-| `CONNECTOR_ACCOUNTS_SES_REGION` / `_ACCESS_KEY` / `_SECRET_KEY` | SES settings. Leave the keys empty to use the machine's IAM role or default AWS credentials. The key only needs `ses:SendEmail`. | `us-east-1` |
-| `CONNECTOR_ACCOUNTS_SMTP_HOST` / `_PORT` / `_USER` / `_PASSWORD` / `_FROM` | SMTP settings for the `smtp` backend (STARTTLS on port 587) | unset |
-| `CONNECTOR_ACCOUNTS_BLOCKED_EMAIL_DOMAINS` | Comma-separated domains refused at signup, on top of reserved test domains | unset |
-| `CONNECTOR_ACCOUNTS_SESSION_DAYS` | Lifetime of a "remember me" session | `30` |
 | `CONNECTOR_ALLOW_PRIVATE_NETWORK` | Allow private network destinations for outbound requests | `false` |
 | `NEXT_PUBLIC_API_URL` | API base URL used by the browser frontend | `http://localhost:8000` |
 
@@ -266,27 +258,6 @@ Provider actions are maintained in a unified catalog at `server/app/providers/ac
 - **Behind a reverse proxy**, set `CONNECTOR_EXPOSE_LOCAL_TOKEN=false`, bind the API to loopback or a private network, terminate TLS at the proxy, and rate-limit `/api/auth/verify`. See `docker-compose.prod.yml` for a loopback-only overlay.
 - **Database Portability & Deployment**: Backed by SQLite async by default with auto-migration, with PostgreSQL supported via SQLAlchemy async and versioned Alembic migrations (`alembic upgrade head`). A single-instance deployment is recommended until distributed locking and replication coordination are configured across multiple instances.
 
-## Accounts
-
-Optional email + password accounts, off by default. Each account owns one private tenant, so everything it
-connects, mints or runs is invisible to everyone else (see Tenancy below). Without an account the console works
-in a shared **public sandbox**; the operator admin token sees the `default` tenant.
-
-- **Sign-up modes:** `invite` (a code you hand out) or `open` (anyone, with emailed verification). With an email
-  backend configured, new accounts must verify a 6-digit code (valid 10 minutes, five guesses) before signing in.
-  Without one, only `invite` mode works and accounts are active immediately; password reset by email is then
-  unavailable.
-- **Sessions:** opaque tokens, stored only as a SHA-256 hash, in an `HttpOnly`, `SameSite=Lax` cookie
-  (`__Host-` prefixed and `Secure` over HTTPS). Logging out, resetting the password, or deleting the account
-  revokes sessions; changing the password signs out every other device. Requests authenticated by the cookie must
-  carry an `X-Connector-CSRF` header (the console sends it).
-- **Passwords:** argon2id, 10+ characters. Login and code endpoints are rate limited, accounts lock for 15 minutes
-  after five failed sign-ins, and the responses never reveal whether an email is registered. Rate limits are
-  in-process, so run a single instance and also limit `/api/accounts/*` at your proxy.
-- **Data rights:** the Account page deletes the account and all of its data.
-- **Production:** set the variables above in `.env.prod`. CORS only allows this service's own origin, so a sibling
-  site on the same domain cannot use a signed-in user's cookie.
-
 ## Tenancy
 
 Every tenant-owned row (connections, OAuth state, runtime tokens, run logs, idempotency records) carries a
@@ -300,9 +271,14 @@ OAuth state record), never from request input.
   environment belong to the operator and are used only by the `default` tenant.
 - Unauthenticated visitors (when `CONNECTOR_ALLOW_PUBLIC_ACCESS` is on) live in a separate `public` tenant
   and never see the operator's data.
-- A hosted layer plugs in with `app.core.tenancy.register_principal_resolver(...)`, mapping its own API keys
-  or sessions to a `Principal` with a `tenant_id` (kind `tenant_admin` for the management API,
-  `runtime` for agents). Platform-wide hosted OAuth credentials remain operator-only.
+- A multi-user or hosted layer plugs in through two hooks in `app.core.tenancy`:
+  `register_principal_resolver(...)` maps its own credentials (API keys, sessions) to a `Principal` with a
+  `tenant_id` (kind `tenant_admin` for the management API, `runtime` for agents), and
+  `register_token_extractor(...)` lets it read a credential from somewhere other than the standard headers
+  (for example a session cookie). A resolver can raise a 401 for a credential it recognises but finds invalid,
+  so that request never falls back to the public sandbox. Platform-wide hosted OAuth credentials remain
+  operator-only. The open core itself has no user accounts: it is meant for your own agents, with the admin token
+  and scoped runtime tokens.
 
 `server/tests/test_tenant_isolation.py` is the contract: two tenants, the operator, and anonymous visitors
 try to reach each other's data through every route.

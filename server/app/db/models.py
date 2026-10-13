@@ -109,6 +109,3 @@ class IdempotencyRecord(Base):
     response_payload = Column(Text, nullable=True) # Encrypted JSON
     created_at = Column(String(32), default=utcnow_str)
     expires_at = Column(String(32), nullable=False)
-
-# Register account tables with Base.metadata (create_all and Alembic)
-from app.accounts import models as _accounts_models  # noqa: E402,F401
