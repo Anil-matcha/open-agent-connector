@@ -920,6 +920,8 @@ class OAuthService:
 
         if service == "dropbox":
             params["token_access_type"] = "offline"
+        elif service == "reddit":
+            params["duration"] = "permanent"
 
         auth_url_base = provider_meta['authorize_url']
         subdomain = (config or {}).get("subdomain") or (config or {}).get("shopDomain") or (config or {}).get("shop") or ""
@@ -1000,7 +1002,8 @@ class OAuthService:
         auth_method = provider_meta.get("token_auth_method", "body")
         token_headers = {
             "Accept": "application/json",
-            "Content-Type": "application/x-www-form-urlencoded"
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": "ConnectorHub/1.0 by ConnectorHubAgent"
         }
         token_payload = {
             "code": code,
