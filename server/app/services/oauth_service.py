@@ -572,8 +572,39 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "authorize_url": "https://secure.helpscout.net/authentication/authorizeClientApplication",
         "token_url": "https://api.helpscout.net/v2/oauth2/token",
         "default_scopes": [],
+    },
+    "canva": {
+        "display_name": "Canva",
+        "authorize_url": "https://www.canva.com/api/oauth/authorize",
+        "token_url": "https://api.canva.com/rest/v1/oauth/token",
+        "token_auth_method": "basic",
+        "default_scopes": [
+            "design:meta:read",
+            "design:content:read",
+            "design:content:write",
+            "asset:read",
+            "asset:write",
+            "folder:read",
+            "folder:write",
+            "profile:read"
+        ],
+    },
+    "miro": {
+        "display_name": "Miro",
+        "authorize_url": "https://miro.com/oauth/authorize",
+        "token_url": "https://api.miro.com/v1/oauth/token",
+        "token_auth_method": "body",
+        "default_scopes": ["boards:read", "boards:write"],
+    },
+    "tiktok_business": {
+        "display_name": "TikTok for Business",
+        "authorize_url": "https://business-api.tiktok.com/portal/auth",
+        "token_url": "https://business-api.tiktok.com/open_api/v1.3/oauth2/access_token/",
+        "token_auth_method": "body",
+        "default_scopes": [],
     }
 }
+
 
 class OAuthService:
     @staticmethod
@@ -706,6 +737,13 @@ class OAuthService:
             candidates.extend(["UPSTASH_REDIS", "UPSTASH"])
         elif s_lower in ("activecampaign", "active_campaign"):
             candidates.extend(["ACTIVECAMPAIGN", "ACTIVE_CAMPAIGN"])
+        elif s_lower == "canva":
+            candidates.extend(["CANVA"])
+        elif s_lower == "miro":
+            candidates.extend(["MIRO"])
+        elif s_lower in ("tiktok_business", "tiktok"):
+            candidates.extend(["TIKTOK_BUSINESS", "TIKTOK"])
+
         return candidates
 
     @staticmethod

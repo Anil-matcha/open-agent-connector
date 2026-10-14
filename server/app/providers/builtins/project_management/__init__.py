@@ -30,6 +30,8 @@ from app.providers.builtins.project_management.quipteams import QuipteamsProvide
 from app.providers.builtins.project_management.kobotoolbox import KoboToolboxProvider
 from app.providers.builtins.project_management.dropbox_sign import DropboxSignProvider
 from app.providers.builtins.project_management.systeme_io import SystemeIoProvider
+from app.providers.builtins.project_management.miro import MiroProvider
+from app.providers.builtins.project_management.jotform import JotformProvider
 
 
 __all__ = [
@@ -61,5 +63,8 @@ __all__ = [
     "KoboToolboxProvider",
     "DropboxSignProvider",
     "SystemeIoProvider",
+    "MiroProvider",
+    "JotformProvider",
 ]
+
 

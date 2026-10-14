@@ -17,6 +17,8 @@ from app.providers.builtins.media.unsplash import UnsplashProvider
 from app.providers.builtins.media.contentful import ContentfulProvider
 from app.providers.builtins.media.storyblok import StoryblokProvider
 from app.providers.builtins.media.sanity import SanityProvider
+from app.providers.builtins.media.canva import CanvaProvider
+from app.providers.builtins.media.tiktok_business import TikTokBusinessProvider
 
 __all__ = [
     "DiscordProvider",
@@ -35,4 +37,7 @@ __all__ = [
     "ContentfulProvider",
     "StoryblokProvider",
     "SanityProvider",
+    "CanvaProvider",
+    "TikTokBusinessProvider",
 ]
+

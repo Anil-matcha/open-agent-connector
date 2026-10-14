@@ -26,6 +26,9 @@ from app.providers.builtins.communication.crisp import CrispProvider
 from app.providers.builtins.communication.telnyx import TelnyxProvider
 from app.providers.builtins.communication.vonage import VonageProvider
 from app.providers.builtins.communication.onesignal_rest_api import OneSignalRestApiProvider
+from app.providers.builtins.communication.mailerlite import MailerLiteProvider
+from app.providers.builtins.communication.getresponse import GetResponseProvider
+from app.providers.builtins.communication.braze import BrazeProvider
 
 __all__ = [
     "SlackProvider",
@@ -56,4 +59,8 @@ __all__ = [
     "TelnyxProvider",
     "VonageProvider",
     "OneSignalRestApiProvider",
+    "MailerLiteProvider",
+    "GetResponseProvider",
+    "BrazeProvider",
 ]
+

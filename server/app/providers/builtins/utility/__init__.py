@@ -17,6 +17,9 @@ from app.providers.builtins.utility.homebox import HomeBoxProvider
 from app.providers.builtins.utility.ipdata_co import IpdataCoProvider
 from app.providers.builtins.utility.ipinfo_io import IpinfoIoProvider
 from app.providers.builtins.utility.mapbox import MapboxProvider
+from app.providers.builtins.utility.bitly import BitlyProvider
+from app.providers.builtins.utility.hotjar import HotjarProvider
+from app.providers.builtins.utility.nasa import NasaProvider
 
 __all__ = [
     "CustomHttpProvider",
@@ -38,4 +41,8 @@ __all__ = [
     "IpdataCoProvider",
     "IpinfoIoProvider",
     "MapboxProvider",
+    "BitlyProvider",
+    "HotjarProvider",
+    "NasaProvider",
 ]
+

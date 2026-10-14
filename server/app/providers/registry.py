@@ -59,6 +59,9 @@ from app.providers.builtins.communication import (
     TelnyxProvider,
     VonageProvider,
     OneSignalRestApiProvider,
+    MailerLiteProvider,
+    GetResponseProvider,
+    BrazeProvider,
 )
 
 # Developer Tools & Cloud Infrastructure
@@ -144,6 +147,8 @@ from app.providers.builtins.project_management import (
     KoboToolboxProvider,
     DropboxSignProvider,
     SystemeIoProvider,
+    MiroProvider,
+    JotformProvider,
 )
 
 # AI & LLM Services Providers
@@ -252,6 +257,8 @@ from app.providers.builtins.media import (
     ContentfulProvider,
     StoryblokProvider,
     SanityProvider,
+    CanvaProvider,
+    TikTokBusinessProvider,
 )
 
 # Utility Providers
@@ -275,6 +282,9 @@ from app.providers.builtins.utility import (
     IpdataCoProvider,
     IpinfoIoProvider,
     MapboxProvider,
+    BitlyProvider,
+    HotjarProvider,
+    NasaProvider,
 )
 
 class ProviderRegistry:
@@ -538,6 +548,18 @@ class ProviderRegistry:
         self.register(IpdataCoProvider())
         self.register(IpinfoIoProvider())
         self.register(MapboxProvider())
+
+        # 11. Newly Added Priority SaaS Providers
+        self.register(MailerLiteProvider())
+        self.register(GetResponseProvider())
+        self.register(BrazeProvider())
+        self.register(MiroProvider())
+        self.register(JotformProvider())
+        self.register(CanvaProvider())
+        self.register(TikTokBusinessProvider())
+        self.register(BitlyProvider())
+        self.register(HotjarProvider())
+        self.register(NasaProvider())
 
     def register(self, provider: Provider):
         self._providers[provider.service] = provider
