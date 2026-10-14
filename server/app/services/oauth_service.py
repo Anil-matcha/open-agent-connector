@@ -300,6 +300,7 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "display_name": "Supabase",
         "authorize_url": "https://api.supabase.com/v1/oauth/authorize",
         "token_url": "https://api.supabase.com/v1/oauth/token",
+        "token_auth_method": "basic",
         "default_scopes": ["all"],
     },
     "cloudflare_worker": {
