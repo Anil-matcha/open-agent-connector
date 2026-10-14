@@ -410,6 +410,7 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "display_name": "Spotify",
         "authorize_url": "https://accounts.spotify.com/authorize",
         "token_url": "https://accounts.spotify.com/api/token",
+        "token_auth_method": "basic",
         "default_scopes": [
             "user-read-private",
             "user-read-email",
