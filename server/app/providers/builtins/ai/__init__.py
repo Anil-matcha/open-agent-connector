@@ -30,6 +30,7 @@ from app.providers.builtins.ai.jigsawstack import JigsawstackProvider
 from app.providers.builtins.ai.jimeng_ai import JimengAiProvider
 from app.providers.builtins.ai.sunoapi import SunoapiProvider
 from app.providers.builtins.ai.qianfan import QianfanProvider
+from app.providers.builtins.ai.getnote import GetnoteProvider
 
 
 __all__ = [
@@ -60,4 +61,6 @@ __all__ = [
     "JimengAiProvider",
     "SunoapiProvider",
     "QianfanProvider",
+    "GetnoteProvider",
 ]
+

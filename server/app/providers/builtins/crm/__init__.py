@@ -27,6 +27,8 @@ from app.providers.builtins.crm.umami import UmamiProvider
 from app.providers.builtins.crm.databox import DataboxProvider
 from app.providers.builtins.crm.amplitude import AmplitudeProvider
 from app.providers.builtins.crm.plausible_analytics import PlausibleAnalyticsProvider
+from app.providers.builtins.crm.livespace import LivespaceProvider
+from app.providers.builtins.crm.bloomerang import BloomerangProvider
 
 __all__ = [
     "HubSpotProvider",
@@ -54,4 +56,7 @@ __all__ = [
     "DataboxProvider",
     "AmplitudeProvider",
     "PlausibleAnalyticsProvider",
+    "LivespaceProvider",
+    "BloomerangProvider",
 ]
+

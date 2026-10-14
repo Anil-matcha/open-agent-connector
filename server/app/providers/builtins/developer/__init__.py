@@ -47,6 +47,7 @@ from app.providers.builtins.developer.algolia import AlgoliaProvider
 from app.providers.builtins.developer.cloudflare_dns import CloudflareDnsProvider
 from app.providers.builtins.developer.make import MakeProvider
 from app.providers.builtins.developer.pipedream import PipedreamProvider
+from app.providers.builtins.developer.agenty import AgentyProvider
 
 __all__ = [
     "GitHubProvider",
@@ -98,4 +99,6 @@ __all__ = [
     "CloudflareDnsProvider",
     "MakeProvider",
     "PipedreamProvider",
+    "AgentyProvider",
 ]
+

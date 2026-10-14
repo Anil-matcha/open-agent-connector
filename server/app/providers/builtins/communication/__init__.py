@@ -29,6 +29,8 @@ from app.providers.builtins.communication.onesignal_rest_api import OneSignalRes
 from app.providers.builtins.communication.mailerlite import MailerLiteProvider
 from app.providers.builtins.communication.getresponse import GetResponseProvider
 from app.providers.builtins.communication.braze import BrazeProvider
+from app.providers.builtins.communication.slackbot import SlackbotProvider
+from app.providers.builtins.communication.chatarmin import ChatarminProvider
 
 __all__ = [
     "SlackProvider",
@@ -62,5 +64,8 @@ __all__ = [
     "MailerLiteProvider",
     "GetResponseProvider",
     "BrazeProvider",
+    "SlackbotProvider",
+    "ChatarminProvider",
 ]
+
 

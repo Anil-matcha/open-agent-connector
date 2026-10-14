@@ -602,6 +602,41 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "token_url": "https://business-api.tiktok.com/open_api/v1.3/oauth2/access_token/",
         "token_auth_method": "body",
         "default_scopes": [],
+    },
+    "slackbot": {
+        "display_name": "Slack Bot",
+        "authorize_url": "https://slack.com/oauth/v2/authorize",
+        "token_url": "https://slack.com/api/oauth.v2.access",
+        "token_auth_method": "body",
+        "default_scopes": ["chat:write", "channels:read", "users:read"],
+    },
+    "esa": {
+        "display_name": "esa",
+        "authorize_url": "https://api.esa.io/oauth/authorize",
+        "token_url": "https://api.esa.io/oauth/token",
+        "token_auth_method": "body",
+        "default_scopes": ["read", "write"],
+    },
+    "apaleo": {
+        "display_name": "apaleo",
+        "authorize_url": "https://identity.apaleo.com/connect/authorize",
+        "token_url": "https://identity.apaleo.com/connect/token",
+        "token_auth_method": "body",
+        "default_scopes": ["offline_access"],
+    },
+    "bilibili": {
+        "display_name": "Bilibili",
+        "authorize_url": "https://passport.bilibili.com/register/verification.html",
+        "token_url": "https://api.bilibili.com/x/account-oauth2/v1/token",
+        "token_auth_method": "body",
+        "default_scopes": [],
+    },
+    "bloomerang": {
+        "display_name": "Bloomerang",
+        "authorize_url": "https://crm.bloomerang.co/oauth/authorize",
+        "token_url": "https://crm.bloomerang.co/oauth/token",
+        "token_auth_method": "body",
+        "default_scopes": [],
     }
 }
 

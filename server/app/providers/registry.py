@@ -62,6 +62,8 @@ from app.providers.builtins.communication import (
     MailerLiteProvider,
     GetResponseProvider,
     BrazeProvider,
+    SlackbotProvider,
+    ChatarminProvider,
 )
 
 # Developer Tools & Cloud Infrastructure
@@ -115,6 +117,7 @@ from app.providers.builtins.developer import (
     CloudflareDnsProvider,
     MakeProvider,
     PipedreamProvider,
+    AgentyProvider,
 )
 
 # Project Management & Issue Tracking Providers
@@ -149,6 +152,9 @@ from app.providers.builtins.project_management import (
     SystemeIoProvider,
     MiroProvider,
     JotformProvider,
+    EsaProvider,
+    ApaleoProvider,
+    MymindProvider,
 )
 
 # AI & LLM Services Providers
@@ -180,6 +186,7 @@ from app.providers.builtins.ai import (
     JimengAiProvider,
     SunoapiProvider,
     QianfanProvider,
+    GetnoteProvider,
 )
 
 # CRM, Helpdesk & Marketing Providers
@@ -209,6 +216,8 @@ from app.providers.builtins.crm import (
     DataboxProvider,
     AmplitudeProvider,
     PlausibleAnalyticsProvider,
+    LivespaceProvider,
+    BloomerangProvider,
 )
 
 # Payments & E-Commerce Providers
@@ -259,6 +268,7 @@ from app.providers.builtins.media import (
     SanityProvider,
     CanvaProvider,
     TikTokBusinessProvider,
+    BilibiliProvider,
 )
 
 # Utility Providers
@@ -560,6 +570,18 @@ class ProviderRegistry:
         self.register(BitlyProvider())
         self.register(HotjarProvider())
         self.register(NasaProvider())
+
+        # 12. SaaS Expansion Cohort 2
+        self.register(AgentyProvider())
+        self.register(EsaProvider())
+        self.register(ApaleoProvider())
+        self.register(BilibiliProvider())
+        self.register(MymindProvider())
+        self.register(LivespaceProvider())
+        self.register(SlackbotProvider())
+        self.register(ChatarminProvider())
+        self.register(GetnoteProvider())
+        self.register(BloomerangProvider())
 
     def register(self, provider: Provider):
         self._providers[provider.service] = provider

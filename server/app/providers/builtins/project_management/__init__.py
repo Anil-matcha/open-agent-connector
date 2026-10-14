@@ -32,6 +32,9 @@ from app.providers.builtins.project_management.dropbox_sign import DropboxSignPr
 from app.providers.builtins.project_management.systeme_io import SystemeIoProvider
 from app.providers.builtins.project_management.miro import MiroProvider
 from app.providers.builtins.project_management.jotform import JotformProvider
+from app.providers.builtins.project_management.esa import EsaProvider
+from app.providers.builtins.project_management.apaleo import ApaleoProvider
+from app.providers.builtins.project_management.mymind import MymindProvider
 
 
 __all__ = [
@@ -65,6 +68,10 @@ __all__ = [
     "SystemeIoProvider",
     "MiroProvider",
     "JotformProvider",
+    "EsaProvider",
+    "ApaleoProvider",
+    "MymindProvider",
 ]
+
 
 
