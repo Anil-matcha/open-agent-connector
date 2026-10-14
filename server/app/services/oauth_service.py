@@ -244,6 +244,7 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "display_name": "Notion",
         "authorize_url": "https://api.notion.com/v1/oauth/authorize",
         "token_url": "https://api.notion.com/v1/oauth/token",
+        "token_auth_method": "basic",
         "default_scopes": [],
     },
     "linear": {
@@ -1015,13 +1016,19 @@ class OAuthService:
             token_payload["client_id"] = config["client_id"]
             token_payload["client_secret"] = config["client_secret"]
 
+        if service == "notion":
+            token_headers["Content-Type"] = "application/json"
+            token_headers["Notion-Version"] = "2022-06-28"
+
+        use_json = token_headers.get("Content-Type") == "application/json"
         client = await create_guarded_client()
         try:
             resp = await execute_guarded_request(
                 client=client,
                 method="POST",
                 url=token_url,
-                data=token_payload,
+                data=token_payload if not use_json else None,
+                json_body=token_payload if use_json else None,
                 headers=token_headers
             )
             if resp.status_code != 200:
