@@ -902,7 +902,7 @@ class OAuthService:
         await session.commit()
 
         scopes = custom_scopes or provider_meta.get("default_scopes", [])
-        scope_str = " ".join(scopes) if service != "github" else ",".join(scopes)
+        scope_str = ",".join(scopes) if service in ("github", "slack") else " ".join(scopes)
 
         callback_uri = OAuthService.callback_url(service)
         params = {
@@ -1042,7 +1042,7 @@ class OAuthService:
             if "error" in token_data:
                 raise ValueError(f"Provider returned OAuth error: {token_data.get('error_description') or token_data['error']}")
 
-            access_token = token_data.get("access_token")
+            access_token = token_data.get("access_token") or (token_data.get("authed_user") or {}).get("access_token")
             if not access_token:
                 raise ValueError("No access_token returned by provider.")
 
