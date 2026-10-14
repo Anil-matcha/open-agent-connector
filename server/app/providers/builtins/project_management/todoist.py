@@ -13,7 +13,7 @@ from app.providers.base import Provider, Action
 from app.providers.catalog import get_provider_actions
 from app.core.ssrf import assert_public_url, execute_guarded_request
 
-DEFAULT_API_BASE = "https://api.todoist.com/rest/v2"
+DEFAULT_API_BASE = "https://api.todoist.com/api/v1"
 
 def _extract_token(credential: Optional[Dict[str, Any]]) -> str:
     cred = credential or {}
@@ -396,7 +396,7 @@ class TodoistProvider(Provider):
 
     async def validate_credentials(self, credential: Dict[str, Any], client: httpx.AsyncClient) -> Dict[str, Any]:
         cred = credential or {}
-        val_url = "https://api.todoist.com/rest/v2/projects"
+        val_url = "https://api.todoist.com/api/v1/projects"
         for key in ["domain", "subdomain", "host", "tenant"]:
             if "{" + key + "}" in val_url:
                 val_url = val_url.replace("{" + key + "}", str(cred.get(key) or "default"))
@@ -425,7 +425,26 @@ class TodoistProvider(Provider):
             raise ValueError(f"Todoist validation failed: {resp.status_code} {resp.text}")
 
         token = _extract_token(cred)
+        display_name = "Todoist Account"
+        account_id = token[:8] + "..." if token else "verified"
+
+        try:
+            user_resp = await execute_guarded_request(
+                client=client,
+                method="GET",
+                url="https://api.todoist.com/api/v1/user",
+                headers=headers
+            )
+            if user_resp.status_code == 200:
+                user_data = user_resp.json()
+                if isinstance(user_data, dict):
+                    account_id = str(user_data.get("id") or account_id)
+                    display_name = user_data.get("full_name") or user_data.get("email") or display_name
+        except Exception:
+            pass
+
         return {
-            "account_id": token[:8] + "..." if token else "verified",
-            "display_name": f"Todoist Account"
+            "account_id": account_id,
+            "display_name": display_name
         }
+
