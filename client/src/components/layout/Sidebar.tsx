@@ -38,9 +38,17 @@ export function Sidebar() {
     { label: "Overview", href: "/", icon: <LayoutDashboard size={15} /> },
     { label: "Providers", href: "/providers", icon: <Layers size={15} /> },
     { label: "Actions", href: "/actions", icon: <Zap size={15} /> },
-    { label: "Connections", href: "/connections", icon: <KeyRound size={15} /> },
+    {
+      label: "Connections",
+      href: "/connections",
+      icon: <KeyRound size={15} />,
+    },
     { label: "Run Logs", href: "/logs", icon: <History size={15} /> },
-    { label: "Access Tokens", href: "/tokens", icon: <ShieldCheck size={15} /> },
+    {
+      label: "Access Tokens",
+      href: "/tokens",
+      icon: <ShieldCheck size={15} />,
+    },
   ];
 
   return (
@@ -64,8 +72,8 @@ export function Sidebar() {
               serverOnline === null
                 ? "bg-zinc-300"
                 : serverOnline
-                ? "bg-emerald-500 animate-pulse"
-                : "bg-rose-500"
+                  ? "bg-emerald-500 animate-pulse"
+                  : "bg-rose-500"
             }`}
           />
         </div>
@@ -98,22 +106,6 @@ export function Sidebar() {
       </nav>
 
       <AccessControl />
-
-      {/* Footer Info */}
-      <div className="p-3 border-t border-zinc-100 text-[11px] text-zinc-400 flex flex-col gap-1">
-        <div className="flex items-center justify-between">
-          <span>Backend:</span>
-          <span className="font-mono text-[10px] text-zinc-600">FastAPI</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span>Database:</span>
-          <span className="font-mono text-[10px] text-zinc-600">SQLite</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span>MCP Protocol:</span>
-          <span className="font-mono text-[10px] text-emerald-600 font-medium">Ready</span>
-        </div>
-      </div>
     </aside>
   );
 }

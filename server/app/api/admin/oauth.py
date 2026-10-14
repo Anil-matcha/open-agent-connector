@@ -119,8 +119,10 @@ async def initiate_oauth(
 @router.get("/{service}/callback")
 async def handle_oauth_callback(
     service: str,
-    code: str = Query(...),
     state: str = Query(...),
+    code: Optional[str] = Query(None),
+    error: Optional[str] = Query(None),
+    error_description: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db)
 ):
     """Handle OAuth redirect callback, atomically consume state, exchange code, and persist connection.
@@ -136,6 +138,17 @@ async def handle_oauth_callback(
         sep = "&" if "?" in dest else "?"
         query = "&".join(f"{k}={quote(str(v), safe='')}" for k, v in params.items())
         return RedirectResponse(url=f"{dest}{sep}{query}")
+
+    if error:
+        err_msg = error_description or error
+        if dest:
+            return back(status="error", error=err_msg)
+        raise HTTPException(status_code=400, detail=f"Provider OAuth error: {err_msg}")
+
+    if not code:
+        if dest:
+            return back(status="error", error="Missing authorization code")
+        raise HTTPException(status_code=400, detail="Missing authorization code from provider callback.")
 
     try:
         conn = await OAuthService.exchange_code(

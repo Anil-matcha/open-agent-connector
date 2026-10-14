@@ -145,7 +145,7 @@ class DiscordProvider(Provider):
                             "4. Copy your Client ID and Client Secret.",
                             "5. Configure the required scopes: identify, email, guilds, connections."
                         ],
-                        "scopes": ["identify", "email", "guilds", "guilds.members.read", "connections", "applications.entitlements", "role_connections.write", "openid"]
+                        "scopes": ["identify", "email", "guilds", "guilds.members.read", "connections"]
                     }
                 },
                 {

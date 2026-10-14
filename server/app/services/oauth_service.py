@@ -398,9 +398,6 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
             "guilds",
             "guilds.members.read",
             "connections",
-            "applications.entitlements",
-            "role_connections.write",
-            "openid"
         ],
     },
     "linkedin": {
