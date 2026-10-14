@@ -424,6 +424,7 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "display_name": "Reddit",
         "authorize_url": "https://www.reddit.com/api/v1/authorize",
         "token_url": "https://www.reddit.com/api/v1/access_token",
+        "token_auth_method": "basic",
         "default_scopes": ["identity", "read", "submit", "edit"],
     },
     "dropbox": {
