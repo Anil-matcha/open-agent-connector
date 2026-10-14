@@ -222,9 +222,9 @@ function ActionsContent() {
     Boolean(search) || selectedService !== "all" || selectedCategory !== "all";
 
   return (
-    <div className="p-6 flex flex-col gap-5 max-w-6xl mx-auto w-full">
+    <div className="p-3.5 sm:p-6 flex flex-col gap-4 sm:gap-5 max-w-6xl mx-auto w-full">
       {/* Top Filter and Controls Bar */}
-      <div className="bg-white border border-zinc-200/80 rounded-xl p-4 shadow-2xs flex flex-col gap-3">
+      <div className="bg-white border border-zinc-200/80 rounded-xl p-3.5 sm:p-4 shadow-2xs flex flex-col gap-3">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
           {/* Search Bar */}
           <div className="md:col-span-5 relative">
@@ -517,12 +517,12 @@ function ActionsContent() {
                 </div>
 
                 {/* Right Action Trigger */}
-                <div className="flex items-center gap-2 shrink-0 self-end lg:self-center pl-10 lg:pl-0">
+                <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto self-stretch sm:self-end lg:self-center pt-2 sm:pt-0">
                   <Button
                     size="sm"
                     variant="primary"
                     onClick={() => setRunningAction(action)}
-                    className="shadow-2xs"
+                    className="shadow-2xs w-full sm:w-auto justify-center"
                   >
                     <Play size={11} className="fill-current mr-1" />
                     <span>Run Action</span>
@@ -614,7 +614,7 @@ function ActionsContent() {
 
 export default function ActionsPage() {
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-zinc-50">
+    <div className="flex h-screen w-full overflow-hidden bg-zinc-50">
       <Sidebar />
 
       <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden">

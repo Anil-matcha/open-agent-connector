@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { API_BASE, clearAdminToken, getAdminToken, setAdminToken } from "@/lib/api";
+import { useMobileNav } from "@/components/layout/MobileNavContext";
 import {
   ShieldCheck,
   Users,
@@ -32,6 +33,7 @@ function getInitials(name: string): string {
 }
 
 export function AccessControl() {
+  const { close: closeMobileNav } = useMobileNav();
   const operator = useSyncExternalStore(
     subscribeToStorage,
     () => Boolean(getAdminToken()),
@@ -244,7 +246,10 @@ export function AccessControl() {
 
             <Link
               href="/tokens"
-              onClick={() => setMenuOpen(false)}
+              onClick={() => {
+                setMenuOpen(false);
+                closeMobileNav();
+              }}
               className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100/80 rounded-md transition-colors"
             >
               <KeyRound size={14} className="text-zinc-500" />
@@ -253,7 +258,10 @@ export function AccessControl() {
 
             <Link
               href="/logs"
-              onClick={() => setMenuOpen(false)}
+              onClick={() => {
+                setMenuOpen(false);
+                closeMobileNav();
+              }}
               className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100/80 rounded-md transition-colors"
             >
               <History size={14} className="text-zinc-500" />
@@ -264,7 +272,10 @@ export function AccessControl() {
               href={`${API_BASE}/docs`}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => setMenuOpen(false)}
+              onClick={() => {
+                setMenuOpen(false);
+                closeMobileNav();
+              }}
               className="w-full flex items-center justify-between px-2.5 py-1.5 text-xs text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100/80 rounded-md transition-colors"
             >
               <div className="flex items-center gap-2">

@@ -85,7 +85,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-zinc-50">
+    <div className="flex h-screen w-full overflow-hidden bg-zinc-50">
       <Sidebar />
 
       <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden">
@@ -95,10 +95,10 @@ export default function DashboardPage() {
         />
 
         <main className="flex-1 overflow-y-auto min-h-0">
-          <div className="p-6 flex flex-col gap-6 max-w-6xl">
+          <div className="p-4 sm:p-6 flex flex-col gap-5 sm:gap-6 max-w-6xl">
           {/* Top Metric Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="p-3.5 bg-white border border-zinc-200 rounded-lg flex flex-col gap-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="p-3.5 bg-white border border-zinc-200 rounded-lg flex flex-col gap-1 shadow-2xs">
               <div className="flex items-center justify-between text-zinc-500 text-xs">
                 <span>Total Providers</span>
                 <Layers size={14} className="text-zinc-400" />
@@ -109,7 +109,7 @@ export default function DashboardPage() {
               <div className="text-[11px] text-zinc-400">Available services</div>
             </div>
 
-            <div className="p-3.5 bg-white border border-zinc-200 rounded-lg flex flex-col gap-1">
+            <div className="p-3.5 bg-white border border-zinc-200 rounded-lg flex flex-col gap-1 shadow-2xs">
               <div className="flex items-center justify-between text-zinc-500 text-xs">
                 <span>Active Actions</span>
                 <Zap size={14} className="text-zinc-400" />
@@ -120,7 +120,7 @@ export default function DashboardPage() {
               <div className="text-[11px] text-zinc-400">Callable functions</div>
             </div>
 
-            <div className="p-3.5 bg-white border border-zinc-200 rounded-lg flex flex-col gap-1">
+            <div className="p-3.5 bg-white border border-zinc-200 rounded-lg flex flex-col gap-1 shadow-2xs">
               <div className="flex items-center justify-between text-zinc-500 text-xs">
                 <span>Connected Accounts</span>
                 <KeyRound size={14} className="text-zinc-400" />
@@ -131,7 +131,7 @@ export default function DashboardPage() {
               <div className="text-[11px] text-zinc-400">Encrypted in SQLite</div>
             </div>
 
-            <div className="p-3.5 bg-white border border-zinc-200 rounded-lg flex flex-col gap-1">
+            <div className="p-3.5 bg-white border border-zinc-200 rounded-lg flex flex-col gap-1 shadow-2xs">
               <div className="flex items-center justify-between text-zinc-500 text-xs">
                 <span>Execution Success</span>
                 <History size={14} className="text-zinc-400" />
@@ -146,9 +146,9 @@ export default function DashboardPage() {
           </div>
 
           {/* Quick MCP Setup Panel */}
-          <div className="p-4 bg-white border border-zinc-200 rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="p-4 bg-white border border-zinc-200 rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-2xs">
             <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-semibold text-zinc-900">
                   Model Context Protocol (MCP) Ready
                 </span>
@@ -163,7 +163,7 @@ export default function DashboardPage() {
               variant="outline"
               size="sm"
               onClick={copyMcpSnippet}
-              className="shrink-0"
+              className="shrink-0 w-full sm:w-auto"
             >
               {copiedMcp ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
               <span>{copiedMcp ? "Copied Config" : "Copy MCP JSON Config"}</span>
@@ -171,7 +171,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Recent Runs Table */}
-          <div className="bg-white border border-zinc-200 rounded-lg flex flex-col overflow-hidden">
+          <div className="bg-white border border-zinc-200 rounded-lg flex flex-col overflow-hidden shadow-2xs">
             <div className="px-4 py-3 border-b border-zinc-100 flex items-center justify-between">
               <div>
                 <h2 className="text-xs font-semibold text-zinc-900">Recent Executions</h2>
@@ -192,7 +192,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+                <table className="w-full text-left text-xs min-w-[500px]">
                   <thead className="bg-zinc-50 border-b border-zinc-100 text-zinc-500 font-medium select-none">
                     <tr>
                       <th className="px-4 py-2">Status</th>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { MobileNavProvider } from "@/components/layout/MobileNavContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -21,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
       <body className="h-full overflow-hidden bg-zinc-50 text-zinc-900 font-sans selection:bg-zinc-200 selection:text-zinc-900">
-        {children}
+        <MobileNavProvider>{children}</MobileNavProvider>
       </body>
     </html>
   );

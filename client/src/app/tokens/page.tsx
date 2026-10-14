@@ -80,7 +80,7 @@ export default function TokensPage() {
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-zinc-50">
+    <div className="flex h-screen w-full overflow-hidden bg-zinc-50">
       <Sidebar />
 
       <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden">
@@ -99,14 +99,15 @@ export default function TokensPage() {
               }}
             >
               <Plus size={13} />
-              <span>Create Token</span>
+              <span className="hidden xs:inline">Create Token</span>
+              <span className="xs:hidden">Create</span>
             </Button>
           }
         />
 
         <main className="flex-1 overflow-y-auto min-h-0">
-          <div className="p-6 flex flex-col gap-6 max-w-6xl">
-          <div className="bg-white border border-zinc-200 rounded-lg overflow-hidden flex flex-col">
+          <div className="p-4 sm:p-6 flex flex-col gap-5 sm:gap-6 max-w-6xl">
+          <div className="bg-white border border-zinc-200 rounded-lg overflow-hidden flex flex-col shadow-2xs">
             <div className="px-4 py-3 border-b border-zinc-100 flex items-center justify-between">
               <div>
                 <h2 className="text-xs font-semibold text-zinc-900">Active Bearer Tokens</h2>
@@ -122,7 +123,7 @@ export default function TokensPage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+                <table className="w-full text-left text-xs min-w-[560px]">
                   <thead className="bg-zinc-50 border-b border-zinc-100 text-zinc-500 font-medium">
                     <tr>
                       <th className="px-4 py-2">Name</th>

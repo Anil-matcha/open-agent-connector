@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { API_BASE } from "@/lib/api";
 import { AccessControl } from "@/components/layout/AccessControl";
+import { useMobileNav } from "@/components/layout/MobileNavContext";
 import {
   LayoutDashboard,
   Layers,
@@ -12,12 +13,12 @@ import {
   KeyRound,
   ShieldCheck,
   History,
-  Activity,
-  Terminal,
+  X,
 } from "lucide-react";
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { isOpen, close } = useMobileNav();
   const [serverOnline, setServerOnline] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -52,60 +53,90 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className="w-56 h-screen bg-white border-r border-zinc-200 flex flex-col shrink-0 select-none">
-      {/* Brand */}
-      <div className="h-14 px-4 flex items-center justify-between border-b border-zinc-100">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded bg-zinc-900 flex items-center justify-center text-white font-bold text-xs">
-            C
-          </div>
-          <span className="font-semibold text-xs tracking-tight text-zinc-900">
-            ConnectorHub
-          </span>
-        </Link>
+    <>
+      {/* Mobile Backdrop Overlay */}
+      {isOpen && (
         <div
-          title={serverOnline ? "Server connected" : "Server unreachable"}
-          className="flex items-center gap-1.5"
-        >
-          <span
-            className={`w-2 h-2 rounded-full ${
-              serverOnline === null
-                ? "bg-zinc-300"
-                : serverOnline
-                  ? "bg-emerald-500 animate-pulse"
-                  : "bg-rose-500"
-            }`}
-          />
-        </div>
-      </div>
+          className="fixed inset-0 bg-black/40 z-40 backdrop-blur-xs md:hidden animate-in fade-in duration-200"
+          onClick={close}
+          aria-hidden="true"
+        />
+      )}
 
-      {/* Navigation */}
-      <nav className="p-3 flex-1 space-y-0.5 overflow-y-auto">
-        <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider px-2 py-1 select-none">
-          Platform
-        </div>
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-2.5 px-2.5 py-1.5 text-xs rounded-md transition-colors ${
-                isActive
-                  ? "bg-zinc-100 text-zinc-900 font-medium"
-                  : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50"
-              }`}
+      {/* Sidebar Drawer */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-zinc-200 flex flex-col shrink-0 select-none shadow-2xl transition-transform duration-200 ease-in-out md:static md:w-56 md:h-screen md:shadow-none md:translate-x-0 ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {/* Brand */}
+        <div className="h-14 px-4 flex items-center justify-between border-b border-zinc-100 shrink-0">
+          <Link href="/" onClick={close} className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded bg-zinc-900 flex items-center justify-center text-white font-bold text-xs">
+              C
+            </div>
+            <span className="font-semibold text-xs tracking-tight text-zinc-900">
+              ConnectorHub
+            </span>
+          </Link>
+          <div className="flex items-center gap-2">
+            <div
+              title={serverOnline ? "Server connected" : "Server unreachable"}
+              className="flex items-center gap-1.5"
             >
-              <span className={isActive ? "text-zinc-900" : "text-zinc-400"}>
-                {item.icon}
-              </span>
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  serverOnline === null
+                    ? "bg-zinc-300"
+                    : serverOnline
+                      ? "bg-emerald-500 animate-pulse"
+                      : "bg-rose-500"
+                }`}
+              />
+            </div>
 
-      <AccessControl />
-    </aside>
+            {/* Mobile close button */}
+            <button
+              type="button"
+              onClick={close}
+              className="md:hidden p-1 rounded-md text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors"
+              aria-label="Close navigation"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className="p-3 flex-1 space-y-0.5 overflow-y-auto">
+          <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider px-2 py-1 select-none">
+            Platform
+          </div>
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={close}
+                className={`flex items-center gap-2.5 px-2.5 py-2 md:py-1.5 text-xs rounded-md transition-colors ${
+                  isActive
+                    ? "bg-zinc-100 text-zinc-900 font-medium"
+                    : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50"
+                }`}
+              >
+                <span className={isActive ? "text-zinc-900" : "text-zinc-400"}>
+                  {item.icon}
+                </span>
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* User Account / Access Control */}
+        <AccessControl />
+      </aside>
+    </>
   );
 }

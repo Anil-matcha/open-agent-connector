@@ -155,7 +155,7 @@ export default function ConnectionsPage() {
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-zinc-50">
+    <div className="flex h-screen w-full overflow-hidden bg-zinc-50">
       <Sidebar />
 
       <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden">
@@ -166,14 +166,15 @@ export default function ConnectionsPage() {
             <Link href="/providers">
               <Button size="sm" variant="primary">
                 <Plus size={13} />
-                <span>Connect Provider</span>
+                <span className="hidden xs:inline">Connect Provider</span>
+                <span className="xs:hidden">Connect</span>
               </Button>
             </Link>
           }
         />
 
         <main className="flex-1 overflow-y-auto min-h-0">
-          <div className="p-6 flex flex-col gap-6 max-w-6xl">
+          <div className="p-4 sm:p-6 flex flex-col gap-5 sm:gap-6 max-w-6xl">
             {testFeedback && (
               <div
                 className={`p-3 text-xs rounded-lg border flex items-center justify-between ${
@@ -230,7 +231,7 @@ export default function ConnectionsPage() {
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
+                  <table className="w-full text-left text-xs min-w-[620px]">
                     <thead className="bg-zinc-50 border-b border-zinc-100 text-zinc-500 font-medium">
                       <tr>
                         <th className="px-4 py-2.5">Service & Alias</th>

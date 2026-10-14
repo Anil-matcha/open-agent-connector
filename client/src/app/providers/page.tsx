@@ -101,7 +101,7 @@ export default function ProvidersPage() {
   });
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-zinc-50">
+    <div className="flex h-screen w-full overflow-hidden bg-zinc-50">
       <Sidebar />
 
       <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden">
@@ -110,8 +110,8 @@ export default function ProvidersPage() {
           description="Browse available services and configure authenticated credentials."
         />
 
-        <main className="flex-1 overflow-y-auto min-h-0 p-5 sm:p-6">
-          <div className="bg-white border border-zinc-200 rounded-xl p-5 sm:p-6 flex flex-col gap-4 shadow-xs">
+        <main className="flex-1 overflow-y-auto min-h-0 p-3.5 sm:p-6">
+          <div className="bg-white border border-zinc-200 rounded-xl p-4 sm:p-6 flex flex-col gap-4 shadow-xs">
             {/* Top Bar: Title & Search */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <h2 className="text-base font-semibold text-zinc-900 tracking-tight">
@@ -134,14 +134,14 @@ export default function ProvidersPage() {
 
             {/* Filter Buttons & Showing Count */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
                 {filterButtons.map((btn) => {
                   const isActive = filter === btn.id;
                   return (
                     <button
                       key={btn.id}
                       onClick={() => setFilter(btn.id)}
-                      className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
+                      className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ${
                         isActive
                           ? "bg-zinc-900 text-white shadow-xs"
                           : "bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"

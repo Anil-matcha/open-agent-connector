@@ -54,7 +54,7 @@ export default function LogsPage() {
   ];
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-zinc-50">
+    <div className="flex h-screen w-full overflow-hidden bg-zinc-50">
       <Sidebar />
 
       <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden">
@@ -64,9 +64,9 @@ export default function LogsPage() {
         />
 
         <main className="flex-1 overflow-y-auto min-h-0">
-          <div className="p-6 flex flex-col gap-6 max-w-6xl">
+          <div className="p-4 sm:p-6 flex flex-col gap-5 sm:gap-6 max-w-6xl">
           {/* Controls Bar with CustomSelect */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 border border-zinc-200 rounded-lg">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 border border-zinc-200 rounded-lg shadow-2xs">
             <div className="w-full sm:w-56">
               <CustomSelect
                 options={filterOptions}
@@ -75,21 +75,21 @@ export default function LogsPage() {
               />
             </div>
 
-            <Button size="sm" variant="outline" onClick={loadRuns} loading={loading}>
+            <Button size="sm" variant="outline" onClick={loadRuns} loading={loading} className="w-full sm:w-auto justify-center">
               <RefreshCw size={11} />
               <span>Refresh Logs</span>
             </Button>
           </div>
 
           {/* Table */}
-          <div className="bg-white border border-zinc-200 rounded-lg overflow-hidden flex flex-col">
+          <div className="bg-white border border-zinc-200 rounded-lg overflow-hidden flex flex-col shadow-2xs">
             {runs.length === 0 ? (
               <div className="p-12 text-center text-xs text-zinc-400">
                 No execution logs found.
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+                <table className="w-full text-left text-xs min-w-[600px]">
                   <thead className="bg-zinc-50 border-b border-zinc-100 text-zinc-500 font-medium">
                     <tr>
                       <th className="px-4 py-2">Status</th>
