@@ -507,7 +507,13 @@ class SpotifyProvider(Provider):
             raise ValueError(f"Unable to reach Spotify API: {str(e)}")
 
         if resp.status_code in (401, 403):
-            raise ValueError("Invalid Spotify credentials. Spotify returned Unauthorized (401/403).")
+            detail = ""
+            try:
+                err_data = resp.json().get("error", {})
+                detail = f": {err_data.get('message')}" if isinstance(err_data, dict) else f": {err_data}"
+            except Exception:
+                detail = f": {resp.text[:200]}" if resp.text else ""
+            raise ValueError(f"Spotify authentication failed ({resp.status_code}){detail}")
         elif resp.status_code != 200:
             raise ValueError(f"Spotify credential validation failed with status {resp.status_code}: {resp.text[:300]}")
 
