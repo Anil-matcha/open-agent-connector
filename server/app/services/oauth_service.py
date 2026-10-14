@@ -486,6 +486,7 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "display_name": "Zoom",
         "authorize_url": "https://zoom.us/oauth/authorize",
         "token_url": "https://zoom.us/oauth/token",
+        "token_auth_method": "basic",
         "default_scopes": ["user:read", "meeting:read", "meeting:write"],
     },
     "cal": {
