@@ -916,6 +916,9 @@ class OAuthService:
         if scope_str:
             params["scope"] = scope_str
 
+        if service == "dropbox":
+            params["token_access_type"] = "offline"
+
         auth_url_base = provider_meta['authorize_url']
         subdomain = (config or {}).get("subdomain") or (config or {}).get("shopDomain") or (config or {}).get("shop") or ""
         if "{" in auth_url_base and subdomain:
