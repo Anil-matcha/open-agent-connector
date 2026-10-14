@@ -487,7 +487,7 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "authorize_url": "https://zoom.us/oauth/authorize",
         "token_url": "https://zoom.us/oauth/token",
         "token_auth_method": "basic",
-        "default_scopes": ["user:read", "meeting:read", "meeting:write"],
+        "default_scopes": [],
     },
     "cal": {
         "display_name": "Cal.com",
@@ -906,6 +906,8 @@ class OAuthService:
 
         scopes = custom_scopes or provider_meta.get("default_scopes", [])
         scope_str = ",".join(scopes) if service in ("github", "slack") else " ".join(scopes)
+        if service == "zoom":
+            scope_str = ""
 
         callback_uri = OAuthService.callback_url(service)
         params = {
