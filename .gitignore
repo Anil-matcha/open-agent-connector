@@ -53,6 +53,7 @@ Thumbs.db
 .idea/
 
 PROVIDER_GUIDE.md
+INSTANT_APPROVAL_APPS_GUIDE.md
 scratch/
 # Production secrets (the real file lives only on the server)
 .env.prod
