@@ -142,7 +142,13 @@ class ActionRunner:
         result_data = {}
 
         try:
-            result_data = await action.execute(clean_input, credential, client)
+            import inspect
+            sig = inspect.signature(action.execute)
+            pnames = list(sig.parameters.keys())
+            if pnames and pnames[0] in ("credential", "cred"):
+                result_data = await action.execute(credential, clean_input, client)
+            else:
+                result_data = await action.execute(clean_input, credential, client)
         except SSRFViolationError as e:
             ok = False
             status_code = 400
