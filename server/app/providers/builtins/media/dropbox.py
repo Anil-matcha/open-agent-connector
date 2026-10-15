@@ -99,15 +99,24 @@ class DropboxDynamicAction(Action):
         else:
             # Standard RPC call
             headers["Content-Type"] = "application/json"
-            # Body can be null/empty for certain endpoints like get_current_account
-            body = inputs if inputs else None
-            resp = await execute_guarded_request(
-                client=client,
-                method="POST",
-                url=url,
-                headers=headers,
-                json_body=body
-            )
+            # In Dropbox RPC v2, endpoints with no arguments require literal JSON 'null' body.
+            # Passing Content-Type: application/json with an empty body causes Dropbox to crash with 500.
+            if inputs:
+                resp = await execute_guarded_request(
+                    client=client,
+                    method="POST",
+                    url=url,
+                    headers=headers,
+                    json_body=inputs
+                )
+            else:
+                resp = await execute_guarded_request(
+                    client=client,
+                    method="POST",
+                    url=url,
+                    headers=headers,
+                    data="null"
+                )
 
         try:
             res_data = resp.json()
@@ -206,13 +215,45 @@ class DropboxProvider(Provider):
         assert_public_url(url)
 
         try:
-            resp = await execute_guarded_request(client=client, method="POST", url=url, headers=headers, json_body=None)
+            # Dropbox RPC v2 endpoints with no arguments require literal JSON 'null' in the body
+            resp = await execute_guarded_request(
+                client=client,
+                method="POST",
+                url=url,
+                headers=headers,
+                data="null"
+            )
         except Exception as e:
             raise ValueError(f"Unable to reach Dropbox API: {str(e)}")
 
         if resp.status_code in (401, 403):
             raise ValueError("Invalid Dropbox credentials. Dropbox returned Unauthorized (401/403).")
-        elif resp.status_code != 200:
+
+        # Fallback for Team-scoped tokens or transient errors on get_current_account
+        if resp.status_code != 200:
+            check_url = f"{DROPBOX_API_BASE}/check/user"
+            assert_public_url(check_url)
+            try:
+                check_resp = await execute_guarded_request(
+                    client=client,
+                    method="POST",
+                    url=check_url,
+                    headers=headers,
+                    json_body={"query": "ping"}
+                )
+                if check_resp.status_code == 200:
+                    return {
+                        "valid": True,
+                        "accountId": "dropbox_user",
+                        "displayName": "Dropbox User (Verified)",
+                        "metadata": {
+                            "validationEndpoint": "/check/user",
+                            "note": "Validated via Dropbox user check endpoint"
+                        }
+                    }
+            except Exception:
+                pass
+
             raise ValueError(f"Dropbox credential validation failed with status {resp.status_code}: {resp.text[:300]}")
 
         body = resp.json() if isinstance(resp.text, str) and resp.text.startswith("{") else {}
