@@ -17,6 +17,7 @@ import {
   Copy,
   Check,
   Globe,
+  Loader2,
 } from "lucide-react";
 
 interface SetupGuide {
@@ -123,25 +124,176 @@ export function ConnectModal({
     }
   }, [service, authTypes]);
 
+  const popupRef = React.useRef<Window | null>(null);
+  const pollTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const messageListenerRef = React.useRef<((event: MessageEvent) => void) | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+      if (messageListenerRef.current) {
+        window.removeEventListener("message", messageListenerRef.current);
+      }
+    };
+  }, []);
+
   async function handleOAuthLaunch(mode: "hosted" | "custom" = "hosted") {
     setOauthLoading(true);
     setError(null);
+
+    // 1. Calculate centered popup position
+    const width = 600;
+    const height = 750;
+    const left =
+      typeof window !== "undefined"
+        ? Math.max(0, Math.round(window.screenX + (window.outerWidth - width) / 2))
+        : 100;
+    const top =
+      typeof window !== "undefined"
+        ? Math.max(0, Math.round(window.screenY + (window.outerHeight - height) / 2))
+        : 100;
+    const popupFeatures = `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=no`;
+
+    // 2. Open popup immediately to avoid popup blockers
+    let popup: Window | null = null;
+    try {
+      popup = window.open("about:blank", `Connect_${service}`, popupFeatures);
+      popupRef.current = popup;
+      if (popup) {
+        popup.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Connecting to ${displayName || service}...</title>
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <style>
+                body {
+                  margin: 0;
+                  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                  background: #09090b;
+                  color: #fafafa;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  height: 100vh;
+                }
+                .card { text-align: center; padding: 24px; max-width: 360px; }
+                .spinner {
+                  width: 34px;
+                  height: 34px;
+                  border: 3px solid rgba(255,255,255,0.12);
+                  border-top-color: #3b82f6;
+                  border-radius: 50%;
+                  animation: spin 0.8s linear infinite;
+                  margin: 0 auto 16px;
+                }
+                @keyframes spin { to { transform: rotate(360deg); } }
+                h2 { font-size: 15px; font-weight: 600; margin: 0 0 6px; }
+                p { font-size: 13px; color: #71717a; margin: 0; }
+              </style>
+            </head>
+            <body>
+              <div class="card">
+                <div class="spinner"></div>
+                <h2>Connecting to ${displayName || service}</h2>
+                <p>Opening secure authentication window...</p>
+              </div>
+            </body>
+          </html>
+        `);
+      }
+    } catch {
+      // Browser popup blocked
+    }
+
+    // 3. Setup postMessage listener from popup
+    if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+    if (messageListenerRef.current) {
+      window.removeEventListener("message", messageListenerRef.current);
+    }
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type !== "CONNECTOR_HUB_OAUTH_RESULT") return;
+
+      window.removeEventListener("message", handleMessage);
+      messageListenerRef.current = null;
+      if (pollTimerRef.current) {
+        clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+
+      if (event.data.status === "success") {
+        setOauthLoading(false);
+        try {
+          popup?.close();
+        } catch {}
+        onSuccess?.();
+        onClose();
+      } else {
+        setOauthLoading(false);
+        try {
+          popup?.close();
+        } catch {}
+        setError(event.data.error || "OAuth authorization was rejected or failed.");
+      }
+    };
+
+    messageListenerRef.current = handleMessage;
+    window.addEventListener("message", handleMessage);
+
+    // 4. Poll if user manually closes popup window
+    pollTimerRef.current = setInterval(() => {
+      if (popup && popup.closed) {
+        if (pollTimerRef.current) {
+          clearInterval(pollTimerRef.current);
+          pollTimerRef.current = null;
+        }
+        if (messageListenerRef.current) {
+          window.removeEventListener("message", messageListenerRef.current);
+          messageListenerRef.current = null;
+        }
+        setOauthLoading(false);
+      }
+    }, 600);
+
+    // 5. Fetch authorization URL with returnUri pointing to /oauth/callback
     try {
       const returnUri =
         typeof window !== "undefined"
-          ? `${window.location.origin}/connections`
+          ? `${window.location.origin}/oauth/callback`
           : "";
       const res = await fetchApi<{ data: { authorization_url: string } }>(
         `/api/oauth/${service}/authorize?connectionName=${encodeURIComponent(
           connectionName.trim() || "default"
         )}&redirectUri=${encodeURIComponent(returnUri)}&mode=${mode}`
       );
+
       if (res.data?.authorization_url) {
-        window.location.href = res.data.authorization_url;
+        if (popup && !popup.closed) {
+          popup.location.href = res.data.authorization_url;
+        } else {
+          // If popup was blocked or closed immediately, fall back to current tab
+          window.location.href = res.data.authorization_url;
+        }
       } else {
+        try {
+          popup?.close();
+        } catch {}
         throw new Error("Authorization URL could not be generated.");
       }
     } catch (err: any) {
+      try {
+        popup?.close();
+      } catch {}
+      if (messageListenerRef.current) {
+        window.removeEventListener("message", messageListenerRef.current);
+        messageListenerRef.current = null;
+      }
+      if (pollTimerRef.current) {
+        clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
       setError(err.message || "Failed to start OAuth flow.");
       setOauthLoading(false);
     }
@@ -277,6 +429,27 @@ export function ConnectModal({
               <div className="font-semibold">Validation Failed</div>
               <div className="mt-0.5">{error}</div>
             </div>
+          </div>
+        )}
+
+        {oauthLoading && (
+          <div className="p-3 text-xs text-blue-900 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <Loader2 size={14} className="animate-spin text-blue-600 shrink-0" />
+              <span>Authenticating with {displayName} in popup window...</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  popupRef.current?.close();
+                } catch {}
+                setOauthLoading(false);
+              }}
+              className="text-[11px] underline text-blue-700 hover:text-blue-900 font-medium cursor-pointer"
+            >
+              Cancel
+            </button>
           </div>
         )}
 

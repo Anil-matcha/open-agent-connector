@@ -64,6 +64,30 @@ export default function ConnectionsPage() {
 
   useEffect(() => {
     loadConnections();
+
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const status = params.get("status");
+      const service = params.get("service");
+      const connectionName = params.get("connectionName");
+      const error = params.get("error");
+
+      if (status === "connected") {
+        setTestFeedback({
+          id: "oauth_success",
+          success: true,
+          message: `Successfully connected ${service || "provider"}${connectionName ? ` (${connectionName})` : ""}! Credentials validated and live.`,
+        });
+        window.history.replaceState({}, "", window.location.pathname);
+      } else if (status === "error" || error) {
+        setTestFeedback({
+          id: "oauth_error",
+          success: false,
+          message: error || "OAuth authorization failed.",
+        });
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    }
   }, []);
 
   async function handleTest(conn: ConnectionItem) {

@@ -35,6 +35,7 @@ export default function ProvidersPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
   const [connectModalData, setConnectModalData] = useState<ProviderItem | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   async function loadData() {
     try {
@@ -110,7 +111,22 @@ export default function ProvidersPage() {
           description="Browse available services and configure authenticated credentials."
         />
 
-        <main className="flex-1 overflow-y-auto min-h-0 p-3.5 sm:p-6">
+        <main className="flex-1 overflow-y-auto min-h-0 p-3.5 sm:p-6 flex flex-col gap-4">
+          {successMessage && (
+            <div className="p-3 text-xs rounded-lg border bg-emerald-50 border-emerald-200 text-emerald-800 flex items-center justify-between shadow-xs animate-fadeIn">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                <span className="font-medium">{successMessage}</span>
+              </div>
+              <button
+                onClick={() => setSuccessMessage(null)}
+                className="text-[11px] underline opacity-70 hover:opacity-100 cursor-pointer"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
           <div className="bg-white border border-zinc-200 rounded-xl p-4 sm:p-6 flex flex-col gap-4 shadow-xs">
             {/* Top Bar: Title & Search */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -247,7 +263,12 @@ export default function ProvidersPage() {
               displayName={connectModalData.displayName}
               authTypes={connectModalData.authTypes}
               authConfigs={connectModalData.authConfigs}
-              onSuccess={loadData}
+              onSuccess={() => {
+                const name = connectModalData.displayName;
+                loadData();
+                setSuccessMessage(`Successfully connected ${name}! Connection is now active.`);
+                setTimeout(() => setSuccessMessage(null), 5000);
+              }}
             />
           )}
         </main>
