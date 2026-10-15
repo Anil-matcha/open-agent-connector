@@ -998,6 +998,8 @@ class OAuthService:
             params["token_access_type"] = "offline"
         elif service == "reddit":
             params["duration"] = "permanent"
+        elif service == "notion":
+            params["owner"] = "user"
 
         auth_url_base = provider_meta['authorize_url']
         subdomain = (config or {}).get("subdomain") or (config or {}).get("shopDomain") or (config or {}).get("shop") or ""
