@@ -374,6 +374,7 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "display_name": "Pipedrive",
         "authorize_url": "https://oauth.pipedrive.com/oauth/authorize",
         "token_url": "https://oauth.pipedrive.com/oauth/token",
+        "token_auth_method": "basic",
         "default_scopes": ["deals:full", "contacts:full", "activities:full"],
     },
     "digital_ocean": {
@@ -1143,7 +1144,19 @@ class OAuthService:
             if not provider:
                 raise ValueError(f"Provider registry entry missing for '{service}'.")
 
-            profile = await provider.validate_credentials({"accessToken": access_token}, client)
+            val_payload = {
+                "accessToken": access_token,
+                "refreshToken": refresh_token,
+                "tokenType": token_data.get("token_type", "Bearer"),
+                "authType": "oauth2",
+                "authMode": auth_mode
+            }
+            if "api_domain" in token_data:
+                val_payload["apiDomain"] = token_data["api_domain"]
+            if "domain" in token_data:
+                val_payload["domain"] = token_data["domain"]
+
+            profile = await provider.validate_credentials(val_payload, client)
 
             # Build credential record
             credential_dict = {
@@ -1153,6 +1166,8 @@ class OAuthService:
                 "scope": token_data.get("scope", ""),
                 "authMode": auth_mode
             }
+            if "api_domain" in token_data:
+                credential_dict["apiDomain"] = token_data["api_domain"]
 
             # Merge provider-specific metadata (e.g. Mailchimp dc, serverPrefix, apiEndpoint)
             if isinstance(profile.get("metadata"), dict):

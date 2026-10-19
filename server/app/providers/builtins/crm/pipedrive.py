@@ -43,14 +43,29 @@ PIPEDRIVE_ENDPOINT_MAP = {
     "pipedrive.update_person": ("PUT", "/persons/{id}"),
 }
 
-def _pipedrive_headers(token: str) -> Dict[str, str]:
-    return {
-        "Authorization": f"Bearer {token}",
-        "x-api-token": token,
+def _pipedrive_headers(credential_or_token: Any) -> Dict[str, str]:
+    if isinstance(credential_or_token, dict):
+        token = _extract_token(credential_or_token)
+        is_oauth = bool(
+            credential_or_token.get("accessToken")
+            or credential_or_token.get("authType") == "oauth2"
+            or credential_or_token.get("tokenType")
+            or len(token) > 45
+        )
+    else:
+        token = str(credential_or_token).strip()
+        is_oauth = len(token) > 45
+
+    headers = {
         "Accept": "application/json",
         "Content-Type": "application/json",
         "User-Agent": "ConnectorHub/1.0"
     }
+    if is_oauth:
+        headers["Authorization"] = f"Bearer {token}"
+    else:
+        headers["x-api-token"] = token
+    return headers
 
 def _extract_token(credential: Optional[Dict[str, Any]]) -> str:
     token = (credential or {}).get("apiKey") or (credential or {}).get("accessToken") or (credential or {}).get("token")
@@ -78,7 +93,7 @@ class PipedriveDynamicAction(Action):
     async def execute(self, input_data: Dict[str, Any], credential: Optional[Dict[str, Any]], client: httpx.AsyncClient) -> Dict[str, Any]:
         token = _extract_token(credential)
         inputs = dict(input_data or {})
-        headers = _pipedrive_headers(token)
+        headers = _pipedrive_headers(credential or token)
 
         path = self.endpoint_template
         for var in ["id", "dealId", "personId", "organizationId", "activityId", "pipelineId", "stageId"]:
@@ -91,7 +106,10 @@ class PipedriveDynamicAction(Action):
                 val = inputs.pop(var)
                 path = path.replace("{id}", urllib.parse.quote(str(val), safe=""))
 
-        url = f"{PIPEDRIVE_API_BASE}{path}"
+        # Support company-specific api_domain if available (required for OAuth calls)
+        api_domain = (credential or {}).get("apiDomain") or (credential or {}).get("api_domain")
+        base_url = f"{str(api_domain).rstrip('/')}/api/v1" if api_domain else PIPEDRIVE_API_BASE
+        url = f"{base_url}{path}"
         assert_public_url(url)
 
         req_method = self.method
@@ -168,10 +186,12 @@ class PipedriveProvider(Provider):
             self.register_action(PipedriveDynamicAction(meta))
 
     async def validate_credentials(self, credential: Dict[str, Any], client: httpx.AsyncClient) -> Dict[str, Any]:
-        """Validate Pipedrive API Token by querying GET /users/me."""
+        """Validate Pipedrive API Token or OAuth access token by querying GET /users/me."""
         token = _extract_token(credential)
-        headers = _pipedrive_headers(token)
-        url = f"{PIPEDRIVE_API_BASE}/users/me"
+        headers = _pipedrive_headers(credential)
+        
+        api_domain = credential.get("apiDomain") or credential.get("api_domain")
+        url = f"{str(api_domain).rstrip('/')}/api/v1/users/me" if api_domain else f"{PIPEDRIVE_API_BASE}/users/me"
         assert_public_url(url)
 
         try:
@@ -180,12 +200,18 @@ class PipedriveProvider(Provider):
             raise ValueError(f"Unable to reach Pipedrive API: {str(e)}")
 
         if resp.status_code in (401, 403):
-            raise ValueError("Invalid Pipedrive API token. Pipedrive returned Unauthorized.")
+            raise ValueError(f"Invalid Pipedrive credentials: {resp.status_code} Unauthorized.")
         elif resp.status_code != 200:
             raise ValueError(f"Pipedrive credential validation failed with status {resp.status_code}: {resp.text[:300]}")
 
         body = resp.json() if isinstance(resp.text, str) and resp.text.startswith("{") else {}
         user_data = body.get("data", {})
+        
+        company_domain = user_data.get("company_domain")
+        resolved_api_domain = api_domain
+        if not resolved_api_domain and company_domain:
+            resolved_api_domain = company_domain if str(company_domain).startswith("http") else f"https://{company_domain}.pipedrive.com"
+
         return {
             "valid": True,
             "accountId": str(user_data.get("id", "pipedrive_user")),
@@ -193,6 +219,9 @@ class PipedriveProvider(Provider):
             "metadata": {
                 "validationEndpoint": "/users/me",
                 "email": user_data.get("email"),
-                "companyName": user_data.get("company_name")
+                "companyName": user_data.get("company_name"),
+                "companyId": user_data.get("company_id"),
+                "companyDomain": company_domain,
+                "apiDomain": resolved_api_domain
             }
         }
