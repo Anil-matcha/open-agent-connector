@@ -728,8 +728,19 @@ class CalProvider(Provider):
         elif resp.status_code >= 400:
             raise ValueError(f"Cal.com validation failed: {resp.status_code} {resp.text}")
 
+        body = resp.json() if isinstance(resp.text, str) and resp.text.startswith("{") else {}
+        user_data = body.get("data", {}) if isinstance(body.get("data"), dict) else body
         token = _extract_token(cred)
+        account_id = str(user_data.get("id") or user_data.get("username") or (token[:8] + "..." if token else "verified"))
+        display_name = user_data.get("name") or user_data.get("username") or user_data.get("email") or "Cal.com Account"
         return {
-            "account_id": token[:8] + "..." if token else "verified",
-            "display_name": f"Cal.com Account"
+            "valid": True,
+            "accountId": account_id,
+            "displayName": display_name,
+            "metadata": {
+                "email": user_data.get("email"),
+                "username": user_data.get("username"),
+                "name": user_data.get("name"),
+                "timeZone": user_data.get("timeZone")
+            }
         }
