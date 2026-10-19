@@ -579,8 +579,19 @@ class CalendlyProvider(Provider):
         elif resp.status_code >= 400:
             raise ValueError(f"Calendly validation failed: {resp.status_code} {resp.text}")
 
+        body = resp.json() if isinstance(resp.text, str) and resp.text.startswith("{") else {}
+        resource = body.get("resource", {}) if isinstance(body, dict) else {}
         token = _extract_token(cred)
+        account_id = resource.get("uri", "").split("/")[-1] or (token[:8] + "..." if token else "verified")
+        display_name = resource.get("name") or resource.get("email") or "Calendly Account"
         return {
-            "account_id": token[:8] + "..." if token else "verified",
-            "display_name": f"Calendly Account"
+            "valid": True,
+            "accountId": account_id,
+            "displayName": display_name,
+            "metadata": {
+                "email": resource.get("email"),
+                "name": resource.get("name"),
+                "uri": resource.get("uri"),
+                "currentOrganization": resource.get("current_organization")
+            }
         }
