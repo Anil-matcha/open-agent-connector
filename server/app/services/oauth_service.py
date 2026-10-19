@@ -694,6 +694,69 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "token_url": "https://oauth2.googleapis.com/token",
         "token_auth_method": "body",
         "default_scopes": ["https://www.googleapis.com/auth/bigquery"],
+    },
+    "instagram": {
+        "display_name": "Instagram",
+        "authorize_url": "https://api.instagram.com/oauth/authorize",
+        "token_url": "https://api.instagram.com/oauth/access_token",
+        "token_auth_method": "body",
+        "default_scopes": [
+            "instagram_business_basic",
+            "instagram_business_manage_comments",
+            "instagram_business_content_publish",
+            "instagram_business_manage_messages"
+        ],
+    },
+    "netlify": {
+        "display_name": "Netlify",
+        "authorize_url": "https://app.netlify.com/authorize",
+        "token_url": "https://api.netlify.com/oauth/token",
+        "token_auth_method": "body",
+        "default_scopes": [],
+    },
+    "ticktick": {
+        "display_name": "TickTick",
+        "authorize_url": "https://ticktick.com/oauth/authorize",
+        "token_url": "https://ticktick.com/oauth/token",
+        "token_auth_method": "basic",
+        "default_scopes": ["tasks:read", "tasks:write"],
+    },
+    "googleslides": {
+        "display_name": "Google Slides",
+        "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth",
+        "token_url": "https://oauth2.googleapis.com/token",
+        "token_auth_method": "body",
+        "default_scopes": [
+            "https://www.googleapis.com/auth/presentations",
+            "https://www.googleapis.com/auth/drive.readonly"
+        ],
+    },
+    "google_search_console": {
+        "display_name": "Google Search Console",
+        "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth",
+        "token_url": "https://oauth2.googleapis.com/token",
+        "token_auth_method": "body",
+        "default_scopes": ["https://www.googleapis.com/auth/webmasters.readonly"],
+    },
+    "harvest": {
+        "display_name": "Harvest",
+        "authorize_url": "https://id.getharvest.com/oauth2/authorize",
+        "token_url": "https://id.getharvest.com/api/v2/oauth2/token",
+        "token_auth_method": "body",
+        "default_scopes": [],
+    },
+    "confluence": {
+        "display_name": "Confluence",
+        "authorize_url": "https://auth.atlassian.com/authorize",
+        "token_url": "https://auth.atlassian.com/oauth/token",
+        "token_auth_method": "body",
+        "default_scopes": [
+            "read:page:confluence",
+            "write:page:confluence",
+            "read:space:confluence",
+            "search:confluence",
+            "offline_access"
+        ],
     }
 }
 

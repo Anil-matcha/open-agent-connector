@@ -10,6 +10,8 @@ from app.providers.builtins.google.google_forms import GoogleFormsProvider
 from app.providers.builtins.google.google_photos import GooglePhotosProvider
 from app.providers.builtins.google.youtube import YouTubeProvider
 from app.providers.builtins.google.google_analytics import GoogleAnalyticsProvider
+from app.providers.builtins.google.google_slides import GoogleSlidesProvider
+from app.providers.builtins.google.google_search_console import GoogleSearchConsoleProvider
 
 __all__ = [
     "GmailProvider",
@@ -24,4 +26,6 @@ __all__ = [
     "GooglePhotosProvider",
     "YouTubeProvider",
     "GoogleAnalyticsProvider",
+    "GoogleSlidesProvider",
+    "GoogleSearchConsoleProvider",
 ]

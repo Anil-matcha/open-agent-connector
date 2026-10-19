@@ -20,6 +20,7 @@ from app.providers.builtins.media.sanity import SanityProvider
 from app.providers.builtins.media.canva import CanvaProvider
 from app.providers.builtins.media.tiktok_business import TikTokBusinessProvider
 from app.providers.builtins.media.bilibili import BilibiliProvider
+from app.providers.builtins.media.instagram import InstagramProvider
 
 __all__ = [
     "DiscordProvider",
@@ -41,6 +42,7 @@ __all__ = [
     "CanvaProvider",
     "TikTokBusinessProvider",
     "BilibiliProvider",
+    "InstagramProvider",
 ]
 
 

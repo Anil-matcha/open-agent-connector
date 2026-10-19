@@ -15,6 +15,8 @@ from app.providers.builtins.google import (
     GooglePhotosProvider,
     YouTubeProvider,
     GoogleAnalyticsProvider,
+    GoogleSlidesProvider,
+    GoogleSearchConsoleProvider,
 )
 
 # Microsoft Ecosystem Providers
@@ -118,6 +120,7 @@ from app.providers.builtins.developer import (
     MakeProvider,
     PipedreamProvider,
     AgentyProvider,
+    NetlifyProvider,
 )
 
 # Project Management & Issue Tracking Providers
@@ -155,6 +158,9 @@ from app.providers.builtins.project_management import (
     EsaProvider,
     ApaleoProvider,
     MymindProvider,
+    TickTickProvider,
+    HarvestProvider,
+    ConfluenceProvider,
 )
 
 # AI & LLM Services Providers
@@ -269,6 +275,7 @@ from app.providers.builtins.media import (
     CanvaProvider,
     TikTokBusinessProvider,
     BilibiliProvider,
+    InstagramProvider,
 )
 
 # Utility Providers
@@ -582,6 +589,15 @@ class ProviderRegistry:
         self.register(ChatarminProvider())
         self.register(GetnoteProvider())
         self.register(BloomerangProvider())
+
+        # 13. Public SaaS & OAuth Expansion Cohort 3
+        self.register(InstagramProvider())
+        self.register(NetlifyProvider())
+        self.register(TickTickProvider())
+        self.register(GoogleSlidesProvider())
+        self.register(GoogleSearchConsoleProvider())
+        self.register(HarvestProvider())
+        self.register(ConfluenceProvider())
 
     def register(self, provider: Provider):
         self._providers[provider.service] = provider

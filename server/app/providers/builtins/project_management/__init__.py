@@ -35,6 +35,9 @@ from app.providers.builtins.project_management.jotform import JotformProvider
 from app.providers.builtins.project_management.esa import EsaProvider
 from app.providers.builtins.project_management.apaleo import ApaleoProvider
 from app.providers.builtins.project_management.mymind import MymindProvider
+from app.providers.builtins.project_management.ticktick import TickTickProvider
+from app.providers.builtins.project_management.harvest import HarvestProvider
+from app.providers.builtins.project_management.confluence import ConfluenceProvider
 
 
 __all__ = [
@@ -71,6 +74,9 @@ __all__ = [
     "EsaProvider",
     "ApaleoProvider",
     "MymindProvider",
+    "TickTickProvider",
+    "HarvestProvider",
+    "ConfluenceProvider",
 ]
 
 

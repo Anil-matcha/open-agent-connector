@@ -48,6 +48,7 @@ from app.providers.builtins.developer.cloudflare_dns import CloudflareDnsProvide
 from app.providers.builtins.developer.make import MakeProvider
 from app.providers.builtins.developer.pipedream import PipedreamProvider
 from app.providers.builtins.developer.agenty import AgentyProvider
+from app.providers.builtins.developer.netlify import NetlifyProvider
 
 __all__ = [
     "GitHubProvider",
@@ -100,5 +101,6 @@ __all__ = [
     "MakeProvider",
     "PipedreamProvider",
     "AgentyProvider",
+    "NetlifyProvider",
 ]
 
