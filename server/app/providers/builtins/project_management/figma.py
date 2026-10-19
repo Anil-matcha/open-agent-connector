@@ -50,8 +50,11 @@ def _build_headers(credential: Optional[Dict[str, Any]]) -> Dict[str, str]:
             headers["Authorization"] = f"Bearer {rt}"
     elif auth_mode == "figma_token":
         if token:
-            if str(token).startswith("figd_") or not str(token).startswith("ey"):
+            if cred.get("accessToken") or cred.get("authType") == "oauth2":
+                headers["Authorization"] = f"Bearer {token}"
+            elif str(token).startswith("figd_") or not str(token).startswith("ey"):
                 headers["X-Figma-Token"] = token
+                headers["Authorization"] = f"Bearer {token}"
             else:
                 headers["Authorization"] = f"Bearer {token}"
     elif auth_mode == "wordpress_auth":
@@ -455,8 +458,17 @@ class FigmaProvider(Provider):
         elif resp.status_code >= 400:
             raise ValueError(f"Figma validation failed: {resp.status_code} {resp.text}")
 
+        body = resp.json() if isinstance(resp.text, str) and resp.text.startswith("{") else {}
         token = _extract_token(cred)
+        account_id = str(body.get("id") or (token[:8] + "..." if token else "verified"))
+        display_name = body.get("handle") or body.get("email") or "Figma Account"
         return {
-            "account_id": token[:8] + "..." if token else "verified",
-            "display_name": f"Figma Account"
+            "valid": True,
+            "accountId": account_id,
+            "displayName": display_name,
+            "metadata": {
+                "email": body.get("email"),
+                "handle": body.get("handle"),
+                "img_url": body.get("img_url")
+            }
         }
