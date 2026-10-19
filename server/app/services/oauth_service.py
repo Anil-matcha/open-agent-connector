@@ -694,27 +694,6 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "token_url": "https://oauth2.googleapis.com/token",
         "token_auth_method": "body",
         "default_scopes": ["https://www.googleapis.com/auth/bigquery"],
-    },
-    "instagram": {
-        "display_name": "Instagram",
-        "authorize_url": "https://api.instagram.com/oauth/authorize",
-        "token_url": "https://api.instagram.com/oauth/access_token",
-        "token_auth_method": "body",
-        "default_scopes": ["user_profile", "user_media"],
-    },
-    "netlify": {
-        "display_name": "Netlify",
-        "authorize_url": "https://app.netlify.com/authorize",
-        "token_url": "https://api.netlify.com/oauth/token",
-        "token_auth_method": "body",
-        "default_scopes": [],
-    },
-    "ticktick": {
-        "display_name": "TickTick",
-        "authorize_url": "https://ticktick.com/oauth/authorize",
-        "token_url": "https://ticktick.com/oauth/token",
-        "token_auth_method": "basic",
-        "default_scopes": ["tasks:read", "tasks:write"],
     }
 }
 
