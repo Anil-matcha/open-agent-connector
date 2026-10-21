@@ -113,7 +113,7 @@ class LemonSqueezyProvider(Provider):
             service="lemon_squeezy",
             display_name="Lemon Squeezy",
             category="Finance",
-            auth_types=["api_key", "oauth2"],
+            auth_types=["api_key"],
             description="Merchant of record for SaaS and digital creators: Checkout, Payments, Subscriptions, Global Tax compliance, and Invoicing.",
             homepage_url="https://www.lemonsqueezy.com",
             base_url=LEMON_SQUEEZY_API_BASE,

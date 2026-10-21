@@ -364,12 +364,6 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "token_url": "https://api-m.paypal.com/v1/oauth2/token",
         "default_scopes": ["openid", "profile", "email"],
     },
-    "lemon_squeezy": {
-        "display_name": "Lemon Squeezy",
-        "authorize_url": "https://app.lemonsqueezy.com/oauth/authorize",
-        "token_url": "https://api.lemonsqueezy.com/oauth/token",
-        "default_scopes": [],
-    },
     "pipedrive": {
         "display_name": "Pipedrive",
         "authorize_url": "https://oauth.pipedrive.com/oauth/authorize",
@@ -868,8 +862,6 @@ class OAuthService:
             candidates.extend(["PAYPAL"])
         elif s_lower == "shopify":
             candidates.extend(["SHOPIFY"])
-        elif s_lower == "lemon_squeezy":
-            candidates.extend(["LEMON_SQUEEZY", "LEMONSQUEEZY"])
         elif s_lower == "square":
             candidates.extend(["SQUARE"])
         elif s_lower == "coda":
