@@ -588,7 +588,16 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "display_name": "Webflow",
         "authorize_url": "https://webflow.com/oauth/authorize",
         "token_url": "https://api.webflow.com/oauth/access_token",
-        "default_scopes": ["sites:read", "sites:write", "cms:read", "cms:write"],
+        "pkce": False,
+        "default_scopes": [
+            "sites:read",
+            "sites:write",
+            "cms:read",
+            "cms:write",
+            "pages:read",
+            "forms:read",
+            "assets:read"
+        ],
     },
     "helpscout": {
         "display_name": "Help Scout",
@@ -878,6 +887,8 @@ class OAuthService:
             candidates.extend(["DROPBOX"])
         elif s_lower == "box":
             candidates.extend(["BOX"])
+        elif s_lower == "webflow":
+            candidates.extend(["WEBFLOW"])
         elif s_lower in ("survey_monkey", "surveymonkey"):
             candidates.extend(["SURVEY_MONKEY", "SURVEYMONKEY"])
         elif s_lower == "pandadoc":
@@ -1244,6 +1255,8 @@ class OAuthService:
         if service == "notion":
             token_headers["Content-Type"] = "application/json"
             token_headers["Notion-Version"] = "2022-06-28"
+        elif service == "webflow":
+            token_headers["Content-Type"] = "application/json"
 
         use_json = token_headers.get("Content-Type") == "application/json"
         client = await create_guarded_client()

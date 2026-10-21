@@ -321,7 +321,21 @@ class WebflowProvider(Provider):
             raise ValueError(f"Webflow validation failed: {resp.status_code} {resp.text}")
 
         token = _extract_token(cred)
+        account_id = token[:8] + "..." if token else "verified"
+        display_name = "Webflow Account"
+        try:
+            body = resp.json()
+            sites = body.get("sites", [])
+            if sites and isinstance(sites, list) and len(sites) > 0:
+                site_name = sites[0].get("displayName") or sites[0].get("name")
+                if site_name:
+                    display_name = f"Webflow ({site_name})"
+                if sites[0].get("id"):
+                    account_id = str(sites[0]["id"])
+        except Exception:
+            pass
+
         return {
-            "account_id": token[:8] + "..." if token else "verified",
-            "display_name": f"Webflow Account"
+            "account_id": account_id,
+            "display_name": display_name
         }
