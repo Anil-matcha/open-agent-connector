@@ -49,6 +49,7 @@ from app.providers.builtins.developer.make import MakeProvider
 from app.providers.builtins.developer.pipedream import PipedreamProvider
 from app.providers.builtins.developer.agenty import AgentyProvider
 from app.providers.builtins.developer.netlify import NetlifyProvider
+from app.providers.builtins.developer.google_maps import GoogleMapsProvider
 
 __all__ = [
     "GitHubProvider",
@@ -102,5 +103,6 @@ __all__ = [
     "PipedreamProvider",
     "AgentyProvider",
     "NetlifyProvider",
+    "GoogleMapsProvider",
 ]
 

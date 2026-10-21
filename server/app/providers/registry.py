@@ -121,6 +121,7 @@ from app.providers.builtins.developer import (
     PipedreamProvider,
     AgentyProvider,
     NetlifyProvider,
+    GoogleMapsProvider,
 )
 
 # Project Management & Issue Tracking Providers
@@ -161,6 +162,8 @@ from app.providers.builtins.project_management import (
     TickTickProvider,
     HarvestProvider,
     ConfluenceProvider,
+    ClockifyProvider,
+    ShortcutProvider,
 )
 
 # AI & LLM Services Providers
@@ -224,6 +227,7 @@ from app.providers.builtins.crm import (
     PlausibleAnalyticsProvider,
     LivespaceProvider,
     BloomerangProvider,
+    HunterProvider,
 )
 
 # Payments & E-Commerce Providers
@@ -302,6 +306,7 @@ from app.providers.builtins.utility import (
     BitlyProvider,
     HotjarProvider,
     NasaProvider,
+    OpenWeatherProvider,
 )
 
 class ProviderRegistry:
@@ -598,6 +603,13 @@ class ProviderRegistry:
         self.register(GoogleSearchConsoleProvider())
         self.register(HarvestProvider())
         self.register(ConfluenceProvider())
+
+        # 14. High-Priority SaaS Cohort 4
+        self.register(ClockifyProvider())
+        self.register(ShortcutProvider())
+        self.register(HunterProvider())
+        self.register(GoogleMapsProvider())
+        self.register(OpenWeatherProvider())
 
     def register(self, provider: Provider):
         self._providers[provider.service] = provider

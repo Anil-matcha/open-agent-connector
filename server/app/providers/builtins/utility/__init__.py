@@ -20,6 +20,7 @@ from app.providers.builtins.utility.mapbox import MapboxProvider
 from app.providers.builtins.utility.bitly import BitlyProvider
 from app.providers.builtins.utility.hotjar import HotjarProvider
 from app.providers.builtins.utility.nasa import NasaProvider
+from app.providers.builtins.utility.openweather import OpenWeatherProvider
 
 __all__ = [
     "CustomHttpProvider",
@@ -44,5 +45,6 @@ __all__ = [
     "BitlyProvider",
     "HotjarProvider",
     "NasaProvider",
+    "OpenWeatherProvider",
 ]
 

@@ -38,6 +38,8 @@ from app.providers.builtins.project_management.mymind import MymindProvider
 from app.providers.builtins.project_management.ticktick import TickTickProvider
 from app.providers.builtins.project_management.harvest import HarvestProvider
 from app.providers.builtins.project_management.confluence import ConfluenceProvider
+from app.providers.builtins.project_management.clockify import ClockifyProvider
+from app.providers.builtins.project_management.shortcut import ShortcutProvider
 
 
 __all__ = [
@@ -77,6 +79,8 @@ __all__ = [
     "TickTickProvider",
     "HarvestProvider",
     "ConfluenceProvider",
+    "ClockifyProvider",
+    "ShortcutProvider",
 ]
 
 

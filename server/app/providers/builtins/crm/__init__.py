@@ -29,6 +29,7 @@ from app.providers.builtins.crm.amplitude import AmplitudeProvider
 from app.providers.builtins.crm.plausible_analytics import PlausibleAnalyticsProvider
 from app.providers.builtins.crm.livespace import LivespaceProvider
 from app.providers.builtins.crm.bloomerang import BloomerangProvider
+from app.providers.builtins.crm.hunter import HunterProvider
 
 __all__ = [
     "HubSpotProvider",
@@ -58,5 +59,6 @@ __all__ = [
     "PlausibleAnalyticsProvider",
     "LivespaceProvider",
     "BloomerangProvider",
+    "HunterProvider",
 ]
 
