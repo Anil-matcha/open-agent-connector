@@ -201,7 +201,9 @@ class HubSpotProvider(Provider):
         body = resp.json() if isinstance(resp.text, str) and resp.text.startswith("{") else {}
         return {
             "valid": True,
+            "account_id": "hubspot_account",
             "accountId": "hubspot_account",
+            "display_name": "HubSpot Portal",
             "displayName": "HubSpot Portal",
             "metadata": {
                 "validationEndpoint": "/crm/v3/objects/contacts",
