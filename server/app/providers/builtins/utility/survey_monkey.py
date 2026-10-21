@@ -339,13 +339,38 @@ class SurveyMonkeyProvider(Provider):
             params=params if params else None
         )
 
+        # Fallback to /v3/surveys?per_page=1 if /v3/users/me returned 403 (e.g. users_read scope omitted)
+        if resp.status_code == 403:
+            fallback_url = "https://api.surveymonkey.com/v3/surveys?per_page=1"
+            assert_public_url(fallback_url)
+            try:
+                resp = await execute_guarded_request(
+                    client=client,
+                    method="GET",
+                    url=fallback_url,
+                    headers=headers
+                )
+            except Exception:
+                pass
+
         if resp.status_code in [401, 403]:
             raise ValueError(f"Invalid SurveyMonkey credentials: {resp.status_code} {resp.text}")
         elif resp.status_code >= 400:
             raise ValueError(f"SurveyMonkey validation failed: {resp.status_code} {resp.text}")
 
         token = _extract_token(cred)
+        account_id = token[:8] + "..." if token else "verified"
+        display_name = "SurveyMonkey Account"
+        try:
+            body = resp.json()
+            if "username" in body or "email" in body:
+                display_name = f"SurveyMonkey ({body.get('username') or body.get('email')})"
+            if "id" in body:
+                account_id = str(body["id"])
+        except Exception:
+            pass
+
         return {
-            "account_id": token[:8] + "..." if token else "verified",
-            "display_name": f"SurveyMonkey Account"
+            "account_id": account_id,
+            "display_name": display_name
         }

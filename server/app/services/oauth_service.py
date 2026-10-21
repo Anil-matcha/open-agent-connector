@@ -506,7 +506,33 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "display_name": "SurveyMonkey",
         "authorize_url": "https://api.surveymonkey.com/oauth/authorize",
         "token_url": "https://api.surveymonkey.com/oauth/token",
-        "default_scopes": ["surveys_read", "responses_read_detail"],
+        "default_scopes": [
+            "users_read",
+            "surveys_read",
+            "surveys_write",
+            "responses_read",
+            "responses_read_detail",
+            "collectors_read",
+            "collectors_write",
+            "contacts_read",
+            "contacts_write"
+        ],
+    },
+    "surveymonkey": {
+        "display_name": "SurveyMonkey",
+        "authorize_url": "https://api.surveymonkey.com/oauth/authorize",
+        "token_url": "https://api.surveymonkey.com/oauth/token",
+        "default_scopes": [
+            "users_read",
+            "surveys_read",
+            "surveys_write",
+            "responses_read",
+            "responses_read_detail",
+            "collectors_read",
+            "collectors_write",
+            "contacts_read",
+            "contacts_write"
+        ],
     },
     "typeform": {
         "display_name": "Typeform",
