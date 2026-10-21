@@ -506,6 +506,7 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "display_name": "SurveyMonkey",
         "authorize_url": "https://api.surveymonkey.com/oauth/authorize",
         "token_url": "https://api.surveymonkey.com/oauth/token",
+        "pkce": False,
         "default_scopes": [
             "users_read",
             "surveys_read",
@@ -522,6 +523,7 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "display_name": "SurveyMonkey",
         "authorize_url": "https://api.surveymonkey.com/oauth/authorize",
         "token_url": "https://api.surveymonkey.com/oauth/token",
+        "pkce": False,
         "default_scopes": [
             "users_read",
             "surveys_read",
@@ -1128,15 +1130,17 @@ class OAuthService:
         if service == "zoom":
             scope_str = ""
 
+        use_pkce = provider_meta.get("pkce", True)
         callback_uri = OAuthService.callback_url(service)
         params = {
             "client_id": client_id,
             "response_type": "code",
             "state": state,
-            "code_challenge": code_challenge,
-            "code_challenge_method": "S256",
             "redirect_uri": callback_uri
         }
+        if use_pkce:
+            params["code_challenge"] = code_challenge
+            params["code_challenge_method"] = "S256"
         if scope_str:
             params["scope"] = scope_str
 
@@ -1233,7 +1237,7 @@ class OAuthService:
             "code": code,
             "grant_type": "authorization_code"
         }
-        if code_verifier:
+        if code_verifier and provider_meta.get("pkce", True):
             token_payload["code_verifier"] = code_verifier
         token_payload["redirect_uri"] = OAuthService.callback_url(service)
 
