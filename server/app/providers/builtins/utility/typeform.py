@@ -247,13 +247,38 @@ class TypeformProvider(Provider):
             params=params if params else None
         )
 
+        # Fallback to /forms?page_size=1 if /me returned 403 (e.g. accounts:read scope was omitted)
+        if resp.status_code == 403:
+            fallback_url = "https://api.typeform.com/forms?page_size=1"
+            assert_public_url(fallback_url)
+            try:
+                resp = await execute_guarded_request(
+                    client=client,
+                    method="GET",
+                    url=fallback_url,
+                    headers=headers
+                )
+            except Exception:
+                pass
+
         if resp.status_code in [401, 403]:
             raise ValueError(f"Invalid Typeform credentials: {resp.status_code} {resp.text}")
         elif resp.status_code >= 400:
             raise ValueError(f"Typeform validation failed: {resp.status_code} {resp.text}")
 
         token = _extract_token(cred)
+        display_name = "Typeform Account"
+        account_id = token[:8] + "..." if token else "verified"
+        try:
+            body = resp.json()
+            if "alias" in body or "email" in body:
+                display_name = f"Typeform ({body.get('alias') or body.get('email')})"
+            if "user_id" in body:
+                account_id = str(body["user_id"])
+        except Exception:
+            pass
+
         return {
-            "account_id": token[:8] + "..." if token else "verified",
-            "display_name": f"Typeform Account"
+            "account_id": account_id,
+            "display_name": display_name
         }

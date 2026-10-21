@@ -512,7 +512,7 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "display_name": "Typeform",
         "authorize_url": "https://api.typeform.com/oauth/authorize",
         "token_url": "https://api.typeform.com/oauth/token",
-        "default_scopes": ["forms:read", "responses:read", "workspaces:read"],
+        "default_scopes": ["accounts:read", "forms:read", "responses:read", "workspaces:read", "offline"],
     },
     "workday": {
         "display_name": "Workday",
