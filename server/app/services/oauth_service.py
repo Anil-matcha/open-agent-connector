@@ -548,7 +548,7 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "authorize_url": "https://login.wrike.com/oauth2/authorize/v4",
         "token_url": "https://login.wrike.com/oauth2/token",
         "pkce": False,
-        "default_scopes": ["Default", "offline_access"],
+        "default_scopes": ["Default", "wsReadWrite"],
     },
     "smartsheet": {
         "display_name": "Smartsheet",
