@@ -488,6 +488,7 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "display_name": "Cal.com",
         "authorize_url": "https://app.cal.com/auth/oauth2/authorize",
         "token_url": "https://api.cal.com/v2/auth/oauth2/token",
+        "pkce": False,
         "default_scopes": ["BOOKING_READ", "BOOKING_WRITE", "EVENT_TYPE_READ", "SCHEDULE_READ"],
     },
     "todoist": {
@@ -582,6 +583,7 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "display_name": "WordPress",
         "authorize_url": "https://public-api.wordpress.com/oauth2/authorize",
         "token_url": "https://public-api.wordpress.com/oauth2/token",
+        "pkce": False,
         "default_scopes": [],
     },
     "webflow": {

@@ -24,12 +24,13 @@ def _extract_token(credential: Optional[Dict[str, Any]]) -> str:
 
 def _resolve_base_url(credential: Optional[Dict[str, Any]]) -> str:
     cred = credential or {}
-    base = DEFAULT_API_BASE
-    for key in ["domain", "subdomain", "host", "tenant", "restUrl", "siteUrl", "apiUrl"]:
-        if "{" + key + "}" in base:
-            val = str(cred.get(key) or "default").strip()
-            base = base.replace("{" + key + "}", val)
-    return base
+    site_url = cred.get("siteUrl") or cred.get("domain") or cred.get("apiUrl") or cred.get("restUrl") or cred.get("primary_blog_url")
+    if site_url:
+        clean = str(site_url).strip().rstrip("/")
+        if not clean.startswith("http"):
+            clean = f"https://{clean}"
+        return f"{clean}/wp-json/wp/v2"
+    return "https://public-api.wordpress.com/wp/v2"
 
 def _build_headers(credential: Optional[Dict[str, Any]]) -> Dict[str, str]:
     cred = credential or {}
@@ -426,27 +427,25 @@ class WordPressProvider(Provider):
 
     async def validate_credentials(self, credential: Dict[str, Any], client: httpx.AsyncClient) -> Dict[str, Any]:
         cred = credential or {}
-        val_url = "{siteUrl}/wp-json/wp/v2/users/me"
-        for key in ["domain", "subdomain", "host", "tenant", "restUrl", "siteUrl", "apiUrl"]:
-            if "{" + key + "}" in val_url:
-                val_url = val_url.replace("{" + key + "}", str(cred.get(key) or "default"))
+        site_url = cred.get("siteUrl") or cred.get("domain") or cred.get("apiUrl") or cred.get("restUrl") or cred.get("primary_blog_url")
+        headers = _build_headers(cred)
+        token = _extract_token(cred)
+
+        if site_url:
+            clean_url = str(site_url).strip().rstrip("/")
+            if not clean_url.startswith("http"):
+                clean_url = f"https://{clean_url}"
+            val_url = f"{clean_url}/wp-json/wp/v2/users/me"
+        else:
+            val_url = "https://public-api.wordpress.com/rest/v1.1/me"
 
         assert_public_url(val_url)
-        headers = _build_headers(cred)
-
-        params = {}
-        if "wordpress_auth" == "ghost_key":
-            token = _extract_token(cred)
-            if token:
-                params["key"] = token
-
         try:
             resp = await execute_guarded_request(
                 client=client,
                 method="GET",
                 url=val_url,
-                headers=headers,
-                params=params if params else None
+                headers=headers
             )
         except Exception as e:
             raise ValueError(f"WordPress connection error during validation: {e}")
@@ -456,8 +455,19 @@ class WordPressProvider(Provider):
         elif resp.status_code >= 400:
             raise ValueError(f"WordPress validation failed: {resp.status_code} {resp.text}")
 
-        token = _extract_token(cred)
+        user_data = resp.json() if resp.text and resp.text.startswith("{") else {}
+        account_id = str(user_data.get("ID") or user_data.get("id") or (token[:8] + "..." if token else "verified"))
+        display_name = user_data.get("display_name") or user_data.get("username") or user_data.get("name") or "WordPress Account"
+        metadata = {}
+        if user_data.get("primary_blog_url"):
+            metadata["siteUrl"] = user_data["primary_blog_url"]
+        elif user_data.get("primary_blog"):
+            metadata["siteUrl"] = f"https://public-api.wordpress.com/wp/v2/sites/{user_data['primary_blog']}"
+        if user_data.get("email"):
+            metadata["email"] = user_data["email"]
+
         return {
-            "account_id": token[:8] + "..." if token else "verified",
-            "display_name": f"WordPress Account"
+            "account_id": account_id,
+            "display_name": f"WordPress ({display_name})" if display_name != "WordPress Account" else display_name,
+            "metadata": metadata
         }
