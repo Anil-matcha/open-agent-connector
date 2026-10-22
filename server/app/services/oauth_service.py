@@ -545,9 +545,10 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
     },
     "wrike": {
         "display_name": "Wrike",
-        "authorize_url": "https://login.wrike.com/oauth2/v/tokens",
-        "token_url": "https://login.wrike.com/oauth2/v/tokens",
-        "default_scopes": ["Default,offline_access"],
+        "authorize_url": "https://login.wrike.com/oauth2/authorize/v4",
+        "token_url": "https://login.wrike.com/oauth2/token",
+        "pkce": False,
+        "default_scopes": ["Default", "offline_access"],
     },
     "smartsheet": {
         "display_name": "Smartsheet",
@@ -1136,7 +1137,7 @@ class OAuthService:
         await session.commit()
 
         scopes = custom_scopes or provider_meta.get("default_scopes", [])
-        scope_str = ",".join(scopes) if service in ("github", "slack") else " ".join(scopes)
+        scope_str = ",".join(scopes) if service in ("github", "slack", "wrike") else " ".join(scopes)
         if service == "zoom":
             scope_str = ""
 
@@ -1316,6 +1317,8 @@ class OAuthService:
                 val_payload["apiDomain"] = token_data["api_domain"]
             if "domain" in token_data:
                 val_payload["domain"] = token_data["domain"]
+            if "host" in token_data:
+                val_payload["host"] = token_data["host"]
             if subdomain:
                 val_payload["subdomain"] = subdomain
 
@@ -1331,6 +1334,8 @@ class OAuthService:
             }
             if "api_domain" in token_data:
                 credential_dict["apiDomain"] = token_data["api_domain"]
+            if "host" in token_data:
+                credential_dict["host"] = token_data["host"]
             if subdomain:
                 credential_dict["subdomain"] = subdomain
 
