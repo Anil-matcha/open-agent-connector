@@ -13,6 +13,7 @@ router = APIRouter(prefix="/oauth", tags=["Admin OAuth"])
 class OAuthConfigInput(BaseModel):
     clientId: str
     clientSecret: str
+    subdomain: Optional[str] = None
     mode: Optional[str] = "custom"
 
 @router.get("/providers")
@@ -53,6 +54,7 @@ async def get_oauth_config(
         "customConfigured": status["customConfigured"],
         "activeMode": status["activeMode"],
         "clientId": config.get("client_id") if config else None,
+        "subdomain": config.get("subdomain") if config else None,
         "callbackUrl": status["callbackUrl"],
         "hostedDomain": status["hostedDomain"],
         "publicOrigin": status["publicOrigin"],
@@ -83,7 +85,8 @@ async def set_oauth_config(
         service=service,
         client_id=payload.clientId.strip(),
         client_secret=payload.clientSecret.strip(),
-        mode=target_mode
+        mode=target_mode,
+        subdomain=payload.subdomain.strip() if payload.subdomain else None
     )
     return {
         "success": True,
@@ -96,6 +99,7 @@ async def initiate_oauth(
     service: str,
     connectionName: Optional[str] = "default",
     redirectUri: Optional[str] = None,
+    subdomain: Optional[str] = Query(None, description="Subdomain for multi-tenant services like Zendesk/Shopify"),
     mode: Optional[str] = Query(None, description="'hosted' or 'custom' (defaults to active mode)"),
     admin: Principal = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
@@ -108,6 +112,7 @@ async def initiate_oauth(
             service=service,
             connection_name=connectionName or "default",
             redirect_uri=redirectUri,
+            subdomain=subdomain,
             mode=mode
         )
         return {"success": True, "data": res}

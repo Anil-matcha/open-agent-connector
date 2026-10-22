@@ -65,6 +65,7 @@ interface OAuthMeta {
   activeMode: "hosted" | "custom" | null;
   callbackUrl?: string;
   hostedDomain?: string;
+  subdomain?: string;
 }
 
 export function ConnectModal({
@@ -93,6 +94,7 @@ export function ConnectModal({
   const [oauthTab, setOauthTab] = useState<"hosted" | "custom">("hosted");
   const [customClientId, setCustomClientId] = useState("");
   const [customClientSecret, setCustomClientSecret] = useState("");
+  const [customSubdomain, setCustomSubdomain] = useState("");
   const [customSaving, setCustomSaving] = useState(false);
   const [copiedCallback, setCopiedCallback] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -116,6 +118,9 @@ export function ConnectModal({
       fetchApi<OAuthMeta>(`/api/oauth/${service}/config`)
         .then((res) => {
           setOauthStatus(res);
+          if (res.subdomain) {
+            setCustomSubdomain(res.subdomain);
+          }
           if (res.customConfigured && !res.hostedAvailable) {
             setOauthTab("custom");
           }
@@ -263,10 +268,13 @@ export function ConnectModal({
         typeof window !== "undefined"
           ? `${window.location.origin}/oauth/callback`
           : "";
+      const subdomainQuery = customSubdomain.trim()
+        ? `&subdomain=${encodeURIComponent(customSubdomain.trim())}`
+        : "";
       const res = await fetchApi<{ data: { authorization_url: string } }>(
         `/api/oauth/${service}/authorize?connectionName=${encodeURIComponent(
           connectionName.trim() || "default"
-        )}&redirectUri=${encodeURIComponent(returnUri)}&mode=${mode}`
+        )}&redirectUri=${encodeURIComponent(returnUri)}&mode=${mode}${subdomainQuery}`
       );
 
       if (res.data?.authorization_url) {
@@ -313,6 +321,7 @@ export function ConnectModal({
         body: JSON.stringify({
           clientId: customClientId.trim(),
           clientSecret: customClientSecret.trim(),
+          subdomain: customSubdomain.trim() || undefined,
           mode: "custom",
         }),
       });
@@ -564,6 +573,26 @@ export function ConnectModal({
                   </p>
                 </div>
 
+                {(service === "zendesk" || service === "shopify") && (
+                  <div className="flex flex-col gap-1 pt-1">
+                    <label className="text-[11px] font-medium text-zinc-700">
+                      {service === "zendesk" ? "Zendesk Subdomain" : "Shopify Store Domain"}
+                    </label>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="text"
+                        value={customSubdomain}
+                        onChange={(e) => setCustomSubdomain(e.target.value)}
+                        placeholder={service === "zendesk" ? "e.g. muapihelp" : "e.g. your-store"}
+                        className="h-8 px-2.5 text-xs font-mono bg-white border border-zinc-200 rounded-md focus:outline-none focus:ring-1 focus:ring-zinc-400 text-zinc-900 placeholder:text-zinc-400 flex-1"
+                      />
+                      <span className="text-xs text-zinc-500 font-mono">
+                        {service === "zendesk" ? ".zendesk.com" : ".myshopify.com"}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 <Button
                   type="button"
                   variant="primary"
@@ -619,6 +648,27 @@ export function ConnectModal({
                     </button>
                   </div>
                 </div>
+
+                {/* Subdomain Input for Multi-Tenant services */}
+                {(service === "zendesk" || service === "shopify") && (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-zinc-700">
+                      {service === "zendesk" ? "Zendesk Subdomain" : "Shopify Store Domain"}
+                    </label>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="text"
+                        value={customSubdomain}
+                        onChange={(e) => setCustomSubdomain(e.target.value)}
+                        placeholder={service === "zendesk" ? "e.g. muapihelp" : "e.g. your-store"}
+                        className="h-8 px-2.5 text-xs font-mono bg-white border border-zinc-200 rounded-md focus:outline-none focus:ring-1 focus:ring-zinc-400 text-zinc-900 placeholder:text-zinc-400 flex-1"
+                      />
+                      <span className="text-xs text-zinc-500 font-mono">
+                        {service === "zendesk" ? ".zendesk.com" : ".myshopify.com"}
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Client ID & Secret Inputs */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">

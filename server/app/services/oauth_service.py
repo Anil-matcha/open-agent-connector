@@ -1061,12 +1061,16 @@ class OAuthService:
         service: str,
         client_id: str,
         client_secret: str,
-        mode: str = "custom"
+        mode: str = "custom",
+        subdomain: Optional[str] = None
     ) -> None:
         """Store OAuth client credentials encrypted with AES-256-GCM.
         Mode can be 'hosted' or 'custom'.
         """
-        payload = json.dumps({"client_id": client_id, "client_secret": client_secret})
+        cfg = {"client_id": client_id, "client_secret": client_secret}
+        if subdomain:
+            cfg["subdomain"] = subdomain
+        payload = json.dumps(cfg)
         encrypted_val = encrypt_secret(payload)
         
         target_service = f"hosted:{service}" if mode == "hosted" else custom_oauth_config_key(tenant_id, service)
@@ -1091,6 +1095,7 @@ class OAuthService:
         connection_name: str = "default",
         redirect_uri: Optional[str] = None,
         custom_scopes: Optional[list] = None,
+        subdomain: Optional[str] = None,
         mode: Optional[str] = None
     ) -> Dict[str, Any]:
         """Generate PKCE state, record expiring transaction state, and build authorization URL."""
@@ -1157,9 +1162,9 @@ class OAuthService:
             params["owner"] = "user"
 
         auth_url_base = provider_meta['authorize_url']
-        subdomain = (config or {}).get("subdomain") or (config or {}).get("shopDomain") or (config or {}).get("shop") or ""
-        if "{" in auth_url_base and subdomain:
-            auth_url_base = auth_url_base.replace("{subdomain}", subdomain).replace("{shopDomain}", subdomain)
+        effective_subdomain = subdomain or (config or {}).get("subdomain") or (config or {}).get("shopDomain") or (config or {}).get("shop") or ""
+        if "{" in auth_url_base and effective_subdomain:
+            auth_url_base = auth_url_base.replace("{subdomain}", effective_subdomain).replace("{shopDomain}", effective_subdomain)
 
         auth_url = f"{auth_url_base}?{urlencode(params)}"
         return {
@@ -1311,6 +1316,8 @@ class OAuthService:
                 val_payload["apiDomain"] = token_data["api_domain"]
             if "domain" in token_data:
                 val_payload["domain"] = token_data["domain"]
+            if subdomain:
+                val_payload["subdomain"] = subdomain
 
             profile = await provider.validate_credentials(val_payload, client)
 
@@ -1324,6 +1331,8 @@ class OAuthService:
             }
             if "api_domain" in token_data:
                 credential_dict["apiDomain"] = token_data["api_domain"]
+            if subdomain:
+                credential_dict["subdomain"] = subdomain
 
             # Merge provider-specific metadata (e.g. Mailchimp dc, serverPrefix, apiEndpoint)
             if isinstance(profile.get("metadata"), dict):
