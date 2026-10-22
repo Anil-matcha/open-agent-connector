@@ -250,7 +250,7 @@ class WrikeProvider(Provider):
             service="wrike",
             display_name="Wrike",
             category="Project Management",
-            auth_types=["api_key"],
+            auth_types=["oauth2", "api_key"],
             description="Wrike enterprise collaborative work management, folders, and tasks with 7 actions."
         )
         for act in get_provider_actions("wrike"):

@@ -77,7 +77,8 @@ export function ConnectModal({
   authConfigs = [],
   onSuccess,
 }: ConnectModalProps) {
-  const hasOAuth2 = authTypes.includes("oauth2");
+  const [oauthStatus, setOauthStatus] = useState<OAuthMeta | null>(null);
+  const hasOAuth2 = authTypes.includes("oauth2") || Boolean(oauthStatus);
   const hasManualAuth = authTypes.some((t) => t !== "oauth2");
 
   const [authMode, setAuthMode] = useState<"oauth" | "manual">(
@@ -90,7 +91,6 @@ export function ConnectModal({
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
-  const [oauthStatus, setOauthStatus] = useState<OAuthMeta | null>(null);
   const [oauthTab, setOauthTab] = useState<"hosted" | "custom">("hosted");
   const [customClientId, setCustomClientId] = useState("");
   const [customClientSecret, setCustomClientSecret] = useState("");
@@ -114,9 +114,10 @@ export function ConnectModal({
   }, [service, isOpen, authTypes]);
 
   React.useEffect(() => {
-    if (authTypes.includes("oauth2")) {
-      fetchApi<OAuthMeta>(`/api/oauth/${service}/config`)
-        .then((res) => {
+    // Always check server OAuth capability so OAuth is enabled even if authTypes is missing oauth2
+    fetchApi<OAuthMeta>(`/api/oauth/${service}/config`)
+      .then((res) => {
+        if (res) {
           setOauthStatus(res);
           if (res.subdomain) {
             setCustomSubdomain(res.subdomain);
@@ -124,10 +125,14 @@ export function ConnectModal({
           if (res.customConfigured && !res.hostedAvailable) {
             setOauthTab("custom");
           }
-        })
-        .catch(() => {});
-    }
-  }, [service, authTypes]);
+          if (res.configured || res.hostedAvailable || res.customConfigured || res.callbackUrl) {
+            setAuthMode("oauth");
+            setAuthType("oauth2");
+          }
+        }
+      })
+      .catch(() => {});
+  }, [service, isOpen]);
 
   const popupRef = React.useRef<Window | null>(null);
   const pollTimerRef = React.useRef<NodeJS.Timeout | null>(null);

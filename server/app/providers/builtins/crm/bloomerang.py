@@ -165,7 +165,7 @@ class BloomerangProvider(Provider):
             service="bloomerang",
             display_name="Bloomerang",
             category="CRM & Helpdesk",
-            auth_types=['api_key'],
+            auth_types=['oauth2', 'api_key'],
             description="Bloomerang non-profit CRM, constituent profiles, donor interactions, and fundraising records with 3 actions."
         )
         for act in get_provider_actions("bloomerang"):

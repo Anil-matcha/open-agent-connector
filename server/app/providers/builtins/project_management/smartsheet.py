@@ -215,7 +215,7 @@ class SmartsheetProvider(Provider):
             service="smartsheet",
             display_name="Smartsheet",
             category="Project Management",
-            auth_types=["api_key"],
+            auth_types=["oauth2", "api_key"],
             description="Smartsheet enterprise dynamic work spreadsheets, rows, and attachments with 5 actions."
         )
         for act in get_provider_actions("smartsheet"):

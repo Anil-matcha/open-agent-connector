@@ -293,7 +293,7 @@ class PandaDocProvider(Provider):
             service="pandadoc",
             display_name="PandaDoc",
             category="Project Management",
-            auth_types=["api_key"],
+            auth_types=["oauth2", "api_key"],
             description="PandaDoc document automation, proposals, quotes, and contract management with 13 actions."
         )
         for act in get_provider_actions("pandadoc"):

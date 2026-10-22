@@ -215,7 +215,7 @@ class SalesloftProvider(Provider):
             service="salesloft",
             display_name="Salesloft",
             category="CRM & Sales",
-            auth_types=["api_key"],
+            auth_types=["oauth2", "api_key"],
             description="Salesloft sales engagement platform, cadences, accounts, and people with 7 actions."
         )
         for act in get_provider_actions("salesloft"):
