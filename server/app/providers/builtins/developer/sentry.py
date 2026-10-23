@@ -380,57 +380,56 @@ class SentryProvider(Provider):
         base_url = _resolve_base_url(credential)
         headers = _headers(token, credential)
 
-        val_url = f"{base_url}/api/0/users/me/"
-        assert_public_url(val_url)
+        # 1. Primary check: organizations endpoint (authorized by org:read scope for all OAuth & integration tokens)
+        org_url = f"{base_url}/api/0/organizations/"
+        assert_public_url(org_url)
 
         resp = await execute_guarded_request(
             client=client,
             method="GET",
-            url=val_url,
+            url=org_url,
             headers=headers
         )
 
-        if resp.status_code in [401, 403, 404]:
-            # Sentry integration/OAuth tokens are often bound to organizations rather than human users
-            org_url = f"{base_url}/api/0/organizations/"
-            assert_public_url(org_url)
+        if resp.status_code == 200:
             try:
-                org_resp = await execute_guarded_request(client=client, method="GET", url=org_url, headers=headers)
-                if org_resp.status_code == 200:
-                    org_data = org_resp.json()
-                    if isinstance(org_data, list) and len(org_data) > 0:
-                        first_org = org_data[0]
-                        org_slug = str(first_org.get("slug") or first_org.get("id") or "sentry-org")
-                        org_name = str(first_org.get("name") or org_slug)
-                        return {
-                            "account_id": org_slug,
-                            "display_name": f"Sentry ({org_name})"
-                        }
+                org_data = resp.json()
+                if isinstance(org_data, list) and len(org_data) > 0:
+                    first_org = org_data[0]
+                    org_slug = str(first_org.get("slug") or first_org.get("id") or "sentry-org")
+                    org_name = str(first_org.get("name") or org_slug)
+                    return {
+                        "account_id": org_slug,
+                        "display_name": f"Sentry ({org_name})"
+                    }
+                elif isinstance(org_data, dict):
+                    org_slug = str(org_data.get("slug") or org_data.get("id") or "sentry-org")
+                    org_name = str(org_data.get("name") or org_slug)
+                    return {
+                        "account_id": org_slug,
+                        "display_name": f"Sentry ({org_name})"
+                    }
             except Exception:
                 pass
-            raise ValueError(f"Invalid Sentry credentials: {resp.status_code} {resp.text}")
-        elif resp.status_code >= 400:
-            raise ValueError(f"Sentry validation failed: {resp.status_code} {resp.text}")
 
-        try:
-            res_data = resp.json()
-        except Exception:
-            res_data = {}
+        # 2. Secondary fallback check: /users/me/ for personal user tokens
+        val_url = f"{base_url}/api/0/users/me/"
+        assert_public_url(val_url)
+        user_resp = await execute_guarded_request(client=client, method="GET", url=val_url, headers=headers)
+        if user_resp.status_code == 200:
+            try:
+                user_data = user_resp.json()
+                acc_id = str(user_data.get("id") or user_data.get("email") or "sentry-user")
+                disp_name = str(user_data.get("name") or user_data.get("email") or acc_id)
+                return {
+                    "account_id": acc_id,
+                    "display_name": f"Sentry ({disp_name})"
+                }
+            except Exception:
+                pass
 
-        acc_id = None
-        disp_name = None
-        for key in ["id", "user_id", "userId", "username", "login", "email", "name", "account_id"]:
-            if isinstance(res_data, dict):
-                if key in res_data:
-                    acc_id = str(res_data[key])
-                    break
-                user_obj = res_data.get("user") or res_data.get("data")
-                if isinstance(user_obj, dict) and key in user_obj:
-                    acc_id = str(user_obj[key])
-                    disp_name = str(user_obj.get("name") or user_obj.get("username") or acc_id)
-                    break
-
-        return {
-            "account_id": acc_id or "connected_account",
-            "display_name": disp_name or f"Sentry ({acc_id or 'verified'})"
-        }
+        err_status = resp.status_code if resp.status_code not in [200, 404] else user_resp.status_code
+        err_text = resp.text if resp.status_code not in [200, 404] else user_resp.text
+        if err_status in [401, 403]:
+            raise ValueError(f"Invalid Sentry credentials: {err_status} {err_text}")
+        raise ValueError(f"Sentry validation failed: {err_status} {err_text}")
