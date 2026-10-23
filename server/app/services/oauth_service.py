@@ -740,6 +740,7 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "authorize_url": "https://app.netlify.com/authorize",
         "token_url": "https://api.netlify.com/oauth/token",
         "token_auth_method": "body",
+        "pkce": False,
         "default_scopes": [],
     },
     "ticktick": {
