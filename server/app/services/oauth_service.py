@@ -377,12 +377,6 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "token_url": "https://cloud.digitalocean.com/v1/oauth/token",
         "default_scopes": ["read", "write"],
     },
-    "coda": {
-        "display_name": "Coda",
-        "authorize_url": "https://coda.io/oauth/authorize",
-        "token_url": "https://coda.io/oauth/token",
-        "default_scopes": [],
-    },
     "discord": {
         "display_name": "Discord",
         "authorize_url": "https://discord.com/oauth2/authorize",
@@ -877,8 +871,6 @@ class OAuthService:
             candidates.extend(["SHOPIFY"])
         elif s_lower == "square":
             candidates.extend(["SQUARE"])
-        elif s_lower == "coda":
-            candidates.extend(["CODA"])
         elif s_lower == "discord":
             candidates.extend(["DISCORD"])
         elif s_lower == "linkedin":

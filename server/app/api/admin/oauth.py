@@ -44,6 +44,8 @@ async def get_oauth_config(
     db: AsyncSession = Depends(get_db)
 ):
     """Check if OAuth is configured for a service. Exposes hosted and custom status."""
+    if service not in OAUTH_PROVIDERS:
+        raise HTTPException(status_code=404, detail=f"OAuth is not supported for service '{service}'.")
     status = await OAuthService.get_oauth_status(db, admin.tenant_id, service)
     config = await OAuthService.get_client_config(db, admin.tenant_id, service)
     return {
