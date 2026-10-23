@@ -777,6 +777,7 @@ OAUTH_PROVIDERS: Dict[str, Dict[str, Any]] = {
         "authorize_url": "https://id.getharvest.com/oauth2/authorize",
         "token_url": "https://id.getharvest.com/api/v2/oauth2/token",
         "token_auth_method": "body",
+        "pkce": False,
         "default_scopes": [],
     },
     "confluence": {

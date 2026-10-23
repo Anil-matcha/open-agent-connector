@@ -173,9 +173,37 @@ class HarvestProvider(Provider):
         if not token:
             raise ValueError("Harvest access token is required.")
 
+        account_id = credential.get("accountId") or credential.get("account_id") or credential.get("harvestAccountId")
+        company_name = ""
+
+        # Auto-discover accounts via Harvest ID endpoint if accountId is not provided (e.g. in OAuth flows)
+        if not account_id:
+            accounts_url = "https://id.getharvest.com/api/v2/accounts"
+            assert_public_url(accounts_url)
+            acc_resp = await execute_guarded_request(
+                client=client,
+                method="GET",
+                url=accounts_url,
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Accept": "application/json",
+                    "User-Agent": "ConnectorHub/1.0"
+                }
+            )
+            if acc_resp.status_code == 200:
+                try:
+                    acc_data = acc_resp.json()
+                    accounts = acc_data.get("accounts", [])
+                    if accounts:
+                        first_acc = accounts[0]
+                        account_id = str(first_acc.get("id"))
+                        company_name = first_acc.get("name", "")
+                except Exception:
+                    pass
+
         val_url = f"{DEFAULT_API_BASE}/users/me"
         assert_public_url(val_url)
-        headers = _build_headers(credential)
+        headers = _build_headers({**credential, "accountId": account_id} if account_id else credential)
 
         try:
             resp = await execute_guarded_request(client=client, method="GET", url=val_url, headers=headers)
@@ -191,7 +219,13 @@ class HarvestProvider(Provider):
         first_name = data.get("first_name", "")
         last_name = data.get("last_name", "")
         full_name = f"{first_name} {last_name}".strip()
+        display_name = f"Harvest ({company_name})" if company_name else (full_name or data.get("email") or "Harvest Account")
+
         return {
-            "account_id": str(data.get("id") or token[:8] + "..."),
-            "display_name": full_name or data.get("email") or "Harvest Account"
+            "account_id": str(account_id or data.get("id") or "verified"),
+            "display_name": display_name,
+            "metadata": {
+                "accountId": str(account_id) if account_id else None,
+                "companyName": company_name or None
+            }
         }
