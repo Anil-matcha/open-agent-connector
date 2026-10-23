@@ -139,7 +139,7 @@ export default function ProvidersPage() {
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none"
                 />
                 <input
-                  type="text"
+                  type="search"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search providers"
