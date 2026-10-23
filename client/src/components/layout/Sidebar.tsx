@@ -136,6 +136,24 @@ export function Sidebar() {
 
         {/* User Account / Access Control */}
         <AccessControl />
+
+        {/* Legal & Compliance Footer */}
+        <div className="px-4 py-2.5 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-400 select-none">
+          <Link
+            href="/privacy"
+            onClick={close}
+            className="hover:text-zinc-600 transition-colors"
+          >
+            Privacy
+          </Link>
+          <Link
+            href="/terms"
+            onClick={close}
+            className="hover:text-zinc-600 transition-colors"
+          >
+            Terms
+          </Link>
+        </div>
       </aside>
     </>
   );
