@@ -168,7 +168,7 @@ class TickTickProvider(Provider):
         if not token:
             raise ValueError("TickTick access token is required.")
 
-        val_url = f"{DEFAULT_API_BASE}/user/profile"
+        val_url = f"{DEFAULT_API_BASE}/project"
         assert_public_url(val_url)
         headers = _build_headers(credential)
 
@@ -182,8 +182,18 @@ class TickTickProvider(Provider):
         elif resp.status_code >= 400:
             raise ValueError(f"TickTick validation failed: {resp.status_code} {resp.text}")
 
-        data = resp.json() if resp.status_code == 200 else {}
+        account_id = "verified"
+        display_label = "TickTick Account"
+        try:
+            data = resp.json()
+            if isinstance(data, list) and len(data) > 0:
+                first_proj = data[0]
+                account_id = str(first_proj.get("id") or "verified")
+                display_label = f"TickTick ({len(data)} projects)"
+        except Exception:
+            pass
+
         return {
-            "account_id": str(data.get("username") or data.get("id") or token[:8] + "..."),
-            "display_name": data.get("username") or data.get("email") or "TickTick Account"
+            "account_id": account_id,
+            "display_name": display_label
         }
