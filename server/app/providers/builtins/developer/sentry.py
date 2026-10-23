@@ -390,7 +390,24 @@ class SentryProvider(Provider):
             headers=headers
         )
 
-        if resp.status_code in [401, 403]:
+        if resp.status_code in [401, 403, 404]:
+            # Sentry integration/OAuth tokens are often bound to organizations rather than human users
+            org_url = f"{base_url}/api/0/organizations/"
+            assert_public_url(org_url)
+            try:
+                org_resp = await execute_guarded_request(client=client, method="GET", url=org_url, headers=headers)
+                if org_resp.status_code == 200:
+                    org_data = org_resp.json()
+                    if isinstance(org_data, list) and len(org_data) > 0:
+                        first_org = org_data[0]
+                        org_slug = str(first_org.get("slug") or first_org.get("id") or "sentry-org")
+                        org_name = str(first_org.get("name") or org_slug)
+                        return {
+                            "account_id": org_slug,
+                            "display_name": f"Sentry ({org_name})"
+                        }
+            except Exception:
+                pass
             raise ValueError(f"Invalid Sentry credentials: {resp.status_code} {resp.text}")
         elif resp.status_code >= 400:
             raise ValueError(f"Sentry validation failed: {resp.status_code} {resp.text}")
