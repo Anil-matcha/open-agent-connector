@@ -35,8 +35,10 @@ FIRECRAWL_ENDPOINT_MAP = {
     "firecrawl.start_agent": ("POST", "/v2/agent"),
     "firecrawl.get_agent_status": ("GET", "/v2/agent/{id}"),
     "firecrawl.agent_cancel": ("DELETE", "/v2/agent/{id}"),
-    "firecrawl.deep_research": ("POST", "/v1/deep-research"),
-    "firecrawl.get_deep_research_status": ("GET", "/v1/deep-research/{id}"),
+    # Firecrawl shuts down /v1/deep-research on 2026-12-10, so deep research runs on the agent endpoint.
+    # https://docs.firecrawl.dev/migrating-from-deep-research
+    "firecrawl.deep_research": ("POST", "/v2/agent"),
+    "firecrawl.get_deep_research_status": ("GET", "/v2/agent/{id}"),
     "firecrawl.llms_txt_generate": ("POST", "/v1/llmstxt"),
     "firecrawl.llms_txt_get": ("GET", "/v1/llmstxt/{id}"),
     "firecrawl.queue_get": ("GET", "/v2/team/queue-status"),
@@ -65,6 +67,43 @@ def _resolve_base_url(credential: Optional[Dict[str, Any]]) -> str:
     if base and str(base).strip():
         return str(base).strip().rstrip("/")
     return DEFAULT_FIRECRAWL_API_BASE
+
+def _deep_research_agent_body(inputs: Dict[str, Any]) -> Dict[str, Any]:
+    """Map a deep research request onto an agent run: one merged prompt, and a schema for the report and sources."""
+    json_options = inputs.get("jsonOptions") if isinstance(inputs.get("jsonOptions"), dict) else {}
+    json_schema = json_options.get("schema") if isinstance(json_options.get("schema"), dict) else None
+    parts = [inputs.get("query"), inputs.get("systemPrompt"), inputs.get("analysisPrompt"), json_options.get("prompt")]
+    prompt = "\n\n".join(part.strip() for part in parts if isinstance(part, str) and part.strip())
+    properties: Dict[str, Any] = {
+        "report": {"type": "string", "description": "A markdown report that answers the question."},
+        "sources": {
+            "type": "array",
+            "description": "The sources the report is based on.",
+            "items": {
+                "type": "object",
+                "properties": {"url": {"type": "string"}, "title": {"type": "string"}},
+                "required": ["url", "title"],
+            },
+        },
+    }
+    required = ["report", "sources"]
+    if json_schema:
+        properties["json"] = json_schema
+        required.append("json")
+    body: Dict[str, Any] = {"prompt": prompt, "schema": {"type": "object", "properties": properties, "required": required}}
+    if inputs.get("maxCredits") is not None:
+        body["maxCredits"] = inputs["maxCredits"]
+    return body
+
+def _deep_research_status(payload: Any) -> Any:
+    """Return a finished agent run in the deep research shape: data.finalAnalysis, data.sources and sources."""
+    if not isinstance(payload, dict) or not isinstance(payload.get("data"), dict):
+        return payload
+    run = payload["data"]
+    data = {"finalAnalysis": run.get("report"), "sources": run.get("sources")}
+    if "json" in run:
+        data["json"] = run["json"]
+    return {**payload, "data": data, "sources": run.get("sources")}
 
 class FirecrawlDynamicAction(Action):
     def __init__(self, action_meta: Dict[str, Any]):
@@ -101,6 +140,8 @@ class FirecrawlDynamicAction(Action):
 
         req_method = self.method
         json_body = inputs if req_method in ["POST", "PUT", "PATCH"] else None
+        if self.id == "firecrawl.deep_research":
+            json_body = _deep_research_agent_body(inputs)
         params = {k: v for k, v in inputs.items() if v is not None} if req_method == "GET" else None
 
         resp = await execute_guarded_request(
@@ -122,6 +163,9 @@ class FirecrawlDynamicAction(Action):
             if isinstance(data, dict):
                 err_msg = data.get("error") or data.get("message") or str(data)
             raise ValueError(f"Firecrawl API error ({resp.status_code}): {err_msg}")
+
+        if self.id == "firecrawl.get_deep_research_status":
+            data = _deep_research_status(data)
 
         return {"status": resp.status_code, "data": data}
 
