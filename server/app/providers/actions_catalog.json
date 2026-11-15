@@ -301746,7 +301746,7 @@
       "id": "firecrawl.llms_txt_generate",
       "service": "firecrawl",
       "name": "llms_txt_generate",
-      "description": "Start an LLMs.txt generation job for a website.",
+      "description": "Start an LLMs.txt generation job for a website. Firecrawl maps the site and batch scrapes its pages; pass the returned url and urls to llms_txt_get along with the id.",
       "operationType": "write",
       "requiredScopes": [],
       "providerPermissions": [],
@@ -301760,7 +301760,7 @@
           },
           "maxUrls": {
             "type": "integer",
-            "description": "The maximum URLs to analyze."
+            "description": "The maximum URLs to analyze. Defaults to 10."
           },
           "showFullText": {
             "type": "boolean",
@@ -301782,13 +301782,27 @@
           },
           "id": {
             "type": "string",
-            "description": "The Firecrawl LLMs.txt job ID."
+            "description": "The Firecrawl batch scrape job ID behind this LLMs.txt job."
+          },
+          "url": {
+            "type": "string",
+            "description": "The root URL, to pass to llms_txt_get."
+          },
+          "urls": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "The page URLs Firecrawl map found, in map order, to pass to llms_txt_get."
           }
         },
         "additionalProperties": false,
         "required": [
           "success",
-          "id"
+          "id",
+          "url",
+          "urls"
         ],
         "description": "The output payload for this action."
       },
@@ -301802,7 +301816,7 @@
           },
           "maxUrls": {
             "type": "integer",
-            "description": "The maximum URLs to analyze."
+            "description": "The maximum URLs to analyze. Defaults to 10."
           },
           "showFullText": {
             "type": "boolean",
@@ -301824,13 +301838,27 @@
           },
           "id": {
             "type": "string",
-            "description": "The Firecrawl LLMs.txt job ID."
+            "description": "The Firecrawl batch scrape job ID behind this LLMs.txt job."
+          },
+          "url": {
+            "type": "string",
+            "description": "The root URL, to pass to llms_txt_get."
+          },
+          "urls": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "The page URLs Firecrawl map found, in map order, to pass to llms_txt_get."
           }
         },
         "additionalProperties": false,
         "required": [
           "success",
-          "id"
+          "id",
+          "url",
+          "urls"
         ],
         "description": "The output payload for this action."
       },
@@ -301851,6 +301879,18 @@
             "type": "string",
             "minLength": 1,
             "description": "The Firecrawl job ID."
+          },
+          "url": {
+            "type": "string",
+            "description": "The url returned by llms_txt_generate, used in the llms.txt header. Defaults to the site's origin."
+          },
+          "urls": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "The urls returned by llms_txt_generate, used to list the pages in map order."
           }
         },
         "additionalProperties": false,
@@ -301907,6 +301947,18 @@
             "type": "string",
             "minLength": 1,
             "description": "The Firecrawl job ID."
+          },
+          "url": {
+            "type": "string",
+            "description": "The url returned by llms_txt_generate, used in the llms.txt header. Defaults to the site's origin."
+          },
+          "urls": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "The urls returned by llms_txt_generate, used to list the pages in map order."
           }
         },
         "additionalProperties": false,
