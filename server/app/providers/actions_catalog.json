@@ -300176,7 +300176,7 @@
       "id": "firecrawl.deep_research",
       "service": "firecrawl",
       "name": "deep_research",
-      "description": "Start a Firecrawl deep research job.",
+      "description": "Start a Firecrawl deep research job. The Firecrawl agent researches the query and returns a markdown report with its sources.",
       "operationType": "write",
       "requiredScopes": [],
       "providerPermissions": [],
@@ -300187,14 +300187,6 @@
             "type": "string",
             "minLength": 1,
             "description": "The research question or topic."
-          },
-          "formats": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "minLength": 1
-            },
-            "description": "The output formats requested from deep research."
           },
           "jsonOptions": {
             "type": "object",
@@ -300213,17 +300205,9 @@
             "additionalProperties": true,
             "description": "Options for structured JSON output."
           },
-          "maxUrls": {
+          "maxCredits": {
             "type": "integer",
-            "description": "The maximum URLs the research job may analyze."
-          },
-          "maxDepth": {
-            "type": "integer",
-            "description": "The maximum research depth for the job."
-          },
-          "timeLimit": {
-            "type": "integer",
-            "description": "The research time limit in seconds."
+            "description": "The maximum credits the research job may spend."
           },
           "systemPrompt": {
             "type": "string",
@@ -300255,14 +300239,6 @@
             "type": "string",
             "description": "The current deep research status."
           },
-          "currentDepth": {
-            "type": "integer",
-            "description": "The current research depth."
-          },
-          "maxDepth": {
-            "type": "integer",
-            "description": "The configured maximum research depth."
-          },
           "expiresAt": {
             "type": "string",
             "description": "The ISO 8601 expiry timestamp for the job data."
@@ -300289,14 +300265,6 @@
             "minLength": 1,
             "description": "The research question or topic."
           },
-          "formats": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "minLength": 1
-            },
-            "description": "The output formats requested from deep research."
-          },
           "jsonOptions": {
             "type": "object",
             "properties": {
@@ -300314,17 +300282,9 @@
             "additionalProperties": true,
             "description": "Options for structured JSON output."
           },
-          "maxUrls": {
+          "maxCredits": {
             "type": "integer",
-            "description": "The maximum URLs the research job may analyze."
-          },
-          "maxDepth": {
-            "type": "integer",
-            "description": "The maximum research depth for the job."
-          },
-          "timeLimit": {
-            "type": "integer",
-            "description": "The research time limit in seconds."
+            "description": "The maximum credits the research job may spend."
           },
           "systemPrompt": {
             "type": "string",
@@ -300355,14 +300315,6 @@
           "status": {
             "type": "string",
             "description": "The current deep research status."
-          },
-          "currentDepth": {
-            "type": "integer",
-            "description": "The current research depth."
-          },
-          "maxDepth": {
-            "type": "integer",
-            "description": "The configured maximum research depth."
           },
           "expiresAt": {
             "type": "string",
@@ -301496,18 +301448,6 @@
             "type": "string",
             "description": "The current deep research status."
           },
-          "currentDepth": {
-            "type": "integer",
-            "description": "The current research depth."
-          },
-          "maxDepth": {
-            "type": "integer",
-            "description": "The configured maximum research depth."
-          },
-          "totalUrls": {
-            "type": "integer",
-            "description": "The total URLs processed by the job."
-          },
           "expiresAt": {
             "type": "string",
             "description": "The ISO 8601 expiry timestamp for the job data."
@@ -301548,37 +301488,6 @@
               "description": "A source object returned by Firecrawl."
             },
             "description": "The sources gathered during deep research."
-          },
-          "activities": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "type": {
-                  "type": "string",
-                  "description": "The activity type."
-                },
-                "depth": {
-                  "type": "integer",
-                  "description": "The research depth for the activity."
-                },
-                "status": {
-                  "type": "string",
-                  "description": "The activity status."
-                },
-                "message": {
-                  "type": "string",
-                  "description": "The activity summary message."
-                },
-                "timestamp": {
-                  "type": "string",
-                  "description": "The ISO 8601 timestamp of the activity."
-                }
-              },
-              "additionalProperties": true,
-              "description": "A deep research activity item."
-            },
-            "description": "The deep research activity timeline."
           }
         },
         "additionalProperties": true,
@@ -301617,18 +301526,6 @@
             "type": "string",
             "description": "The current deep research status."
           },
-          "currentDepth": {
-            "type": "integer",
-            "description": "The current research depth."
-          },
-          "maxDepth": {
-            "type": "integer",
-            "description": "The configured maximum research depth."
-          },
-          "totalUrls": {
-            "type": "integer",
-            "description": "The total URLs processed by the job."
-          },
           "expiresAt": {
             "type": "string",
             "description": "The ISO 8601 expiry timestamp for the job data."
@@ -301669,37 +301566,6 @@
               "description": "A source object returned by Firecrawl."
             },
             "description": "The sources gathered during deep research."
-          },
-          "activities": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "type": {
-                  "type": "string",
-                  "description": "The activity type."
-                },
-                "depth": {
-                  "type": "integer",
-                  "description": "The research depth for the activity."
-                },
-                "status": {
-                  "type": "string",
-                  "description": "The activity status."
-                },
-                "message": {
-                  "type": "string",
-                  "description": "The activity summary message."
-                },
-                "timestamp": {
-                  "type": "string",
-                  "description": "The ISO 8601 timestamp of the activity."
-                }
-              },
-              "additionalProperties": true,
-              "description": "A deep research activity item."
-            },
-            "description": "The deep research activity timeline."
           }
         },
         "additionalProperties": true,
@@ -301880,7 +301746,7 @@
       "id": "firecrawl.llms_txt_generate",
       "service": "firecrawl",
       "name": "llms_txt_generate",
-      "description": "Start an LLMs.txt generation job for a website.",
+      "description": "Start an LLMs.txt generation job for a website. Firecrawl maps the site and batch scrapes its pages; pass the returned url and urls to llms_txt_get along with the id.",
       "operationType": "write",
       "requiredScopes": [],
       "providerPermissions": [],
@@ -301894,7 +301760,7 @@
           },
           "maxUrls": {
             "type": "integer",
-            "description": "The maximum URLs to analyze."
+            "description": "The maximum URLs to analyze. Defaults to 10."
           },
           "showFullText": {
             "type": "boolean",
@@ -301916,13 +301782,27 @@
           },
           "id": {
             "type": "string",
-            "description": "The Firecrawl LLMs.txt job ID."
+            "description": "The Firecrawl batch scrape job ID behind this LLMs.txt job."
+          },
+          "url": {
+            "type": "string",
+            "description": "The root URL, to pass to llms_txt_get."
+          },
+          "urls": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "The page URLs Firecrawl map found, in map order, to pass to llms_txt_get."
           }
         },
         "additionalProperties": false,
         "required": [
           "success",
-          "id"
+          "id",
+          "url",
+          "urls"
         ],
         "description": "The output payload for this action."
       },
@@ -301936,7 +301816,7 @@
           },
           "maxUrls": {
             "type": "integer",
-            "description": "The maximum URLs to analyze."
+            "description": "The maximum URLs to analyze. Defaults to 10."
           },
           "showFullText": {
             "type": "boolean",
@@ -301958,13 +301838,27 @@
           },
           "id": {
             "type": "string",
-            "description": "The Firecrawl LLMs.txt job ID."
+            "description": "The Firecrawl batch scrape job ID behind this LLMs.txt job."
+          },
+          "url": {
+            "type": "string",
+            "description": "The root URL, to pass to llms_txt_get."
+          },
+          "urls": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "The page URLs Firecrawl map found, in map order, to pass to llms_txt_get."
           }
         },
         "additionalProperties": false,
         "required": [
           "success",
-          "id"
+          "id",
+          "url",
+          "urls"
         ],
         "description": "The output payload for this action."
       },
@@ -301985,6 +301879,18 @@
             "type": "string",
             "minLength": 1,
             "description": "The Firecrawl job ID."
+          },
+          "url": {
+            "type": "string",
+            "description": "The url returned by llms_txt_generate, used in the llms.txt header. Defaults to the site's origin."
+          },
+          "urls": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "The urls returned by llms_txt_generate, used to list the pages in map order."
           }
         },
         "additionalProperties": false,
@@ -302041,6 +301947,18 @@
             "type": "string",
             "minLength": 1,
             "description": "The Firecrawl job ID."
+          },
+          "url": {
+            "type": "string",
+            "description": "The url returned by llms_txt_generate, used in the llms.txt header. Defaults to the site's origin."
+          },
+          "urls": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "The urls returned by llms_txt_generate, used to list the pages in map order."
           }
         },
         "additionalProperties": false,
