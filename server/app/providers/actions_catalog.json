@@ -15111,6 +15111,13 @@
           "body": {
             "type": "object",
             "description": "Optional JSON body object"
+          },
+          "max_pages": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10,
+            "default": 1,
+            "description": "For GET without a body, follow same-origin Link rel=next. Values above 1 return pages and a next_url continuation."
           }
         },
         "required": [
@@ -15142,6 +15149,13 @@
           "body": {
             "type": "object",
             "description": "Optional JSON body object"
+          },
+          "max_pages": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10,
+            "default": 1,
+            "description": "For GET without a body, follow same-origin Link rel=next. Values above 1 return pages and a next_url continuation."
           }
         },
         "required": [

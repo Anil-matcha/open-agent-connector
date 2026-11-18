@@ -208,6 +208,21 @@ curl -X POST http://localhost:8000/v1/actions/github.get_current_user \
   -d '{"input": {}, "connectionName": "default"}'
 ```
 
+### Paginated public API reads
+
+`custom.http_request` accepts `max_pages` (1–10, default 1). With a value above 1,
+a GET without a body follows same-origin `Link: <...>; rel="next"` links:
+
+```json
+{"input": {"url": "https://api.github.com/repos/sparfenyuk/mcp-proxy/pulls?per_page=2", "max_pages": 3}}
+```
+
+The response contains `pages` (each page's URL, status, headers and data), `page_count`,
+and `next_url`. A non-null `next_url` means the page cap was reached and more data remains.
+Every request uses the existing outbound guards. Cycles, cross-origin continuation links,
+upstream errors and more than 10 MiB of total response data fail the action. The default
+single-request response stays unchanged.
+
 ### Main routes
 
 | Route | Purpose | Authentication |

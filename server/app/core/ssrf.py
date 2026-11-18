@@ -170,6 +170,25 @@ async def create_guarded_client(allow_private: bool = False, timeout_seconds: fl
         follow_redirects=False, # Never blindly follow redirects without re-checking destination
     )
 
+async def _bounded_request(client: httpx.AsyncClient, limit: int, **kwargs) -> httpx.Response:
+    async with client.stream(**kwargs) as response:
+        content = bytearray()
+        if not (response.is_redirect and "location" in response.headers):
+            async for chunk in response.aiter_bytes():
+                if len(content) + len(chunk) > limit:
+                    raise ValueError(f"Upstream response exceeded maximum permitted size ({limit} bytes).")
+                content.extend(chunk)
+        # The collected body is decoded, so its headers must describe decoded bytes.
+        headers = httpx.Headers(response.headers)
+        headers.pop("content-encoding", None)
+        headers.pop("transfer-encoding", None)
+        headers["content-length"] = str(len(content))
+        return httpx.Response(
+            response.status_code, headers=headers, content=bytes(content),
+            request=response.request, extensions=response.extensions,
+        )
+
+
 async def execute_guarded_request(
     client: httpx.AsyncClient,
     method: str,
@@ -180,11 +199,13 @@ async def execute_guarded_request(
     data: Optional[Any] = None,
     max_redirects: int = 3,
     allow_private: bool = False,
-    max_response_bytes: int = 10 * 1024 * 1024 # 10MB response ceiling
+    max_response_bytes: int = 10 * 1024 * 1024, # 10MB response ceiling
+    stream_response: bool = False,
 ) -> httpx.Response:
     """
     Executes an outbound HTTP request with hop-by-hop SSRF validation,
     cross-origin credential stripping, and maximum response size limits.
+    stream_response bounds decoded bytes while receiving instead of buffering the entire body.
     """
     current_url = url
     current_headers = dict(headers or {})
@@ -194,7 +215,7 @@ async def execute_guarded_request(
     while True:
         assert_public_url(current_url, allow_private=allow_private)
 
-        resp = await client.request(
+        request_options = dict(
             method=method,
             url=current_url,
             headers=current_headers,
@@ -202,6 +223,10 @@ async def execute_guarded_request(
             json=json_body if redirect_count == 0 else None,
             data=data if redirect_count == 0 else None
         )
+        if stream_response:
+            resp = await _bounded_request(client, max_response_bytes, **request_options)
+        else:
+            resp = await client.request(**request_options)
 
         # Handle redirects manually to protect against SSRF and credential leaks
         if resp.is_redirect and "location" in resp.headers:
